@@ -2,7 +2,7 @@
 
 기본 실행은 **SIMULATION**이다. 웹캠에서 사람을 선택·추적하고 목표 인물의 손 제스처에 따라 추종 명령을 계산해 화면에 표시한다. **SIMULATION은 UDP 소켓을 열지 않으며 ESP32에 명령을 보내지 않는다.**
 
-기존 ESP32 펌웨어의 모터·엔코더·PID·옴니 운동학·워치독을 재사용한다. 원본 ZIP은 보존했다. 하네스를 중단한 뒤 구현·검증은 직접 수행했다. Git 저장소/개발 브랜치는 생성하지 않았다.
+ESP32 공식 개발 기준은 [단일 파일 control_simple_v2.ino](esp32_firmware/control_simple_v2/control_simple_v2/control_simple_v2.ino)다. 수동과 자연어 이동에서 공통 Feedforward+PI를 사용하는 사용자 실물 확인 버전이다. Arduino IDE에서는 같은 폴더의 `secrets.example.h`를 로컬 `secrets.h`로 복사해 Wi-Fi 설정을 입력한다. 기존 `control_v2`와 원본 펌웨어는 참고용이다. [기준선과 개선 계획](docs/CONTROL_SIMPLE_V2_PLAN.md)
 
 ## 자연어 제어 Prototype A+B
 
