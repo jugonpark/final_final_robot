@@ -1,0 +1,62 @@
+{
+  "source_archive": "esp32_omni_controller (.zip",
+  "archive_sha256": "44e19705ac54c0effa928917fad32b97f8c0b6c84879f0d187a8d19c8a5a9807",
+  "original_unchanged": true,
+  "excluded": [
+    "secrets.h",
+    "original secrets.example.h"
+  ],
+  "modified": [
+    "esp32_omni_controller.ino: credential fallback replaced by compile error"
+  ],
+  "files": {
+    "esp32_omni_controller.ino": {
+      "original_sha256": "105eafdf86139523dba33973095b626ea725a02f2c52eab02fe33daa19f5e82b",
+      "reference_sha256": "23bf97015fb943402d645a3805bfa5e7e59d952d4fca8b3840b131008b0e1afc"
+    },
+    "firmware_self_test.h": {
+      "original_sha256": "b5469154a8cc78e0e4e5b3ba40a701a79f21881e6fc7ccf95374aa05957281e5",
+      "reference_sha256": "b5469154a8cc78e0e4e5b3ba40a701a79f21881e6fc7ccf95374aa05957281e5"
+    },
+    "kinematics_motion.cpp": {
+      "original_sha256": "06e8984103399e3b6959b6d47e5a13e028ec604ddb9d3f926a14a130fb11a598",
+      "reference_sha256": "06e8984103399e3b6959b6d47e5a13e028ec604ddb9d3f926a14a130fb11a598"
+    },
+    "kinematics_motion.h": {
+      "original_sha256": "fb794df8955117440a5378f44aa2635b8e128614e80389316b98a06f634bfd40",
+      "reference_sha256": "fb794df8955117440a5378f44aa2635b8e128614e80389316b98a06f634bfd40"
+    },
+    "motor_encoder.cpp": {
+      "original_sha256": "3b12b792cb77cc466596fdc525a06242597e1c76d4ffc15511927a4f27371d31",
+      "reference_sha256": "3b12b792cb77cc466596fdc525a06242597e1c76d4ffc15511927a4f27371d31"
+    },
+    "motor_encoder.h": {
+      "original_sha256": "067091d0cae2ff394fd52faa5934c5b9cd02fc80d5b2a68e483c80e4f7871bef",
+      "reference_sha256": "067091d0cae2ff394fd52faa5934c5b9cd02fc80d5b2a68e483c80e4f7871bef"
+    },
+    "network_protocol.cpp": {
+      "original_sha256": "d9ac55c52c2e521da009ae576fc5af4354a3226dcc197060738b73b582942042",
+      "reference_sha256": "d9ac55c52c2e521da009ae576fc5af4354a3226dcc197060738b73b582942042"
+    },
+    "network_protocol.h": {
+      "original_sha256": "8b10651a3747f3821f13e0068012fec27df03dd49609196dac0b440b7b66730b",
+      "reference_sha256": "8b10651a3747f3821f13e0068012fec27df03dd49609196dac0b440b7b66730b"
+    },
+    "odometry_math.h": {
+      "original_sha256": "9d7261c68523f5818e2ea9a947ba4418dfc91dd3b2ba0c5bdd36b587bc5cd8a3",
+      "reference_sha256": "9d7261c68523f5818e2ea9a947ba4418dfc91dd3b2ba0c5bdd36b587bc5cd8a3"
+    },
+    "robot_config.h": {
+      "original_sha256": "5c11c51469bac0bd3bde8870dd5763ea1e3cfbbddc7d03ff62cd9a8488c21a62",
+      "reference_sha256": "5c11c51469bac0bd3bde8870dd5763ea1e3cfbbddc7d03ff62cd9a8488c21a62"
+    },
+    "safety_telemetry.cpp": {
+      "original_sha256": "24a02b1814090c040d20613dab7e7f9e431ac3a2c98ad56a86c198eb97cf3df3",
+      "reference_sha256": "24a02b1814090c040d20613dab7e7f9e431ac3a2c98ad56a86c198eb97cf3df3"
+    },
+    "safety_telemetry.h": {
+      "original_sha256": "91bf0523378ca5ae0fc9419c86464370b964f03c5444832c0cfcdb503c310635",
+      "reference_sha256": "91bf0523378ca5ae0fc9419c86464370b964f03c5444832c0cfcdb503c310635"
+    }
+  }
+}

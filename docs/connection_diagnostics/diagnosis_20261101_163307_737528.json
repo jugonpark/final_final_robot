@@ -1,0 +1,140 @@
+{
+  "generated_at": "2026-11-01T16:33:07.736524+09:00",
+  "target": "10.232.69.103",
+  "steps": [
+    {
+      "name": "IP_ADDRESS",
+      "status": "OK",
+      "message": "숫자 IPv4 형식이 정상입니다. 실제 ESP32의 현재 주소인지는 별도 확인해야 합니다."
+    },
+    {
+      "name": "RX_SOCKET",
+      "status": "NOT_TESTED",
+      "message": "아직 실제 UDP 연결을 시작하지 않았습니다. IP 저장만으로 소켓이 열리지 않습니다."
+    },
+    {
+      "name": "ESP32_RESPONSE",
+      "status": "NOT_TESTED",
+      "message": "수신 소켓 준비 후 ESP32 응답을 확인합니다."
+    },
+    {
+      "name": "SESSION_HEARTBEAT",
+      "status": "NOT_TESTED",
+      "message": "새 STOP 이후의 유효 세션·순서·정지 응답을 확인해야 합니다."
+    },
+    {
+      "name": "ESP32_CONTROL",
+      "status": "NOT_TESTED",
+      "message": "현재 ESP32의 모드와 오류 상태를 유효하게 확인하지 못했습니다."
+    },
+    {
+      "name": "MOTOR_READY",
+      "status": "NOT_TESTED",
+      "message": "정지·오류·휠/엔코더 수신 조건이 확인되기 전에는 모터 시험을 활성화할 수 없습니다."
+    }
+  ],
+  "findings": [
+    {
+      "code": "DIFFERENT_SUBNET",
+      "message": "선택된 노트북 인터페이스와 입력 주소가 같은 직접 연결 대역이 아닙니다. 라우팅이 가능한지는 별도 확인해야 합니다.",
+      "evidence": {
+        "local_ip": "10.103.239.213",
+        "target": "10.232.69.103"
+      },
+      "certainty": "OBSERVED"
+    },
+    {
+      "code": "NO_ICMP_REPLY",
+      "message": "ICMP 응답이 없습니다. 주소 오류·전원·격리·ICMP 차단 등 후보를 구분해야 하며 이것만으로 UDP 실패를 확정하지 않습니다.",
+      "evidence": {
+        "ping_reply": false
+      },
+      "certainty": "OBSERVED"
+    },
+    {
+      "code": "NO_TX_OBSERVED",
+      "message": "실제 송신 기록이 없습니다. 연결 시작·승인·소켓 준비 단계부터 확인해야 합니다.",
+      "evidence": {
+        "last_tx": null
+      },
+      "certainty": "OBSERVED"
+    }
+  ],
+  "network": {
+    "checked_at": "2026-11-01T16:32:58.722493+09:00",
+    "target": "10.232.69.103",
+    "motor_packets_sent": 0,
+    "selected_local_ip": "10.103.239.213",
+    "same_subnet": false,
+    "interfaces": [
+      {
+        "InterfaceAlias": "Wi-Fi 5",
+        "IPAddress": "169.254.151.100",
+        "PrefixLength": 16
+      },
+      {
+        "InterfaceAlias": "Wi-Fi 4",
+        "IPAddress": "169.254.152.221",
+        "PrefixLength": 16
+      },
+      {
+        "InterfaceAlias": "Wi-Fi",
+        "IPAddress": "10.103.239.213",
+        "PrefixLength": 24
+      },
+      {
+        "InterfaceAlias": "Bluetooth 네트워크 연결",
+        "IPAddress": "169.254.166.224",
+        "PrefixLength": 16
+      },
+      {
+        "InterfaceAlias": "Loopback Pseudo-Interface 1",
+        "IPAddress": "127.0.0.1",
+        "PrefixLength": 8
+      }
+    ],
+    "ping_reply": false,
+    "port_available": true,
+    "connection_profiles": [
+      {
+        "InterfaceAlias": "Wi-Fi",
+        "NetworkCategory": 0
+      }
+    ],
+    "udp_receivers": [],
+    "firewall_profiles": [
+      {
+        "Name": "Domain",
+        "Enabled": 1,
+        "DefaultInboundAction": 0,
+        "DefaultOutboundAction": 0
+      },
+      {
+        "Name": "Private",
+        "Enabled": 1,
+        "DefaultInboundAction": 0,
+        "DefaultOutboundAction": 0
+      },
+      {
+        "Name": "Public",
+        "Enabled": 1,
+        "DefaultInboundAction": 0,
+        "DefaultOutboundAction": 0
+      }
+    ]
+  },
+  "connection_attempt": null,
+  "transport": {},
+  "trial": null,
+  "physical_motor_result": "NOT TESTED",
+  "hardware_checks": [
+    "시리얼 115200bps에서 현재 IP와 STATUS 확인",
+    "모터 전원 전압·공통 GND·드라이버 STBY 실측",
+    "모터/엔코더 핀과 풀업 확인",
+    "물리 전원 차단 수단과 바퀴 공중 고정 확인"
+  ],
+  "note": "명령 처리 정황·엔코더 관측·실물 회전 검증은 별개입니다. 원인이 불명확하면 하드웨어 원인을 확정하지 않습니다.",
+  "program_mode": "SIMULATION",
+  "evidence_source": "PASSIVE_NETWORK_ONLY",
+  "automatic_motor_test_executed": false
+}

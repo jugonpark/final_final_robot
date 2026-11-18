@@ -1,0 +1,33 @@
+{
+  "log": "logs\\20261101_164511_356069\\events.jsonl",
+  "records": 2311,
+  "first_at": "2026-11-01T16:45:11.856828+09:00",
+  "last_at": "2026-11-01T16:49:41.428721+09:00",
+  "modes": {
+    "SIMULATION": 610,
+    "HARDWARE": 1701
+  },
+  "unique_live_frames": 314,
+  "fresh_snapshot_rows": 297,
+  "udp_tx_events": 1697,
+  "udp_tx_socket_success_events": 1697,
+  "udp_tx_command_types": {
+    "stop": 1697
+  },
+  "udp_destinations": [
+    [
+      "10.232.69.103",
+      8888
+    ]
+  ],
+  "udp_rx_events": 0,
+  "valid_telemetry_rows": 0,
+  "events": {
+    "SNAPSHOT": 613,
+    "MODE_CHANGED": 1,
+    "UDP_TX": 1697
+  },
+  "physical_motor_result": "NOT TESTED",
+  "automatic_motor_test_executed": false,
+  "note": "Started in SIMULATION. Connection was initiated in the UI during this run. Recorded STOP attempts are not proof of ESP32 reception. Snapshot throttling under forced UDP events was then fixed."
+}

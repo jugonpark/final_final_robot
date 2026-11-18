@@ -1,0 +1,23 @@
+diff --git a/esp32_omni_controller.ino b/esp32_omni_controller.ino
+--- a/esp32_omni_controller.ino
++++ b/esp32_omni_controller.ino
+@@ -166,5 +166,19 @@
+ void handleAcceptedCommand(const NormalizedCommand &command,
+                            bool fromNetwork, const IPAddress &remoteIp) {
++    if (fromNetwork && safetyState.mode != ControllerMode::NETWORK) {
++        if (command.type != CommandType::STOP) {
++            ++udpRejected;
++            return;
++        }
++        // Emergency STOP in manual mode must not claim the session or reset a fault.
++        ++udpAccepted;
++        manualPwmActive = false;
++        immediateStopNow(safetyState.fault,
++                         safetyState.fault == FaultCode::NONE
++                             ? command.receivedAtMs : safetyState.faultAtMs,
++                         commandMailbox, commandAcceptance);
++        return;
++    }
+     const AcceptanceResult result =
+         acceptCommand(command, commandAcceptance, commandMailbox);
+     if (result != AcceptanceResult::IGNORE_DUPLICATE_OR_STALE &&

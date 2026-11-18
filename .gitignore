@@ -1,0 +1,14 @@
+__pycache__/
+.env
+*.pyc
+.venv/
+.worktrees/
+models/*.pt
+models/*.task
+models/*.part
+esp32_firmware/**/secrets.h
+*.zip
+.tmp/
+runs/
+logs/
+settings/connection.json
