@@ -82,7 +82,7 @@ class ProtocolTests(unittest.TestCase):
         d = ControlDecision('FOLLOWING',MotionCommand(2,0,.1),'FOLLOW',1)
         c.submit(d,now[0]); c.tick()
         self.assertEqual(c.tx.packets[-1]['type'],'cmd_vel')
-        now[0] += .3
+        now[0] += cfg['safety']['perception_timeout_s'] + .05
         c.tick()
         self.assertEqual(c.tx.packets[-1]['type'],'stop')
         self.assertFalse(c.armed)

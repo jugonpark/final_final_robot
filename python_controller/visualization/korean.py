@@ -80,7 +80,20 @@ MEANINGS={
  'SESSION_CONFLICT':'다른 제어 세션 감지 · 이동 차단',
  'SESSION_LOST':'세션 동기화 필요',
  'STRICT':'엄격 오류 정지', 'FILTERED_TEST':'저속 엔코더 필터 시험',
+ 'CAPTURE_STALE_BEFORE_INFERENCE':'캡처 지연으로 프레임 폐기',
+ 'INFERENCE_RESULT_STALE':'추론 완료 시 영상 유효시간 초과',
  'DEVICE_STOPPED_DURING_HOLD':'장치가 현재 이동을 종료함',
+ 'RADAR_NOT_CONFIGURED':'레이더 Pi 주소 미설정',
+ 'RADAR_NO_DATA':'레이더 첫 응답 대기',
+ 'RADAR_SENSOR_UNKNOWN':'레이더 센서 상태 미확인',
+ 'RADAR_TIMEOUT':'레이더 통신 만료',
+ 'RADAR_EVADE':'레이더 위험 감지',
+ 'RADAR_REBOOT':'레이더 Pi 서비스 재시작',
+ 'RADAR_HAZARD_REPORTED':'레이더 위험 이력 수신',
+ 'RADAR_BAD_PACKET':'잘못된 레이더 데이터',
+ 'RADAR_BIND_FAILED':'레이더 UDP 8891 수신 시작 실패',
+ 'RADAR_RX_ERROR':'레이더 수신 오류',
+ 'RADAR_PLAN_CANCELLED':'레이더로 이동 계획 취소',
  'HEARTBEAT_TIMEOUT':'생존 통신 만료', 'VELOCITY_TTL_EXPIRED':'속도 명령 유효시간 만료',
  'OWN_RECEIVER_BOUND':'현재 프로그램의 수신 소켓 사용 중',
  'INVALID_IMAGE_SIZE':'잘못된 영상 크기','NOT_ARMED':'제어 준비 승인 필요','GOAL_REACHED':'목표 도달',
@@ -170,6 +183,9 @@ def add_choices(combo,choices):
 
 def movement_block(transport):
     """A verified output STOP alone never grants movement permission."""
+    radar = transport.get('radar')
+    if radar and radar['blocked']:
+        return radar['reason']
     recovery = transport.get('recovery_state')
     if recovery in ('SYNC_STOP', 'SESSION_CONFLICT'):
         return recovery

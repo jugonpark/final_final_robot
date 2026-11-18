@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 from python_controller.visualization.korean import ko, movement_block
+from python_controller.planning.schema import describe_action
 
 
 PHASE_TEXT = {
@@ -20,6 +21,8 @@ PHASE_TEXT = {
     "FAILED": "요청을 완료하지 못했습니다.",
 }
 DETAIL_TEXT = {
+    "ROTATION_CONTROL_NOT_VERIFIED": "각도 제어가 검증되면 이 회전 계획을 실행할 수 있습니다.",
+    "ROTATE_ANGLE_LIMIT": "회전 각도는 0도 초과 360도 이하로 입력하세요.",
     "HANDSHAKE": "장비의 정지 응답 확인 중",
     "MOVE_ACCEPTED": "거리 이동을 확인했습니다.",
     "GOAL_REACHED": "목표 도달 보고를 확인했습니다. 정지 응답 확인 중",
@@ -59,7 +62,7 @@ class NaturalControlPanel(QWidget):
         plan_layout = QVBoxLayout(plan_box)
         entry = QHBoxLayout()
         self.command = QLineEdit()
-        self.command.setPlaceholderText("예: 앞으로 5cm 이동해")
+        self.command.setPlaceholderText("예: 앞으로 5cm 가고 뒤로 5cm 이동해")
         self.command.setAccessibleName("한국어 이동 명령")
         self.command.textChanged.connect(self._input_changed)
         self.command.returnPressed.connect(self._plan)
@@ -156,7 +159,7 @@ class NaturalControlPanel(QWidget):
             rows = []
             if control.plan is not None:
                 for index, action in enumerate(control.plan.actions, 1):
-                    step = f"{ko(action.direction.upper())}  {action.distance_cm:g} cm" if action.type == "move" else "정지"
+                    step = describe_action(action)
                     rows.append(f"{index}.  {step}")
             self.preview.setPlainText("\n".join(rows))
         self.command.setEnabled(not control.busy)
@@ -175,6 +178,8 @@ class NaturalControlPanel(QWidget):
                            self.engine.release_future is None and transport.get('stop_verified') and
                            transport.get('ready') and not blocked)
             authorized = shared is not None
+        rotation_preview = control.plan is not None and control.plan.requires_angle_control
+        can_prepare = can_prepare and not rotation_preview
         self.prepared.setVisible(not authorized)
         if self.engine.central_ui:
             self.prepared.setVisible(False)
@@ -182,7 +187,11 @@ class NaturalControlPanel(QWidget):
         self.execute_button.setEnabled(can_prepare and (authorized or self.prepared.isChecked()) and bool(self.host.text().strip()))
         if bench_busy or preview:
             self.prepared.setChecked(False)
-        if preview:
+        if rotation_preview:
+            gate = DETAIL_TEXT["ROTATION_CONTROL_NOT_VERIFIED"]
+        elif (transport.get('radar') or {}).get('blocked'):
+            gate = f'레이더 이동 차단 · {ko(blocked)}'
+        elif preview:
             gate = "합성 미리보기에서는 계획만 확인할 수 있습니다."
         elif self.engine.central_ui:
             gate = ('중앙 연결을 사용합니다. 계획을 확인하고 실행하세요.' if can_prepare else

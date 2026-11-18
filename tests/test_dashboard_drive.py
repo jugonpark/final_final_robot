@@ -48,6 +48,8 @@ class DashboardDriveTests(unittest.TestCase):
         self.assertEqual(drive.observe(sample('Closed_Fist', .2), 2.2, 2.2, .4)['reason'], 'GESTURE_STOP')
         with self.assertRaises(ValueError):
             HandDrive(mapping={**DEFAULT_MAPPING, 'Closed_Fist': 'FORWARD'})
+        old_mapping = {name: direction for name, direction in DEFAULT_MAPPING.items() if name != 'Victory'}
+        self.assertEqual(HandDrive(mapping=old_mapping).mapping['Victory'], 'STOP')
 
     def make_hand_engine(self):
         now = [1.]

@@ -3,6 +3,7 @@ from dataclasses import asdict
 from concurrent.futures import Future
 import json
 import math
+import socket
 import threading
 import time
 from queue import Queue, Empty, Full
@@ -48,6 +49,38 @@ class RobotSession(MotorTestClient, HandDriveClient):
         self.stop_pending = True
         self.v2_barrier = None
         self.v2_negotiating = False
+        self.safety = None
+        self.radar_generation = -1
+        self.distance_radar_generation = None
+
+    def start(self):
+        if self.safety is None and self.socket_factory is socket.socket:
+            raise ValueError('RADAR_DASHBOARD_REQUIRED')
+        super().start()
+
+    def radar_status(self):
+        return self.safety.snapshot(self.clock()) if self.safety is not None else None
+
+    def _apply_radar(self):
+        status = self.radar_status()
+        if status and status['blocked'] and (
+            status['generation'] != self.radar_generation or self.active or self.armed
+        ):
+            self.radar_generation = status['generation']
+            self.stop(status['reason'])
+        return status
+
+    def rearm_radar(self):
+        with self.lock:
+            if self.safety is None:
+                raise ValueError('레이더를 사용하는 중앙 제어 연결이 필요합니다.')
+            with self.safety.lock:
+                self._apply_radar()
+                if self.distance_leased or not self.snapshot()['stop_verified']:
+                    raise ValueError('ESP32의 새 STOP 응답과 실행 종료를 확인하세요.')
+                self.safety.rearm(self.clock())
+                self.distance_cancelled = False
+                self.reason = 'RADAR_CLEAR'
 
     def operator_alive(self):
         with self.lock:
@@ -64,10 +97,15 @@ class RobotSession(MotorTestClient, HandDriveClient):
             self.execution_at = self.clock()
 
     def arm(self):
-        return UdpClient.arm(self)
+        with self.lock:
+            status = self._apply_radar()
+            return not (status and status['blocked']) and UdpClient.arm(self)
 
     def submit(self, decision, frame_timestamp, recognized_at=None):
         with self.lock:
+            status = self._apply_radar()
+            if status and status['blocked']:
+                return
             was_active = self.active
             UdpClient.submit(self,decision,frame_timestamp,recognized_at)
             if self.active and not was_active:
@@ -232,8 +270,11 @@ class RobotSession(MotorTestClient, HandDriveClient):
         if not future.set_running_or_notify_cancel():
             return False
         kind = command.pop('type')
+        radar = self.radar_status()
         if (kind not in ('stop','heartbeat','cmd_move','set_test_profile','reset_fault') or
             generation != self.recovery_generation or
+            (kind == 'cmd_move' and radar and
+                (radar['blocked'] or radar['generation'] != self.distance_radar_generation)) or
             (kind in ('heartbeat','cmd_move') and (self.distance_cancelled or self.session_lost))):
             future.set_exception(OSError('CONTROL_CANCELLED'))
             return False
@@ -263,13 +304,15 @@ class RobotSession(MotorTestClient, HandDriveClient):
                 self.stop_pending = True
             else:
                 packet = self.protocol.packet(kind,protocol_version=2,**command)
-            self._send_packet(packet,kind == 'cmd_move')
+            if self._send_packet(packet,kind == 'cmd_move') is False:
+                raise OSError('RADAR_BLOCKED')
             future.set_result((json.loads(packet),self.last_tx_at))
         except (OSError,ValueError,KeyError) as exc:
             future.set_exception(exc)
         return True
 
     def _select_packet(self, now):
+        radar = self._apply_radar()
         if self.trial is not None:
             deadline = self.trial['deadline']
             if self.active and deadline is not None and now >= deadline:
@@ -285,6 +328,12 @@ class RobotSession(MotorTestClient, HandDriveClient):
         if self.stop_pending:
             return self._stop_packet(),False
         if self._service_request(now):
+            return None,False
+        if radar and radar['blocked']:
+            if not self.snapshot()['stop_verified'] and (
+                self.last_tx_at is None or now-self.last_tx_at >= HEARTBEAT_PERIOD_S
+            ):
+                return self._stop_packet(),False
             return None,False
         if self.session_lost or self.distance_cancelled or self.guard.reason != 'OK':
             if self.last_tx_at is None or now-self.last_tx_at >= HEARTBEAT_PERIOD_S:
@@ -312,7 +361,8 @@ class RobotSession(MotorTestClient, HandDriveClient):
             return self._stop_packet(),False
         if self.armed and self.active:
             if now-self.last_heartbeat_at >= HEARTBEAT_PERIOD_S:
-                self._send_packet(self._heartbeat_packet(now))
+                if self._send_packet(self._heartbeat_packet(now)) is False:
+                    return None,False
             if now-self.last_velocity_at >= HEARTBEAT_PERIOD_S:
                 fields = dict(vx=self.command.vx_cm_s,vy=self.command.vy_cm_s,w=self.command.w_rad_s,status='SLOW')
                 return self._motion_packet('cmd_vel',fields),True
@@ -323,6 +373,18 @@ class RobotSession(MotorTestClient, HandDriveClient):
         elif self.last_tx_at is None or now-self.last_tx_at >= HEARTBEAT_PERIOD_S:
             return self._stop_packet(),False
         return None,False
+
+    def _send_packet(self, packet, moving=False):
+        if self.safety is None:
+            return super()._send_packet(packet, moving)
+        command = json.loads(packet)
+        if command['type'] not in ('cmd_vel', 'cmd_move') and command.get('motion_permit') is not True:
+            return super()._send_packet(packet, moving)
+        with self.safety.lock:
+            if self._apply_radar()['blocked']:
+                super()._send_packet(self._stop_packet())
+                return False
+            return super()._send_packet(packet, moving)
 
     def _after_send(self, packet):
         super()._after_send(packet)
@@ -344,10 +406,14 @@ class RobotSession(MotorTestClient, HandDriveClient):
 
     def distance_socket(self):
         with self.lock:
+            radar = self._apply_radar()
+            if radar and radar['blocked']:
+                raise ValueError(radar['reason'])
             status = self.snapshot()
             if self.owner != 'LLM_COMMAND' or self.distance_leased or not status['ready'] or not status['stop_verified']:
                 raise ValueError('자연어 제어의 정지 응답과 연결 상태를 확인하세요.')
             self.distance_leased = True
+            self.distance_radar_generation = radar['generation'] if radar else None
             self.distance_cancelled = False
             self.distance_finished.clear()
             self.execution_token += 1
@@ -382,6 +448,7 @@ class RobotSession(MotorTestClient, HandDriveClient):
             data.update(central_session=True,manual_test_only=False,controller_owner=self.owner,distance_leased=self.distance_leased,
                         body_command=asdict(self.command) if self.active else asdict(MotionCommand()))
             data.update(recovery_state=self.recovery_state,recovery_generation=self.recovery_generation,
+                        radar=self.radar_status(),
                         protocol_version=version,heartbeat_timeout_ms=heartbeat,velocity_ttl_ms=velocity,
                         heartbeat_period_ms=100,controller_age_s=self.clock()-self.controller_at if math.isfinite(self.controller_at) else None,
                         heartbeat_gap_ms=self.heartbeat_gap_ms,encoder_policy=telemetry.get('encoder_policy'),
@@ -421,6 +488,9 @@ class SessionChannel:
         with s.lock:
             if self.closed or s.done.is_set():
                 raise OSError('CONTROL_CONNECTION_CLOSED')
+            radar = s.radar_status()
+            if command['type'] != 'stop' and radar and radar['blocked']:
+                raise OSError('RADAR_BLOCKED')
             try:
                 s.requests.put_nowait((command,future,s.recovery_generation))
             except Full as exc:

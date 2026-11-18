@@ -1,5 +1,7 @@
 import importlib.util
 import os
+from pathlib import Path
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, PropertyMock, patch
@@ -38,6 +40,24 @@ class RecoveryUiTests(unittest.TestCase):
         self.engine.client_owner = 'DIRECT_CONTROL'
         self.addCleanup(setattr, self.engine, 'client', None)
         return session
+
+    def test_pi_address_save_reloads_and_preserves_esp32_address(self):
+        from python_controller.config import load_config
+        from python_controller.control.safety_supervisor import SafetySupervisor
+
+        with tempfile.TemporaryDirectory() as folder:
+            self.window.radar_file = Path(folder)/'radar.json'
+            esp32 = self.window.host.text()
+            self.window.radar_host.setText(' 192.0.2.106 ')
+            self.window.save_radar_button.click()
+            cfg = load_config(radar_path=self.window.radar_file)
+            self.assertEqual(cfg['radar']['source_ip'], '192.0.2.106')
+            self.assertEqual(self.window.host.text(), esp32)
+            self.assertTrue(SafetySupervisor(cfg['radar']['source_ip']).snapshot(1.)['blocked'])
+            self.fake_session()
+            with self.assertRaises(ValueError):
+                self.engine.save_radar_source(self.window.radar_file, '192.0.2.107')
+            self.assertEqual(load_config(radar_path=self.window.radar_file)['radar']['source_ip'], '192.0.2.106')
 
     def test_fault_stop_proof_and_movement_readiness_are_independent(self):
         self.fake_session(ready=False, connected=False, validation_detail='ENCODER_JUMP',

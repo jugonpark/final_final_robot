@@ -20,9 +20,12 @@ def vector(data, key, integer=False):
 def motor_feedback(telemetry, radius_cm):
     target,measured = vector(telemetry,'wheel_target'),vector(telemetry,'wheel_speed')
     factor = 60/(2*math.pi*radius_cm)
+    def rpm(key, speeds):
+        reported = vector(telemetry, key)
+        return reported if reported is not None else [v*factor for v in speeds] if speeds is not None else None
     return dict(target_cm_s=target,measured_cm_s=measured,
-                target_rpm=[v*factor for v in target] if target is not None else None,
-                measured_rpm=[v*factor for v in measured] if measured is not None else None,
+                target_rpm=rpm('wheel_target_rpm',target),
+                measured_rpm=rpm('wheel_measured_rpm',measured),
                 pwm=vector(telemetry,'wheel_pwm'),encoder_count=vector(telemetry,'encoder_count',True))
 
 

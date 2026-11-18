@@ -5,7 +5,7 @@ import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal, localcontext
 
-from python_controller.planning.schema import Action, ModelPlan, Move, Stop
+from python_controller.planning.schema import Action, ModelPlan, Move, Rotate, Stop
 
 
 POLICY_VERSION = "A+B-1.1"
@@ -13,8 +13,10 @@ STOP_WORDS = {"stop", "정지", "정지해", "정지해줘", "정지하세요", 
 DIRECTIONS = {
     "앞": "forward", "전방": "forward", "전진": "forward",
     "뒤": "backward", "후방": "backward", "후진": "backward",
-    "왼쪽": "left", "좌측": "left", "오른쪽": "right", "우측": "right",
+    "왼쪽": "left", "좌측": "left", "좌": "left",
+    "오른쪽": "right", "우측": "right", "우": "right",
 }
+TURN_DIRECTIONS = {**DIRECTIONS, "반시계 방향": "left", "시계 방향": "right"}
 UNITS = {
     "cm": Decimal(1), "센티미터": Decimal(1),
     "mm": Decimal("0.1"), "밀리미터": Decimal("0.1"),
@@ -22,19 +24,25 @@ UNITS = {
 }
 MOVE_TEXT = re.compile(
     r"(?:로봇(?:\s*몸체)?\s*기준(?:으로)?\s+)?"
-    r"(?P<direction>앞|전방|전진|뒤|후방|후진|왼쪽|좌측|오른쪽|우측)(?:으로|로)?\s*"
+    r"(?P<direction>앞|전방|전진|뒤|후방|후진|왼쪽|좌측|오른쪽|우측|좌(?=로)|우(?=로))(?:으로|로)?\s*"
     r"(?P<distance>[0-9]+(?:\.[0-9]+)?)\s*(?P<unit>cm|mm|m|센티미터|밀리미터|미터)"
     r"(?:를|만큼)?\s*"
     r"(?:가|가줘|가세요|가주세요|가고|간 뒤|간 다음|간 후|"
     r"이동|이동해|이동해줘|이동하세요|이동해 주세요|이동하고|이동한 뒤|이동한 다음|이동한 후|"
-    r"움직여|움직여줘|움직이고|움직여 주세요)?"
+    r"움직여|움직여줘|움직이고|움직여 주세요|하고)?"
 )
 CONNECTOR = re.compile(
     r"\s*[,，]\s*(?:그리고\s+)?|\s+(?:그리고|그다음|그 다음)\s+|"
     r"(?:(?<=가고)|(?<=이동하고)|(?<=움직이고)|(?<=간 뒤)|(?<=간 다음)|(?<=간 후)|"
-    r"(?<=이동한 뒤)|(?<=이동한 다음)|(?<=이동한 후))\s+"
+    r"(?<=이동한 뒤)|(?<=이동한 다음)|(?<=이동한 후)|(?<=회전하고)|"
+    r"(?<=회전한 뒤)|(?<=회전한 다음)|(?<=회전한 후)|(?<=돌고)|(?<=돈 뒤)|(?<=돈 다음)|(?<=돈 후)|(?<=하고))\s+"
 )
-INCOMPLETE = re.compile(r"(?:가고|이동하고|움직이고|간 (?:뒤|다음|후)|이동한 (?:뒤|다음|후))$")
+INCOMPLETE = re.compile(r"(?:가고|하고|움직이고|돌고|(?:간|이동한|회전한|돈) (?:뒤|다음|후))$")
+ROTATE_TEXT = re.compile(
+    r"(?:(?P<direction>왼쪽|오른쪽|좌측|우측|좌(?=로)|우(?=로)|반시계 방향|시계 방향)(?:으로|로)?\s*)?"
+    r"(?:(?P<turns>한|1|반)\s*바퀴|(?P<angle>[0-9]+(?:\.[0-9]+)?)\s*(?:도|°))(?:를|만큼)?\s*"
+    r"(?P<verb>회전(?:해(?:줘| 주세요)?|하세요|하고|한 (?:뒤|다음|후))?|돌아(?:줘)?|돌고|돈 (?:뒤|다음|후))?"
+)
 
 
 class PlanError(ValueError):
@@ -47,13 +55,17 @@ class ValidatedPlan:
     needs_clarification: bool = False
 
     def __post_init__(self):
-        if not isinstance(self.actions, tuple) or not all(isinstance(action, (Move, Stop)) for action in self.actions):
+        if not isinstance(self.actions, tuple) or not all(isinstance(action, (Move, Rotate, Stop)) for action in self.actions):
             raise PlanError("INVALID_VALIDATED_ACTIONS")
         if self.needs_clarification:
             if self.actions:
                 raise PlanError("CLARIFICATION_WITH_ACTIONS")
         else:
             _check_actions(self.actions)
+
+    @property
+    def requires_angle_control(self):
+        return any(isinstance(action, Rotate) for action in self.actions)
 
 
 def _check_actions(actions):
@@ -68,10 +80,10 @@ def _check_actions(actions):
             raise PlanError("TOTAL_DISTANCE_LIMIT")
 
 
-def parse_operator_command(text):
+def parse_operator_command(text, *, allow_rotation_preview=False):
     if not text.strip() or len(text) > 350:
         raise PlanError("INPUT_LENGTH")
-    normalized = unicodedata.normalize("NFC", text).strip().lower()
+    normalized = ' '.join(unicodedata.normalize("NFC", text).lower().split())
     normalized = re.sub(r"[.!。！]\Z", "", normalized)
     clauses = CONNECTOR.split(normalized)
     if len(clauses) > 4:
@@ -85,6 +97,13 @@ def parse_operator_command(text):
         for clause in clauses:
             if clause in STOP_WORDS:
                 actions.append(Stop(type="stop"))
+                continue
+            rotation = ROTATE_TEXT.fullmatch(clause) if allow_rotation_preview else None
+            if rotation and (rotation["verb"] or (rotation["direction"] and rotation["turns"])):
+                angle = Decimal(rotation["angle"] or (180 if rotation["turns"] == "반" else 360))
+                if not 0 < angle <= 360:
+                    raise PlanError("ROTATE_ANGLE_LIMIT")
+                actions.append(Rotate(type="rotate", direction=TURN_DIRECTIONS.get(rotation["direction"]), angle_deg=angle))
                 continue
             match = MOVE_TEXT.fullmatch(clause)
             if not match:

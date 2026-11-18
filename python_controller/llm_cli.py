@@ -10,18 +10,14 @@ from python_controller.execution.control_lease import ESP32_COMMAND_PORT, ESP32_
 from python_controller.execution.motion_executor import HEARTBEAT_S, LLMMotionExecutor, MotionError
 from python_controller.execution.run_log import RunLog
 from python_controller.llm.nvidia_client import DEFAULT_BASE_URL, NvidiaError, NvidiaPlanner
-from python_controller.planning.schema import Move, Stop
+from python_controller.planning.dashboard_command import normalize_dashboard_command
+from python_controller.planning.schema import Stop, describe_action
 from python_controller.planning.validator import POLICY_VERSION, PlanError, ValidatedPlan, parse_operator_command, validate_plan
-
-
-DIRECTIONS_KO = {"forward": "앞으로", "backward": "뒤로", "left": "왼쪽으로", "right": "오른쪽으로"}
 
 
 def _preview(plan):
     for index, action in enumerate(plan.actions, 1):
-        label = (f"{DIRECTIONS_KO[action.direction]} {action.distance_cm:g} cm"
-                 if isinstance(action, Move) else "정지")
-        print(f"{index}. {label}")
+        print(f"{index}. {describe_action(action)}")
 
 
 def load_environment():
@@ -30,7 +26,9 @@ def load_environment():
 
 
 def prepare_plan(command, config, emit=None):
-    requested = parse_operator_command(command)
+    if not command.strip() or len(command) > 350:
+        raise PlanError("INPUT_LENGTH")
+    requested = parse_operator_command(normalize_dashboard_command(command), allow_rotation_preview=True)
     stop_only = len(requested) == 1 and isinstance(requested[0], Stop)
     if stop_only:
         plan = ValidatedPlan(requested)
@@ -76,6 +74,8 @@ def _run(args, config, log):
         print("DRY RUN · 이동 계획만 표시했습니다.")
         return 0
 
+    if plan.requires_angle_control:
+        raise PlanError("ROTATION_CONTROL_NOT_VERIFIED")
     timeout = motion_timeout(config)
     host = config.get("ESP32_IP", "")
     if not host:
@@ -103,7 +103,7 @@ def _run(args, config, log):
 
 
 def main(argv=None, *, log_dir=Path("logs/llm")):
-    parser = argparse.ArgumentParser(description="D.I.G. NVIDIA 자연어 제어 (기본 dry-run)")
+    parser = argparse.ArgumentParser(description="D.I.G. NVIDIA 자연어 미리보기. 실물 실행은 레이더가 연결된 중앙 대시보드를 사용합니다.")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="계획 표시 (기본값)")
     mode.add_argument("--execute", action="store_true", help="계획 검토 후 실제 거리 제어 시도")

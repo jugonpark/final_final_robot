@@ -12,3 +12,5 @@ esp32_firmware/**/secrets.h
 runs/
 logs/
 settings/connection.json
+settings/radar.json
+settings/radar.json.tmp

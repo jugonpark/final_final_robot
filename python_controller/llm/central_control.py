@@ -53,6 +53,8 @@ class NaturalControl:
     def start_motion(self, host, prepared, *, session=None):
         if self.busy or self.phase != "READY" or self.plan is None:
             raise ControlError("VALIDATED_PLAN_REQUIRED")
+        if self.plan.requires_angle_control:
+            raise ControlError("ROTATION_CONTROL_NOT_VERIFIED")
         if prepared is not True:
             raise ControlError("HARDWARE_PREPARATION_REQUIRED")
         try:

@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from python_controller.config import load_config
-from python_controller.dashboard_runtime import DashboardEngine,LatestSlot
+from python_controller.dashboard_runtime import DashboardEngine,LatestSlot,VisionStream
 from python_controller.models import PerceptionFrame,PersonObservation
 from python_controller.vision.gesture_recognizer import gesture_diagnostics
 
@@ -21,6 +21,32 @@ class DashboardRuntimeTests(unittest.TestCase):
         slot=LatestSlot()
         for i in range(1000):slot.put(i)
         self.assertEqual(slot.get(),(1000,999))
+
+    def test_yolo_startup_resamples_latest_camera_frame(self):
+        from types import SimpleNamespace
+
+        stream = VisionStream(load_config())
+        image = SimpleNamespace(shape=(480, 640, 3))
+        stream.capture.put((image, time.monotonic()-2, 10))
+        newest = []
+
+        def construct_detector(config):
+            newest.append(time.monotonic())
+            stream.capture.put((image, newest[0], 10))
+            def detect(frame, timestamp):
+                self.assertEqual(timestamp, newest[0])
+                stream.done.set()
+                return ()
+            return SimpleNamespace(detect=detect)
+
+        recognizer = SimpleNamespace(recognize=lambda *args: (None, []),
+                                     diagnostics={}, close=lambda: None)
+        with patch('python_controller.vision.person_detector.PersonDetector', side_effect=construct_detector), \
+             patch('python_controller.vision.gesture_recognizer.GestureRecognizer', return_value=recognizer):
+            stream._vision()
+        self.assertIsNone(stream.error)
+        self.assertEqual(stream.latest()['frame'].timestamp, newest[0])
+        self.assertEqual(stream.latest()['metrics']['skipped_capture_frames'], 1)
 
     def test_simulation_cannot_open_sockets_and_stale_frame_stops(self):
         e=self.engine()

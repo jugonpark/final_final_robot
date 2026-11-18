@@ -5,12 +5,15 @@ from python_controller.models import ControlDecision, MotionCommand
 
 
 DIRECTIONS = ('STOP', 'FORWARD', 'BACKWARD', 'LEFT', 'RIGHT', 'TURN_LEFT', 'TURN_RIGHT')
-DEFAULT_MAPPING = {'Open_Palm': 'FORWARD', 'Thumb_Up': 'LEFT', 'Thumb_Down': 'RIGHT', 'Closed_Fist': 'STOP'}
+DEFAULT_MAPPING = {'Open_Palm': 'FORWARD', 'Thumb_Up': 'LEFT', 'Thumb_Down': 'RIGHT',
+                   'Closed_Fist': 'STOP', 'Victory': 'BACKWARD'}
 
 
 class HandDrive:
     def __init__(self, confidence=.7, frames=2, hold=.25, mapping=None):
         self.mapping = dict(DEFAULT_MAPPING if mapping is None else mapping)
+        if self.mapping.keys() == DEFAULT_MAPPING.keys() - {'Victory'}:
+            self.mapping['Victory'] = 'STOP'
         if (not number(confidence) or not .5 <= confidence <= .99 or type(frames) is not int or
             not 2 <= frames <= 8 or not number(hold) or not .1 <= hold <= 1 or
             self.mapping.keys() != DEFAULT_MAPPING.keys() or self.mapping['Closed_Fist'] != 'STOP' or

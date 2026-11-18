@@ -88,15 +88,26 @@ class VisionStream:
                     self.done.wait(.005);continue
                 dropped += current-version-1
                 version=current
+                hand_only=self.hand_only
+                if not hand_only and detector is None and not self.tracking_error:
+                    try:
+                        self.status='LOADING_YOLO'
+                        detector=PersonDetector(self.cfg['vision'])
+                    except Exception as exc:
+                        self.tracking_error=f'YOLO: {type(exc).__name__}: {exc}'
+                    # Model initialization can take seconds. Resample the capture slot.
+                    current,value=self.capture.get()
+                    dropped+=current-version
+                    version=current
+                    hand_only=self.hand_only
                 image,timestamp,capture_ms=value
                 started=time.monotonic()
-                hand_only=self.hand_only
+                if started-timestamp > self.cfg['safety']['perception_timeout_s']:
+                    self.status='CAPTURE_STALE_BEFORE_INFERENCE'
+                    continue
                 people=()
-                if not hand_only and not self.tracking_error:
+                if not hand_only and detector is not None and not self.tracking_error:
                     try:
-                        if detector is None:
-                            self.status='LOADING_YOLO'
-                            detector=PersonDetector(self.cfg['vision'])
                         self.status='INFERENCING_YOLO'
                         people=detector.detect(image,timestamp)
                     except Exception as exc:
@@ -117,7 +128,8 @@ class VisionStream:
                                       fps=1/(completed-last_completed) if last_completed else None))
                 last_completed=completed
                 last_capture=(current,timestamp)
-                self.status='RUNNING'
+                self.status=('RUNNING' if completed-timestamp <= self.cfg['safety']['perception_timeout_s']
+                             else 'INFERENCE_RESULT_STALE')
         except Exception as exc:
             self.error=f'VISION: {type(exc).__name__}: {exc}'
         finally:
@@ -152,7 +164,7 @@ class PreviewStream:
 
 
 class DashboardEngine:
-    def __init__(self,config,folder,source='LIVE_CAMERA',client_factory=None,logger=True):
+    def __init__(self,config,folder,source='LIVE_CAMERA',client_factory=None,logger=True,radar=None):
         self.control_lock = threading.RLock()
         self.control_done = threading.Event()
         self.control_thread = None
@@ -163,6 +175,10 @@ class DashboardEngine:
         self.c=Controller(config)
         self.client=None
         self.client_factory=client_factory
+        self.radar = radar
+        self.radar_receiver = None
+        self.seen_radar_generation = None
+        self.radar_neutral_required = False
         self.pending=None
         self.last_result=None
         self.snapshot=None
@@ -240,6 +256,56 @@ class DashboardEngine:
         return self.snapshot,self.last_result
 
     @control_locked
+    def save_radar_source(self, path, host):
+        from python_controller.config import radar_source_ip, save_radar_settings
+
+        if self.client or self.release_future or self.language.executing:
+            raise ValueError('ESP32를 정지 후 연결 해제한 다음 Pi 주소를 저장하세요.')
+        host = radar_source_ip(host)
+        save_radar_settings(path, host, self.cfg['radar']['timeout_s'])
+        if self.radar_receiver:
+            self.radar_receiver.close()
+            self.radar_receiver = None
+        self.radar = None
+        self.seen_radar_generation = None
+        self.cfg['radar']['source_ip'] = host
+        self.notice = '레이더 Pi 주소를 저장했습니다.' if host else '레이더 Pi 주소를 비웠습니다. 이동은 차단됩니다.'
+
+    def _sync_radar(self, now):
+        if self.radar is None:
+            return None
+        radar = self.radar.snapshot(now)
+        if radar['blocked'] and radar['generation'] != self.seen_radar_generation:
+            self.seen_radar_generation = radar['generation']
+            self.language.cancel()
+            self.pending = None
+            self.follow_auto_arm = False
+            self.hand_armed_once = True
+            self.radar_neutral_required = True
+            self.hand.reset()
+            self.c.halt('PAUSED', radar['reason'], True)
+            if self.logger:
+                self.logger.write(dict(event='RADAR_BLOCKED', radar=radar), True)
+        return radar
+
+    @control_locked
+    def rearm_radar(self):
+        session = self.shared_session
+        if session is None or self.release_future or self.language.executing:
+            raise ValueError('ESP32 연결과 이전 실행 종료를 확인하세요.')
+        self._sync_radar(session.clock())
+        session.rearm_radar()
+        self.pending = None
+        self.hand.reset()
+        self.hand_connected_at = session.clock()
+        self.hand_armed_once = False
+        self.radar_neutral_required = True
+        self.follow_auto_arm = False
+        self.notice = '레이더 CLEAR 확인 · 새 이동 입력 대기'
+        if self.logger:
+            self.logger.write(dict(event='RADAR_REARMED', radar=session.radar_status()), True)
+
+    @control_locked
     def recover_robot(self):
         if not self.shared_session or self.release_future:
             raise ValueError('연결된 중앙 제어 세션을 확인하세요.')
@@ -277,6 +343,13 @@ class DashboardEngine:
         config = copy.deepcopy(self.cfg)
         config['communication']['host'] = host
         client = (self.client_factory or RobotSession)(config)
+        if self.radar is None and self.client_factory is None:
+            from python_controller.control.safety_supervisor import SafetySupervisor
+            from python_controller.radar.udp_receiver import RadarReceiver
+            self.radar = SafetySupervisor(config['radar']['source_ip'], config['radar']['timeout_s'])
+            self.radar_receiver = RadarReceiver(self.radar)
+            self.radar_receiver.start()
+        client.safety = self.radar
         client.configure_owner('DIRECT_CONTROL', self._previous_session(host, stationary_only=True))
         self.connection_attempt = dict(status='PENDING', host=host, phase='CONFIG', checked_at=time.time())
         try:
@@ -533,6 +606,9 @@ class DashboardEngine:
         if self.source != 'LIVE_CAMERA':
             raise ValueError('합성 미리보기에서 실제 장치 실행은 차단됩니다.')
         if self.shared_session:
+            radar = self._sync_radar(self.shared_session.clock())
+            if radar and radar['blocked']:
+                raise ValueError(radar['reason'])
             if (self.client_owner != 'LLM_COMMAND' or self.pending_mode or self.release_future or
                 self.shared_session.host != host or not self.shared_session.snapshot()['stop_verified']):
                 raise ValueError('자연어 제어로 전환하고 ESP32 정지 응답을 확인하세요.')
@@ -647,13 +723,14 @@ class DashboardEngine:
 
     @control_locked
     def tick(self,result,now=None,pipeline_error=None,pipeline_health=None):
+        now=time.monotonic() if now is None else now
+        radar = self._sync_radar(now)
         was_executing=self.language.executing
         self.language.poll()
         self._take_language_release()
         self._finish_mode_change()
         if was_executing and self.language.phase == 'FAILED':
             self.language_authorized_host = None
-        now=time.monotonic() if now is None else now
         previous_state=self.snapshot['state'] if self.snapshot else None
         if result is not None: self.last_result=result
         r=self.last_result
@@ -725,7 +802,11 @@ class DashboardEngine:
             valid = bool(r and fresh and r.get('hand_only') and f.timestamp >= self.hand_connected_at
                          and self.release_future is None)
             hand_status = self.hand.observe(vision, f.timestamp, now, self.cfg['safety']['perception_timeout_s'], valid)
-            if shared and valid and not self.hand_armed_once and transport['stop_verified'] and not self.pending_mode:
+            neutral = vision['hand_count'] == 0 or hand_status.get('label') == 'Closed_Fist'
+            if valid and neutral and not (radar and radar['blocked']):
+                self.radar_neutral_required = False
+            if (shared and valid and not self.hand_armed_once and not self.radar_neutral_required and
+                transport['stop_verified'] and not self.pending_mode):
                 self.hand_armed_once = shared.arm()
             if not valid and transport['armed']:
                 self.client.stop('PERCEPTION_STALE_OR_FAILED')
@@ -774,7 +855,7 @@ class DashboardEngine:
             program_mode=self.mode,evidence_source=self.source,notice=pipeline_error or self.notice,pipeline_health=pipeline_health,
             control_source=self.client_owner or ('LLM_COMMAND' if self.language.executing else 'VISION_SIMULATION'),
             active_control_mode=self.active_control_mode,controller_owner=self.active_control_mode,
-            motor_test=motor)
+            motor_test=motor,radar=radar)
         if manual:
             data.update(state='MOTOR_TEST_'+motor['status'],stop_reason=transport['reason'],armed=transport['manual_enabled'],following=False)
         if hand_direct:
@@ -802,6 +883,8 @@ class DashboardEngine:
         self.language.close()
         if self.client:
             self.disconnect()
+        if self.radar_receiver:
+            self.radar_receiver.close()
         if self.logger:
             self.logger.save_tests(self.book)
             self.logger.close()

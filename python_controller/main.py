@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import time
 
-from python_controller.config import load_config
+from python_controller.config import RADAR_SETTINGS, load_config
 from python_controller.control.state_machine import Controller
 from python_controller.models import PersonObservation, PerceptionFrame, RadarObservation
 
@@ -134,7 +134,7 @@ def main(argv=None):
     if args.mode=='HARDWARE' and args.ui!='dashboard':
         parser.error('Hardware control requires --ui dashboard')
     try:
-        config = load_config(args.config)
+        config = load_config(args.config, radar_path=RADAR_SETTINGS if args.ui=='dashboard' else None)
         if args.esp32_host: config['communication']['host'] = args.esp32_host
         for key in ('model_path','gesture_model_path'):
             p = Path(config['vision'][key])

@@ -18,7 +18,9 @@ TELEMETRY_KEYS.update({'protocol_version','heartbeat_age_ms','velocity_age_ms','
     'encoder_warning','encoder_good_samples','encoder_bad_samples','bad_samples','fault_motor_mask','fault_dt_us',
     'fault_delta_limit','fault_delta_count','fault_previous_count','fault_current_count','fault_pwm_before',
     'fault_latched','stop_applied_ms','goal_elapsed_ms','remaining_cm','lateral_error_cm','goal_active','goal_reached',
-    'encoder_recent_bad','fault_sample_ms','last_fault','last_fault_at_ms'})
+    'encoder_recent_bad','fault_sample_ms','last_fault','last_fault_at_ms',
+    'control_style','wheel_control_target','wheel_ff_pwm','wheel_pi_trim_pwm',
+    'wheel_target_rpm','wheel_measured_rpm'})
 
 
 def safe_payload(value):

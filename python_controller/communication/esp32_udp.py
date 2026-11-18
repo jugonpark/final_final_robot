@@ -192,6 +192,8 @@ class UdpClient:
         self.session_sync = SessionSync(previous)
 
     def start(self):
+        if self.socket_factory is socket.socket and not getattr(self, 'central_session', False):
+            raise ValueError('RADAR_DASHBOARD_REQUIRED')
         if self.requires_verified_signs and self.cfg['communication']['signs_verified'] is not True:
             raise ValueError('Physical coordinate signs must be verified in config before HARDWARE')
         try:

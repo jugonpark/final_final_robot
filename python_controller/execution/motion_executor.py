@@ -78,6 +78,8 @@ class LLMMotionExecutor:
             raise MotionError("OPERATOR_APPROVAL_REQUIRED")
         if not isinstance(plan, ValidatedPlan) or plan.needs_clarification:
             raise MotionError("VALIDATED_PLAN_REQUIRED")
+        if plan.requires_angle_control:
+            raise MotionError("ROTATION_CONTROL_NOT_VERIFIED")
         if self.sock is not None:
             raise MotionError("EXECUTOR_ALREADY_USED")
         self.stop_requested = stop_requested
@@ -85,6 +87,8 @@ class LLMMotionExecutor:
         try:
             self.sock = self._open_transport()
             self.independent_transport = getattr(self.sock,'independent_heartbeat',False) is True
+        except ValueError as exc:
+            raise MotionError(str(exc)) from None
         except OSError:
             raise MotionError("UDP_BIND_FAILED") from None
         complete = False
@@ -138,6 +142,9 @@ class LLMMotionExecutor:
         if self.owned_session is not None:
             self.owned_session.controller_alive()
         if self.independent_transport:
+            radar = self.sock.session.radar_status()
+            if radar and (radar['blocked'] or radar['generation'] != self.sock.session.distance_radar_generation):
+                raise MotionError(radar['reason'] if radar['blocked'] else 'RADAR_PLAN_CANCELLED')
             self.sock.session.execution_alive()
         if self.stop_requested is not None and self.stop_requested():
             raise MotionError("OPERATOR_STOP")
@@ -147,7 +154,12 @@ class LLMMotionExecutor:
         data = json.loads(packet)
         now = self.clock()
         if self.independent_transport:
-            data, now = self.sock.dispatch(packet)
+            try:
+                data, now = self.sock.dispatch(packet)
+            except OSError as exc:
+                if str(exc) == 'RADAR_BLOCKED':
+                    raise MotionError('RADAR_PLAN_CANCELLED') from None
+                raise
         elif self.sock.sendto(packet, self.target) != len(packet):
             raise OSError("Partial UDP send")
         self.last_sent_seq = data['seq']

@@ -178,6 +178,7 @@ class Dashboard(QMainWindow):
         self.resize(1320,920);self.setMinimumSize(940,680)
         root=Path(__file__).resolve().parents[2]
         self.connection_file=root/'settings'/'connection.json'
+        self.radar_file=root/'settings'/'radar.json'
         source='SYNTHETIC_PREVIEW' if preview else 'LIVE_CAMERA'
         self.background_control=engine is None
         self.engine=engine or DashboardEngine(config,folder or root/'logs',source)
@@ -211,6 +212,15 @@ class Dashboard(QMainWindow):
         top.addWidget(title);top.addStretch();top.addWidget(self.mode);top.addWidget(self.state);top.addWidget(self.arm_state);top.addWidget(self.estop)
         top.addWidget(self.release_control)
         outer.addLayout(top)
+        radar_row=QHBoxLayout()
+        self.radar_status=QLabel('레이더 · ESP32 연결 대기')
+        self.radar_status.setWordWrap(True)
+        self.radar_rearm=QPushButton('레이더 해제 확인 · 새 이동 허용')
+        self.radar_rearm.setEnabled(False)
+        self.radar_rearm.clicked.connect(self.rearm_radar)
+        radar_row.addWidget(self.radar_status,1)
+        radar_row.addWidget(self.radar_rearm)
+        outer.addLayout(radar_row)
         self.pipeline=QLabel(ko('Initializing camera and models in background...'));self.pipeline.setWordWrap(True)
         outer.addWidget(self.pipeline)
         actions=QGridLayout()
@@ -243,7 +253,7 @@ class Dashboard(QMainWindow):
         self.motor_table=QTableWidget(3,6);self.motor_table.setHorizontalHeaderLabels([ko(s) for s in ['Motor','Target cm/s','Measured cm/s','Target RPM*','Measured RPM*','PWM / encoder']])
         self.motor_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch);self.motor_table.setMaximumHeight(155)
         self.motor_table.setEditTriggers(QTableWidget.NoEditTriggers);ml.addWidget(self.motor_table)
-        ml.addWidget(QLabel(ko('* RPM converted using configured wheel radius. Encoders do not prove floor motion.')))
+        ml.addWidget(QLabel('* ESP32 RPM 우선 표시 · RPM 필드가 없으면 설정 바퀴 반지름으로 환산'))
         self.graph=MotorGraph();ml.addWidget(self.graph,1)
         tests=QWidget();tl=QVBoxLayout(tests)
         connect=QGroupBox('ESP32 연결');cl=QVBoxLayout(connect)
@@ -255,6 +265,16 @@ class Dashboard(QMainWindow):
         connect_button=self.connect_button=QPushButton('ESP32 연결');connect_button.clicked.connect(self.connect_hardware)
         save_ip=QPushButton(ko('Save IP'));save_ip.clicked.connect(self.save_ip)
         row.addWidget(self.host,1);row.addWidget(save_ip);row.addWidget(connect_button);cl.addLayout(row)
+        radar_settings=QHBoxLayout()
+        self.radar_host=QLineEdit(self.engine.cfg['radar']['source_ip'])
+        self.radar_host.setPlaceholderText('레이더 Raspberry Pi IPv4')
+        self.radar_host.setAccessibleName('레이더 Raspberry Pi IPv4')
+        self.save_radar_button=QPushButton('Pi 주소 저장')
+        self.save_radar_button.clicked.connect(self.save_radar_ip)
+        radar_settings.addWidget(QLabel('레이더 Pi'))
+        radar_settings.addWidget(self.radar_host,1)
+        radar_settings.addWidget(self.save_radar_button)
+        cl.addLayout(radar_settings)
         outer.insertWidget(1,connect)
         self.log_path=QLabel(ko(str(self.engine.logger.directory) if self.engine.logger else 'Logging disabled (test)'));self.log_path.setWordWrap(True)
         tl.addWidget(QLabel(ko('JSONL session log (10 Hz + operator events; no camera images):')));tl.addWidget(self.log_path)
@@ -455,6 +475,13 @@ class Dashboard(QMainWindow):
         self.pending_jog=None
         self.recovery_notice.setText('이전 입력을 폐기하고 STOP 전용 동기화를 요청했습니다. 장치 Fault 해제와 구동 준비는 별도로 확인합니다.')
 
+    def rearm_radar(self):
+        self.end_motor_hold()
+        try:
+            self.engine.rearm_radar()
+        except (OSError, ValueError) as exc:
+            self.warning('레이더 이동 허용 실패', str(exc))
+
     def update_recovery(self,tr,td):
         td=td or {}
         missing='미수신·미검증 (구형 펌웨어는 미지원)'
@@ -597,6 +624,13 @@ class Dashboard(QMainWindow):
             self.engine.notice='ESP32 IP saved locally; no network connection started'
         except Exception as exc:self.warning('IP not saved',str(exc))
 
+    def save_radar_ip(self):
+        try:
+            self.engine.save_radar_source(self.radar_file, self.radar_host.text())
+            self.radar_host.setText(self.engine.cfg['radar']['source_ip'])
+        except (ValueError, OSError) as exc:
+            self.warning('Pi 주소 저장 실패', str(exc))
+
     def enable_motor_test(self):
         try:
             if self.engine.shared_session:
@@ -727,6 +761,21 @@ class Dashboard(QMainWindow):
 
     def update_display(self,d,result,capture=None):
         self.last_data=d;now=time.monotonic();tr=d['transport'];g=d['gesture'];v=d['vision']
+        radar = tr.get('radar') or d.get('radar')
+        if radar:
+            if radar['blocked']:
+                self.held_direction = self.pending_jog = None
+            reason = ko(radar['reason'])
+            action = '이동 차단' if radar['blocked'] else '새 입력 허용'
+            proof = ('ESP32 정지 확인' if tr.get('stop_verified') else 'ESP32 정지 미확인')
+            age_ms = None if radar['age_s'] is None else radar['age_s']*1000
+            self.radar_status.setText(
+                f"레이더 {radar['state']} · {action} · {reason} · 수신 경과 {text(age_ms, 0)} ms · {proof}")
+            self.radar_rearm.setEnabled(bool(self.engine.shared_session and radar['blocked'] and
+                radar['state']=='CLEAR' and tr.get('stop_verified') and not self.engine.language.executing))
+        else:
+            self.radar_status.setText('레이더 · ESP32 연결 대기')
+            self.radar_rearm.setEnabled(False)
         generation=tr.get('recovery_generation')
         if generation is not None:
             if generation!=getattr(self,'_displayed_recovery_generation',generation):
@@ -757,6 +806,9 @@ class Dashboard(QMainWindow):
         self.release_control.setEnabled(not releasing and bool(self.engine.client or natural or self.engine.language_authorized_host))
         self.release_control.setText('정지 응답 확인 중' if releasing else '정지 후 연결 해제')
         self.host.setEnabled(not self.engine.client and not natural)
+        radar_editable=not self.engine.client and not releasing and not natural
+        self.radar_host.setEnabled(radar_editable)
+        self.save_radar_button.setEnabled(radar_editable)
         self.connect_button.setEnabled(not self.engine.client and not natural and self.engine.source=='LIVE_CAMERA')
         self.hand_host.setEnabled(self.host.isEnabled())
         self.hand_enable.setEnabled(not natural and not (self.engine.client and self.engine.client.active))

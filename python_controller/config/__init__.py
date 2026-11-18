@@ -1,15 +1,43 @@
 import copy
+import ipaddress
 import json
 import math
 from pathlib import Path
 
 
-def load_config(path=None):
+RADAR_SETTINGS = Path(__file__).resolve().parents[2] / 'settings' / 'radar.json'
+
+
+def radar_source_ip(value):
+    if not isinstance(value, str):
+        raise ValueError('레이더 Pi의 IPv4 주소를 입력하세요.')
+    value = value.strip()
+    if not value:
+        return ''
+    address = ipaddress.IPv4Address(value)
+    if address.is_unspecified or address.is_multicast or int(address) == 0xffffffff:
+        raise ValueError('레이더 Pi의 유니캐스트 IPv4 주소를 입력하세요.')
+    return str(address)
+
+
+def save_radar_settings(path, source_ip, timeout_s):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pending = path.with_suffix(path.suffix + '.tmp')
+    pending.write_text(json.dumps({'radar': {'source_ip': radar_source_ip(source_ip),
+                                            'timeout_s': timeout_s}}, indent=2)+'\n', encoding='utf-8')
+    pending.replace(path)
+
+
+def load_config(path=None, *, radar_path=None):
     base = Path(__file__).with_name('default.json')
     config = json.loads(base.read_text(encoding='utf-8'))
     schema = copy.deepcopy(config)
-    if path:
-        custom = json.loads(Path(path).read_text(encoding='utf-8'))
+    local_radar = Path(radar_path) if radar_path is not None else None
+    for override in (local_radar if local_radar and local_radar.is_file() else None, path):
+        if override is None:
+            continue
+        custom = json.loads(Path(override).read_text(encoding='utf-8'))
         for section, values in custom.items():
             if section not in config or not isinstance(values, dict):
                 raise ValueError(f'Invalid config section: {section}')
@@ -30,6 +58,10 @@ def load_config(path=None):
                 raise ValueError(f'Invalid config type: {section}.{key}')
             if isinstance(value, (int, float)) and not isinstance(value, bool) and not math.isfinite(value):
                 raise ValueError(f'Non-finite config: {section}.{key}')
+    radar = config['radar']
+    radar['source_ip'] = radar_source_ip(radar['source_ip'])
+    if not .15 <= radar['timeout_s'] <= .60:
+        raise ValueError('Radar timeout must be between 0.15 and 0.60 seconds')
     f, s, g, c = (config[k] for k in ('follow', 'safety', 'gesture', 'communication'))
     for key, ceiling in [('max_linear_cm_s', 5), ('max_angular_rad_s', .5), ('linear_accel_cm_s2',25), ('angular_accel_rad_s2',2)]:
         if not 0 < f[key] <= ceiling:
