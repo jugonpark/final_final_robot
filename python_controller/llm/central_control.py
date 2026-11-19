@@ -4,11 +4,66 @@ from pathlib import Path
 from queue import Empty, SimpleQueue
 from threading import Event, Thread
 from time import monotonic
+from uuid import uuid4
 from python_controller.communication.timing import CONTROLLER_LEASE_S
 
 
 class ControlError(ValueError):
     pass
+
+
+class ExecutionProgress:
+    """Display state consumed from the executor queue by the control thread."""
+    def __init__(self, plan, plan_ref):
+        from python_controller.planning.schema import Move, describe_action
+
+        self.plan_id, self.revision = plan_ref
+        self.run_id = uuid4().hex
+        self.labels = tuple(describe_action(action) for action in plan.actions if isinstance(action, Move))
+        self.steps = ['WAITING'] * len(self.labels)
+        self.state = 'EXECUTING'
+        self.verified = 0
+        self.current = None
+        self.move_id = self.move_seq = self.last_stop_barrier = None
+        self.completed = False
+        self.error = None
+
+    def ingest(self, event, fields):
+        if self.state != 'EXECUTING':
+            return
+        telemetry = fields.get('telemetry') or {}
+        if event == 'MOVE_ACCEPTED' and self.last_stop_barrier is not None and self.verified < len(self.steps):
+            if (self.steps[self.verified] == 'WAITING' and fields['move_seq'] > self.last_stop_barrier
+                    and telemetry['motion_id'] != self.move_id):
+                self.current = self.verified
+                self.move_id, self.move_seq = telemetry['motion_id'], fields['move_seq']
+                self.steps[self.current] = 'MOVING'
+        elif event == 'GOAL_REACHED' and self.current == self.verified:
+            if self.steps[self.current] == 'MOVING' and telemetry['motion_id'] == self.move_id:
+                self.steps[self.current] = 'GOAL_REPORTED'
+        elif event == 'STOP_CONFIRMED':
+            barrier = fields['stop_barrier']
+            if self.last_stop_barrier is None:
+                self.last_stop_barrier = barrier  # Initial STOP is the handshake, not a completed move.
+            elif self.current == self.verified and self.steps[self.current] == 'GOAL_REPORTED' and barrier > self.move_seq:
+                self.last_stop_barrier = barrier
+                self.steps[self.current] = 'STOP_VERIFIED'
+                self.verified += 1
+        elif event == 'COMPLETED':
+            self.completed = self.last_stop_barrier is not None and self.verified == len(self.steps)
+
+    def finish(self, event, error):
+        if event == 'DONE' and self.completed and self.state == 'EXECUTING':
+            self.state = 'COMPLETED'
+            return
+        self.error = error or ('OPERATOR_STOP' if self.state == 'STOPPING' else 'PROGRESS_NOT_VERIFIED')
+        self.state = 'ABORTED'
+        self.steps[self.verified:] = ['BLOCKED'] * (len(self.steps) - self.verified)
+
+    def snapshot(self):
+        return {'plan_id': self.plan_id, 'revision': self.revision, 'run_id': self.run_id, 'state': self.state,
+                'steps': self.steps.copy(), 'labels': self.labels, 'verified_count': self.verified,
+                'current_step': self.current + 1 if self.current is not None else None, 'last_error': self.error}
 
 
 class NaturalControl:
@@ -29,6 +84,7 @@ class NaturalControl:
         self._last_poll = monotonic()
         self.motion_session = None
         self.session_guard = None
+        self.progress = None
 
     @property
     def busy(self):
@@ -51,7 +107,7 @@ class NaturalControl:
         self.log_path = self.last_feedback = None
         self.last_echo_age_s = None
 
-    def start_motion(self, host, prepared, *, session=None, validated_plan=None, session_guard=None):
+    def start_motion(self, host, prepared, *, session=None, validated_plan=None, session_guard=None, plan_ref=None):
         if self.busy or (validated_plan is None and (self.phase != "READY" or self.plan is None)):
             raise ControlError("VALIDATED_PLAN_REQUIRED")
         if validated_plan is not None:
@@ -76,7 +132,16 @@ class NaturalControl:
         self.session_diagnostic = None
         self.session_info = None
         self.stop_result = None
-        self._start("EXECUTING", "DONE", lambda: self._execute(str(address), plan))
+        self.progress = ExecutionProgress(plan, plan_ref) if plan_ref else None
+        try:
+            self._start("EXECUTING", "DONE", lambda: self._execute(str(address), plan))
+        except ControlError as exc:
+            if self.progress:
+                self.progress.finish('FAILED', str(exc))
+            raise
+
+    def progress_snapshot(self):
+        return self.progress.snapshot() if self.progress else None
 
     def _start(self, phase, terminal, task):
         if self.busy:
@@ -137,8 +202,8 @@ class NaturalControl:
                 self._events.put((event, (fields.get("telemetry"), fields.get("echoed_packet_age_s"))))
             elif event == "HANDSHAKE":
                 self._events.put((event, fields))
-            elif event in ("MOVE_ACCEPTED", "GOAL_REACHED", "STOP_CONFIRMED"):
-                self._events.put((event, fields.get("telemetry")))
+            elif event in ("MOVE_ACCEPTED", "GOAL_REACHED", "STOP_CONFIRMED", "COMPLETED"):
+                self._events.put((event, fields))
 
         executor = None
         try:
@@ -209,6 +274,8 @@ class NaturalControl:
             elif event == "HANDSHAKE":
                 self.detail, self.session_info = event, data
             elif event in ("READY", "FAILED", "DONE"):
+                if self.progress and self.executing:
+                    self.progress.finish(event, data)
                 self._thread = None
                 if self._stop.is_set() and event == "READY":
                     self.phase, self.detail = "CANCELLED", None
@@ -216,14 +283,19 @@ class NaturalControl:
                 self.phase = event
                 self.plan = data if event == "READY" else None
                 self.detail = data if event == "FAILED" else None
-            elif self.phase == "EXECUTING":
-                self.detail = event
-                if data:
-                    self.last_feedback = data
+            elif event in ("MOVE_ACCEPTED", "GOAL_REACHED", "STOP_CONFIRMED", "COMPLETED"):
+                if self.progress:
+                    self.progress.ingest(event, data)
+                if self.phase == "EXECUTING" and event != "COMPLETED":
+                    self.detail = event
+                    if data.get('telemetry'):
+                        self.last_feedback = data['telemetry']
 
     def cancel(self):
         self._stop.set()
         self.plan = None
+        if self.progress and self.executing and self.progress.state == 'EXECUTING':
+            self.progress.state = 'STOPPING'
         self.phase = ("STOPPING" if self.executing else "CANCELLING") if self.busy else "CANCELLED"
         self.detail = None
 

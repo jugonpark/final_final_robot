@@ -1,30 +1,40 @@
 """Host-side tools and live operator authorization for the conversation graph."""
 import re
 from dataclasses import dataclass
+from math import isfinite
 from queue import Empty, SimpleQueue
 from secrets import token_hex
 from threading import Thread
 from time import monotonic
 
 from python_controller.llm.agent_graph import ConversationGraph, load_plan
-from python_controller.llm.agent_intent import NvidiaIntentInterpreter, emergency_stop
+from python_controller.llm.agent_intent import NvidiaIntentInterpreter, corrected_mode, emergency_stop, explicit_mode
 from python_controller.planning.schema import describe_action
 from python_controller.planning.validator import ValidatedPlan
 from python_controller.visualization.korean import ko, movement_block
 
 MODE_LABELS = {'LLM_COMMAND': 'AI 대화 제어', 'GESTURE_DIRECT': '손동작 직접 제어',
                'GESTURE_FOLLOW': '사람 추종', 'DIRECT_CONTROL': '수동 제어'}
-MODE_WORDS = {'LLM_COMMAND': r'LLM|AI 대화(?: 제어)?|자연어(?: 제어)?',
-              'GESTURE_DIRECT': r'손동작(?: 직접 제어)?', 'GESTURE_FOLLOW': r'사람 추종',
-              'DIRECT_CONTROL': r'수동(?: 제어)?|직접 제어'}
+STEP_LABELS = {'WAITING': '대기', 'MOVING': '이동 수락 · 진행 중',
+               'GOAL_REPORTED': '목표 도달 보고 · STOP 확인 중', 'STOP_VERIFIED': 'STOP 확인 · 단계 완료',
+               'BLOCKED': '실행 중단'}
+RUN_LABELS = {'EXECUTING': '실행 진행 중', 'STOPPING': '정지 요청 · 응답 대기',
+              'COMPLETED': '모든 단계 STOP 확인 · 완료', 'ABORTED': '실행 중단'}
 
 
-def explicit_mode(text, mode):
-    text = text.strip().rstrip('.!。！?').strip()
-    if mode == 'GESTURE_FOLLOW' and re.fullmatch(r'사람(?:을)?\s*따라가고\s*싶어(?:요)?', text):
-        return True
-    return bool(re.fullmatch(rf'(?:{MODE_WORDS[mode]})\s*(?:으로|로)?\s*'
-                             r'(?:바꿔(?:줘| 줘| 주세요)?|전환(?:해(?:줘| 줘| 주세요)?)?|조종할래|조종하고 싶어|제어할래)', text, re.I))
+def progress_summary(progress):
+    if not progress:
+        return '실행 기록이 없습니다.'
+    verified, steps = progress['verified_count'], progress['steps']
+    status = f'계획 v{progress["revision"]} · {RUN_LABELS[progress["state"]]}'
+    if steps:
+        status += f' · 단계 STOP 확인 {verified}/{len(steps)}'
+    if progress['current_step']:
+        index = progress['current_step']
+        status += f'\n{index}단계 {progress["labels"][index-1]} · {STEP_LABELS[steps[index-1]]}'
+    if progress['last_error']:
+        status += '\n' + ko(progress['last_error'])
+    return status
 
 
 class RobotCommandFacade:
@@ -55,6 +65,7 @@ class RobotCommandFacade:
         data = data or {}
         fresh = bool(result and data.get('perception_fresh') and
                      0 <= monotonic()-result['frame'].timestamp <= e.cfg['safety']['perception_timeout_s'])
+        camera = (data.get('pipeline_health') or {}).get('camera')
         status = {
             'robot': f'제어 모드 {MODE_LABELS.get(e.active_control_mode, e.active_control_mode)} · '
                      f'ESP32 {"연결" if tr.get("connected") else "미연결"} · '
@@ -62,7 +73,8 @@ class RobotCommandFacade:
             'radar': f'레이더 {radar.get("state", "UNKNOWN")} · '
                      f'{"이동 차단" if radar.get("blocked", True) else "차단 해제"} · '
                      f'{ko(radar.get("reason") or "RADAR_NO_DATA")}',
-            'camera': f'카메라 {"합성 영상" if e.source != "LIVE_CAMERA" else "실카메라"} · '
+            'camera': '카메라 꺼짐' if camera == 'CAMERA_OFF' else
+                      f'카메라 {"합성 영상" if e.source != "LIVE_CAMERA" else "실카메라"} · '
                       f'{"인식 유효" if fresh else "인식 미확인"}',
             'execution': f'실행 상태 {e.language.phase} · '
                          f'정지/보류 {ko("EMERGENCY_STOP" if e.c.estop_latched else data.get("stop_reason") or "UNKNOWN")}',
@@ -73,6 +85,90 @@ class RobotCommandFacade:
         if fault and fault != 'NONE':
             status['robot'] += f' · 장치 오류 {ko(fault)}'
         return '\n'.join(status.values()) if target == 'all' else status[target]
+
+    def explain_blocked(self, target, card):
+        e = self.engine
+        session, tr, radar, _ = self.live()
+        reasons = []
+        if not session or not tr.get('connected'):
+            reasons.append('ESP32 중앙 제어 통신 미확인')
+        if radar.get('state') != 'CLEAR' or radar.get('blocked') is not False:
+            reasons.append(f'레이더 이동 차단 · {ko(radar.get("reason") or "RADAR_NO_DATA")}')
+        if e.c.estop_latched:
+            reasons.append('긴급 정지 상태')
+        if not tr.get('stop_verified'):
+            reasons.append('장치 STOP 응답 미확인')
+        if session and (blocked := movement_block(tr)):
+            reasons.append(ko(blocked))
+        if e.pending_mode or e.client_owner != 'LLM_COMMAND':
+            reasons.append('LLM 제어권 전환 확인 필요')
+        if session and not tr.get('ready'):
+            reasons.append('장치 준비 미확인')
+        if e.release_future or e.control_error or e.error:
+            reasons.append('중앙 제어 종료 또는 오류 상태 확인 필요')
+        if e.language.executing or tr.get('distance_leased'):
+            reasons.append('이전 실행 종료 및 STOP 확인 필요')
+        elif not card:
+            reasons.append('승인 대기 중인 이동 계획 없음')
+        elif card['rotation']:
+            reasons.append('각도 제어 미검증 · 전체 계획 실행 차단')
+        else:
+            reasons.append('현재 버전의 Qt 운영자 승인 필요')
+        suffix = '\n'.join(f'• {reason}' for reason in dict.fromkeys(reasons))
+        return f'{self.get_status(target)}\n{suffix}'
+
+    def vision_facts(self):
+        e = self.engine
+        data, result = e.render_state()
+        mode = e.active_control_mode
+        mapping = {'GESTURE_DIRECT': e.hand.mapping, 'GESTURE_FOLLOW': e.cfg['gesture']['mapping']}.get(mode, {})
+        fresh = bool(e.source == 'LIVE_CAMERA' and data and result and data.get('perception_fresh') and
+                     0 <= monotonic() - result['frame'].timestamp <= e.cfg['safety']['perception_timeout_s'])
+        camera = ((data or {}).get('pipeline_health') or {}).get('camera')
+        hands, people = [], None
+        if fresh:
+            for hand in data.get('vision', {}).get('raw', []):
+                score = hand.get('confidence')
+                if isinstance(score, (int, float)) and isfinite(score) and 0 <= score <= 1:
+                    hands.append({'name': hand['name'], 'confidence': score})
+            if not result.get('hand_only') and not (data.get('pipeline_health') or {}).get('tracking_error'):
+                people = data.get('detected_people')
+        return {'source': e.source, 'fresh': fresh, 'people': people, 'hands': hands, 'mapping': dict(mapping),
+                'mode': mode, 'camera_status': camera}
+
+    def describe_vision(self, target):
+        facts = self.vision_facts()
+        lines = []
+        if target != 'mapping':
+            if facts['camera_status'] == 'CAMERA_OFF':
+                lines.append('카메라가 꺼져 있습니다. 카메라 · 손동작 화면에서 켤 수 있습니다.')
+            elif facts['source'] != 'LIVE_CAMERA':
+                lines.append('합성 영상 미리보기입니다. 실제 사람이나 손동작 검출 결과는 없습니다.')
+            elif not facts['fresh']:
+                lines.append('최근 유효한 카메라 인식 결과가 없어 사람이나 손동작을 확인할 수 없습니다.')
+            else:
+                if target in ('all', 'people'):
+                    people = facts['people']
+                    lines.append('현재 사람 검출 결과를 사용할 수 없습니다.' if people is None else f'검출 인원 {people}명')
+                if target in ('all', 'hands'):
+                    hands = [f'{ko(hand["name"])} {hand["confidence"]:.0%}' for hand in facts['hands']]
+                    lines.append('손동작 · ' + ' / '.join(hands) if hands else '분류된 손동작이 없습니다.')
+        if target in ('all', 'mapping'):
+            mode = MODE_LABELS.get(facts['mode'], facts['mode'])
+            mapping = [f'{ko(gesture)} → {ko(action)}' for gesture, action in facts['mapping'].items()]
+            lines.append(f'{mode} · ' + (' / '.join(mapping) if mapping else '적용 중인 제스처 매핑 없음'))
+        return '\n'.join(lines)
+
+    def mode_preview_state(self):
+        session, tr, radar, telemetry = self.live()
+        e = self.engine
+        if (not session or not e.central_ui or e.source != 'LIVE_CAMERA' or e.c.estop_latched or
+                e.release_future or e.error or e.control_error or movement_block(tr) or
+                radar.get('state') != 'CLEAR' or radar.get('blocked') is not False or
+                not telemetry.get('boot_id') or telemetry.get('session_id') != session.protocol.session_id):
+            raise ValueError('정상 연결, 레이더 차단 해제 및 긴급 정지 상태를 확인하세요.')
+        return tr, (session, session.protocol.session_id, telemetry['boot_id'], tr['recovery_generation'],
+                    radar.get('generation'), tr.get('stop_requested_at'))
 
     def request_mode_change(self, mode):
         e = self.engine
@@ -106,6 +202,13 @@ class ApprovalTicket:
     expires_at: float
 
 
+@dataclass(frozen=True)
+class PendingModePlan:
+    motion: str
+    identity: tuple
+    expires_at: float
+
+
 class UnifiedAgent:
     def __init__(self, engine, interpreter=None):
         self.engine = engine
@@ -115,6 +218,7 @@ class UnifiedAgent:
         self.messages = []
         self.busy = False
         self.card = self.card_binding = self.ticket = None
+        self.mode_plan = None
         self.navigation = None
         self.navigation_id = 0
         self.generation = 0
@@ -126,11 +230,14 @@ class UnifiedAgent:
     def _invalidate(self):
         self.generation += 1
         self.card = self.card_binding = self.ticket = None
+        self.mode_plan = None
         self.navigation = None
 
     def _sync(self):
         if self._seen_control_generation != self.engine.control_generation:
             self._seen_control_generation = self.engine.control_generation
+            if self.mode_plan:
+                self._append('assistant', '제어 상태가 바뀌어 전환 후 계획 요청을 취소했습니다.')
             self._invalidate()
         elif self.card and self.card_binding != self.bridge.binding():
             self._invalidate()
@@ -194,14 +301,44 @@ class UnifiedAgent:
                 self._invalidate()
                 self._append('assistant', '대기 계획을 취소했습니다.')
                 return
+            if self.busy or self.mode_plan or self.engine.language.executing:
+                reply = self._read_during_operation(text)
+                if reply is not None:
+                    self._append('user', text)
+                    self._append('assistant', reply)
+                    return
             if self.busy:
                 raise ValueError('이전 요청을 처리하고 있습니다.')
+            if self.mode_plan:
+                self._invalidate()
+                if mode := corrected_mode(text):
+                    self._append('user', text)
+                    reply = self.bridge.request_mode_change(mode)
+                    self._sync()
+                    self._append('assistant', f'전환 후 계획 요청을 취소했습니다. {reply}')
+                    return
+                self._append('assistant', '새 요청으로 전환 후 계획 요청을 취소했습니다.')
             # Only prior operator text is sent back. Live tool responses remain local.
             history = [item for item in self.messages if item['role'] == 'user'][-8:]
             previous = self.card
             self.ticket = None
             self._append('user', text)
             self._run('message', text, lambda: self.graph.turn(text, history, previous))
+
+    def _read_during_operation(self, text):
+        text = text.rstrip('.!?。！？').strip()
+        if re.fullmatch(r'몇 단계 (?:진행됐어|남았어)|(?:실행 )?진행 (?:상태 )?알려\s*줘', text):
+            return progress_summary(self.engine.language.progress_snapshot())
+        if re.fullmatch(r'(?:지금 )?(?:관제 |로봇 )?상태 (?:알려|보여)\s*줘', text):
+            return self.bridge.get_status()
+        if re.fullmatch(r'왜 (?:안 움직여|멈췄어|실행이 안 돼)', text):
+            return self.bridge.explain_blocked('all', self.card)
+        for target, pattern in (('people', r'사람(?:이)? 보여|검출 인원 알려\s*줘'),
+                                ('hands', r'손(?:동작| 모양)(?:이)? 보여'),
+                                ('mapping', r'손바닥(?:을)? 펼치면 뭐\s*해|제스처 매핑 알려\s*줘')):
+            if re.fullmatch(pattern, text):
+                return self.bridge.describe_vision(target)
+        return None
 
     def review(self, plan_id, revision, *, approve, operator_confirmed=False):
         with self.engine.control_lock:
@@ -244,8 +381,43 @@ class UnifiedAgent:
                     raise ValueError('AGENT_SESSION_CHANGED')
                 return session.distance_socket()
 
-        self.engine.start_natural_motion(session.host, True, validated_plan=ticket.plan, session_guard=acquire_distance_socket)
+        self.engine.start_natural_motion(session.host, True, validated_plan=ticket.plan,
+                                         session_guard=acquire_distance_socket, plan_ref=(ticket.plan_id, ticket.revision))
         return '이동 실행을 요청했습니다. 실제 진행과 정지 응답은 실행 상태에서 확인하세요.'
+
+    def _request_mode_plan(self, motion):
+        self.bridge.mode_preview_state()
+        self.bridge.request_mode_change('LLM_COMMAND')
+        self._sync()
+        self._invalidate()
+        _, identity = self.bridge.mode_preview_state()
+        self.mode_plan = PendingModePlan(motion, identity, monotonic()+8)
+        return 'LLM 제어 모드와 STOP 응답을 확인한 뒤 이동 계획을 준비하겠습니다.'
+
+    def _poll_mode_plan(self):
+        pending = self.mode_plan
+        if not pending:
+            return
+        try:
+            tr, identity = self.bridge.mode_preview_state()
+            if pending.identity != identity or monotonic() >= pending.expires_at:
+                raise ValueError('전환을 확인할 수 없거나 대기 시간이 지났습니다.')
+            if self.engine.pending_mode == 'LLM_COMMAND' or not tr.get('stop_verified'):
+                return
+            self.bridge.motion_session()
+            binding = self.bridge.binding()
+            result = self.graph.turn(pending.motion, [], None, preview=True)
+            if result.get('error') or binding != self.bridge.binding():
+                raise ValueError('현재 제어 상태와 이동 구문을 다시 확인하세요.')
+            self.card, self.card_binding = result['card'], binding
+            self._announce_card()
+        except ValueError as exc:
+            self._append('assistant', f'전환 후 계획 요청을 취소했습니다. {exc}')
+        self.mode_plan = None
+
+    def _announce_card(self):
+        self._append('assistant', '각도 제어 미검증으로 이 계획 전체는 미리보기만 가능합니다.' if self.card['rotation'] else
+                     '검증된 이동 계획을 확인해 주세요. 실물 실행은 Qt에서 승인합니다.')
 
     def _dispatch(self, intent, text):
         kind = intent['intent']
@@ -255,6 +427,14 @@ class UnifiedAgent:
             return '화면 이동을 요청했습니다.'
         if kind == 'query_status':
             return self.bridge.get_status(intent['target'])
+        if kind == 'explain_blocked':
+            return self.bridge.explain_blocked(intent['target'], self.card)
+        if kind == 'query_vision':
+            return self.bridge.describe_vision(intent['target'])
+        if kind == 'query_progress':
+            return progress_summary(self.engine.language.progress_snapshot())
+        if kind == 'mode_then_plan':
+            return self._request_mode_plan(intent['motion_text'])
         if kind == 'switch_mode':
             mode = intent['mode']
             if not explicit_mode(text, mode):
@@ -269,6 +449,7 @@ class UnifiedAgent:
     def poll(self):
         with self.engine.control_lock:
             self._sync()
+            self._poll_mode_plan()
             try:
                 token, binding, kind, value, result = self.events.get_nowait()
             except Empty:
@@ -279,7 +460,8 @@ class UnifiedAgent:
                 return
             try:
                 if result.get('error'):
-                    self._invalidate()
+                    if kind != 'message' or not result.get('card'):
+                        self._invalidate()
                     reply = f'요청을 확인하지 못했습니다. ({result["error"]})'
                 elif kind == 'review':
                     if result['decision'] == 'approve':
@@ -291,9 +473,8 @@ class UnifiedAgent:
                     reply = self._dispatch(result['intent'], value)
                 elif result.get('card'):
                     self.card, self.card_binding = result['card'], binding
-                    reply = '검증된 이동 계획을 확인해 주세요.'
-                    if self.card['rotation']:
-                        reply = '각도 제어 미검증으로 이 계획 전체는 미리보기만 가능합니다.'
+                    self._announce_card()
+                    reply = None
                 else:
                     raise ValueError('Agent가 사용할 수 있는 의도를 반환하지 않았습니다.')
             except ValueError as exc:
@@ -319,5 +500,7 @@ class UnifiedAgent:
                     'status': self.bridge.get_status(), 'execution': self.engine.language.phase,
                     'execution_detail': self.engine.language.detail,
                     'stop_result': self.engine.language.stop_result,
+                    'progress': self.engine.language.progress_snapshot(), 'vision_facts': self.bridge.vision_facts(),
+                    'waiting_mode_plan': self.mode_plan is not None,
                     'estop_latched': self.engine.c.estop_latched,
                     'mode': self.engine.active_control_mode, 'pending_mode': self.engine.pending_mode}

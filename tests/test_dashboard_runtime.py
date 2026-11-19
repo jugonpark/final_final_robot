@@ -1,5 +1,6 @@
 import time
 import unittest
+from threading import Event
 from unittest.mock import patch
 
 from python_controller.config import load_config
@@ -47,6 +48,28 @@ class DashboardRuntimeTests(unittest.TestCase):
         self.assertIsNone(stream.error)
         self.assertEqual(stream.latest()['frame'].timestamp, newest[0])
         self.assertEqual(stream.latest()['metrics']['skipped_capture_frames'], 1)
+
+    def test_stopping_live_stream_releases_camera_in_capture_worker(self):
+        from types import SimpleNamespace
+
+        stream = VisionStream(load_config())
+        reading, released = Event(), Event()
+
+        def capture():
+            reading.set()
+            stream.done.wait(2)
+            return object(), time.monotonic()
+
+        camera = SimpleNamespace(read=capture, close=released.set)
+        with patch('python_controller.vision.camera.Camera', return_value=camera), patch.object(stream, '_vision'):
+            stream.start()
+            try:
+                self.assertTrue(reading.wait(2))
+                stream.stop()
+                self.assertTrue(released.wait(2))
+            finally:
+                stream.close()
+        self.assertTrue(stream.stopped)
 
     def test_simulation_cannot_open_sockets_and_stale_frame_stops(self):
         e=self.engine()

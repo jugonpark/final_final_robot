@@ -9,7 +9,10 @@ from langgraph.types import Command, interrupt
 from langsmith import tracing_context
 from pydantic import TypeAdapter
 
-from python_controller.llm.agent_intent import CreatePlan, ModifyPlan, new_plan, revise_plan
+from python_controller.llm.agent_intent import (
+    CreatePlan, CreateSequence, EditPlan, ModeThenPlan, ModifyPlan,
+    edit_plan, explicit_composite, new_plan, requested_plan, revise_plan,
+)
 from python_controller.planning.schema import Action
 from python_controller.planning.validator import ValidatedPlan
 
@@ -30,23 +33,40 @@ class AgentState(TypedDict, total=False):
     intent: dict | None
     card: dict | None
     decision: str | None
+    error: str | None
+    preview: bool
 
 
 class ConversationGraph:
     def __init__(self, interpreter):
         def classify(state):
             previous = state['previous']
-            intent = interpreter.interpret(state['message'], history=state['history'],
-                                           plan=previous['actions'] if previous else None)
-            if not isinstance(intent, (CreatePlan, ModifyPlan)):
-                return {'intent': intent.model_dump(mode='json'), 'card': previous, 'decision': None}
-            if isinstance(intent, CreatePlan):
-                plan = new_plan(state['message'], intent)
-                plan_id, revision = uuid4().hex, 1
-            else:
-                plan = revise_plan(state['message'], intent, load_plan(previous['actions']) if previous else None)
-                plan_id, revision = previous['id'], previous['revision'] + 1
-            return {'intent': None, 'decision': None, 'card': {
+            text = state['message']
+            try:
+                if state['preview']:
+                    plan = requested_plan(text)
+                    plan_id, revision = uuid4().hex, 1
+                else:
+                    intent = interpreter.interpret(text, history=state['history'], plan=previous)
+                    if isinstance(intent, (CreatePlan, CreateSequence)):
+                        plan = new_plan(text, intent)
+                        plan_id, revision = uuid4().hex, 1
+                    elif isinstance(intent, (ModifyPlan, EditPlan)):
+                        old = load_plan(previous['actions']) if previous else None
+                        plan = (edit_plan(text, intent, previous, old) if isinstance(intent, EditPlan)
+                                else revise_plan(text, intent, old))
+                        plan_id, revision = previous['id'], previous['revision'] + 1
+                    else:
+                        value = intent.model_dump(mode='json')
+                        if isinstance(intent, ModeThenPlan):
+                            value['motion_text'] = explicit_composite(text, intent)
+                        return {'intent': value, 'card': previous, 'decision': None, 'error': None}
+            except ValueError as exc:
+                code = str(exc)
+                return {'intent': None, 'card': previous, 'decision': None,
+                        'error': code if code.isascii() and code.replace('_', '').isalnum() and code.isupper()
+                        else 'INVALID_AGENT_RESPONSE'}
+            return {'intent': None, 'decision': None, 'error': None, 'card': {
                 'id': plan_id, 'revision': revision, 'rotation': plan.requires_angle_control,
                 'actions': [action.model_dump(mode='json') for action in plan.actions],
             }}
@@ -70,12 +90,13 @@ class ConversationGraph:
         self.graph = builder.compile(checkpointer=InMemorySaver())
         self.config = {'configurable': {'thread_id': uuid4().hex}}
 
-    def turn(self, message, history, previous):
+    def turn(self, message, history, previous, *, preview=False):
         with tracing_context(enabled=False):
             snapshot = self.graph.get_state(self.config)
             if snapshot.next == ('review',):
                 self.review(snapshot.values['card'], 'continue')
-            return self.graph.invoke({'message': message, 'history': history, 'previous': previous}, self.config)
+            return self.graph.invoke({'message': message, 'history': history, 'previous': previous,
+                                      'preview': preview}, self.config)
 
     def review(self, card, decision):
         with tracing_context(enabled=False):

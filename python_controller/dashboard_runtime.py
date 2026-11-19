@@ -59,6 +59,7 @@ class VisionStream:
         camera=None
         try:
             from python_controller.vision.camera import Camera
+            if self.done.is_set(): return
             camera=Camera(self.cfg['camera'])
             self.camera_status='WAITING_FOR_FRAMES'
             while not self.done.is_set():
@@ -77,6 +78,7 @@ class VisionStream:
         try:
             from python_controller.vision.person_detector import PersonDetector
             from python_controller.vision.gesture_recognizer import GestureRecognizer
+            if self.done.is_set(): return
             self.status='LOADING_MEDIAPIPE'
             recognizer=GestureRecognizer(self.cfg['vision'],self.cfg['gesture'])
             detector=None
@@ -100,6 +102,7 @@ class VisionStream:
                     dropped+=current-version
                     version=current
                     hand_only=self.hand_only
+                if self.done.is_set(): break
                 image,timestamp,capture_ms=value
                 started=time.monotonic()
                 if started-timestamp > self.cfg['safety']['perception_timeout_s']:
@@ -141,8 +144,15 @@ class VisionStream:
     def latest_capture(self):
         return self.capture.get()[1]
 
-    def close(self):
+    @property
+    def stopped(self):
+        return not any(thread.is_alive() for thread in self.threads)
+
+    def stop(self):
         self.done.set()
+
+    def close(self):
+        self.stop()
         for thread in self.threads: thread.join(timeout=.5)
 
 
@@ -151,6 +161,7 @@ class PreviewStream:
     error=None
     status='SYNTHETIC_PREVIEW'
     target_id=None
+    stopped=True
     def start(self): pass
     def latest(self):
         import numpy as np
@@ -160,7 +171,8 @@ class PreviewStream:
         return dict(frame=PerceptionFrame(now,640,480,people,g),image=np.full((480,640,3),(31,39,48),dtype=np.uint8),
                     hands=[],vision=gesture_diagnostics([('Open_Palm',.92,7)],self.target_id,1,now,1),
                     completed_at=now,latency_ms=None,fps=None)
-    def close(self): pass
+    def stop(self): pass
+    def close(self): self.stop()
 
 
 class DashboardEngine:
@@ -223,7 +235,7 @@ class DashboardEngine:
     def control_running(self):
         return bool(self.control_thread and self.control_thread.is_alive())
 
-    def start_control_loop(self, stream):
+    def start_control_loop(self, stream, *, on_exit=None):
         if self.control_thread is not None:
             raise ValueError('중앙 제어 감독 작업은 이미 시작됐습니다.')
 
@@ -231,20 +243,29 @@ class DashboardEngine:
             try:
                 while not self.control_done.is_set():
                     self.finish_disconnect()
-                    stream.hand_only = self.client_owner == 'GESTURE_DIRECT'
-                    capture = stream.latest_capture() if hasattr(stream,'latest_capture') else None
-                    health = dict(vision=stream.status,camera=getattr(stream,'camera_status',None),
-                                  tracking_error=getattr(stream,'tracking_error',None),
-                                  capture_age_ms=max(0,(time.monotonic()-capture[1])*1000) if capture else None)
-                    error = stream.error or self.error
-                    if self.active_control_mode in ('SIMULATION','GESTURE_FOLLOW'):
-                        error = error or health['tracking_error']
-                    self.tick(stream.latest(),pipeline_error=error,pipeline_health=health)
-                    stream.target_id = self.c.target_id
+                    with self.control_lock:
+                        active = stream() if callable(stream) else stream
+                        if active is None:
+                            self.tick(None, pipeline_error=self.error,
+                                      pipeline_health={'camera': 'CAMERA_OFF', 'vision': 'CAMERA_OFF'})
+                        else:
+                            active.hand_only = self.client_owner == 'GESTURE_DIRECT'
+                            capture = active.latest_capture() if hasattr(active,'latest_capture') else None
+                            health = dict(vision=active.status,camera=getattr(active,'camera_status',None),
+                                          tracking_error=getattr(active,'tracking_error',None),
+                                          capture_age_ms=max(0,(time.monotonic()-capture[1])*1000) if capture else None)
+                            error = active.error or self.error
+                            if self.active_control_mode in ('SIMULATION','GESTURE_FOLLOW'):
+                                error = error or health['tracking_error']
+                            self.tick(active.latest(),pipeline_error=error,pipeline_health=health)
+                            active.target_id = self.c.target_id
                     self.control_done.wait(.05)
             except Exception as exc:
                 self.control_error = f'CONTROL_SUPERVISOR_FAILED: {type(exc).__name__}'
                 self.request('ESTOP')
+            finally:
+                if on_exit is not None:
+                    on_exit()
 
         self.control_thread = threading.Thread(target=supervise,name='central-control-supervisor',daemon=True)
         self.control_thread.start()
@@ -611,7 +632,7 @@ class DashboardEngine:
         self.request('RESUME')
 
     @control_locked
-    def start_natural_motion(self, host, prepared, *, validated_plan=None, session_guard=None):
+    def start_natural_motion(self, host, prepared, *, validated_plan=None, session_guard=None, plan_ref=None):
         if self.source != 'LIVE_CAMERA':
             raise ValueError('합성 미리보기에서 실제 장치 실행은 차단됩니다.')
         if self.shared_session:
@@ -625,7 +646,7 @@ class DashboardEngine:
                 if not self.central_ui or session_guard is None or self.c.estop_latched:
                     raise ValueError('Agent 실행 승인과 정지 상태를 확인하세요.')
                 self.language.start_motion(host, prepared, session=self.shared_session,
-                                           validated_plan=validated_plan, session_guard=session_guard)
+                                           validated_plan=validated_plan, session_guard=session_guard, plan_ref=plan_ref)
             else:
                 self.language.start_motion(host, True, session=self.shared_session)
             self.c.estop_latched = False

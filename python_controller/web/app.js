@@ -6,6 +6,14 @@ const panels = [...document.querySelectorAll('[data-panel]')];
 const cameraButtons = [...document.querySelectorAll('[data-camera]')];
 const prompt = byId('prompt');
 const unknown = '미확인';
+const stepStatus = {
+  WAITING: '대기', MOVING: '이동 수락 · 진행 중', GOAL_REPORTED: '목표 도달 보고 · STOP 확인 중',
+  STOP_VERIFIED: 'STOP 확인 · 단계 완료', BLOCKED: '실행 중단',
+};
+const runStatus = {
+  EXECUTING: '실행 진행 중', STOPPING: '정지 요청 · 응답 대기',
+  COMPLETED: '모든 단계 STOP 확인 · 완료', ABORTED: '실행 중단',
+};
 const fingers = [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[17,0]];
 const names = {
   Open_Palm: '손바닥 펼침', Closed_Fist: '주먹', Thumb_Up: '엄지 올림', Thumb_Down: '엄지 내림', Victory: '브이 손동작',
@@ -25,6 +33,12 @@ let planBusy = false;
 let lastPlan = '';
 let stopPending = false;
 let lastNavigation = 0;
+const cameraViewer = crypto.randomUUID().replaceAll('-', '');
+let cameraAllowed = true;
+let cameraWanted = false;
+let cameraVersion = 0;
+let cameraRegistered = false;
+let cameraPower = Promise.resolve();
 
 function text(id, value) {
   const node = byId(id);
@@ -86,8 +100,7 @@ function selectPage(pageId) {
     } else button.removeAttribute('aria-current');
   }
   for (const panel of panels) panel.hidden = panel.dataset.panel !== page;
-  if (page !== 'camera') frameToken = null;
-  else clearFrame('프레임 대기 중');
+  syncCameraPower();
   window.scrollTo(0, 0);
   render();
 }
@@ -95,14 +108,21 @@ function selectPage(pageId) {
 function renderPlan() {
   const agent = state?.agent;
   const plan = agent?.card ?? (!agent && state?.plan?.text === prompt.value.trim() ? state.plan : null);
+  const waiting = Boolean(agent?.waiting_mode_plan);
+  byId('plan-waiting').hidden = !waiting;
+  byId('plan-empty').hidden = Boolean(plan) || waiting;
   byId('plan-form').querySelector('button').disabled = planBusy || !online || !prompt.value.trim();
   byId('discard').disabled = !online || planBusy || (agent ? agent.busy || !agent.card : !state?.plan);
   const key = JSON.stringify(plan);
   if (key === lastPlan) return;
   lastPlan = key;
-  byId('user-request').hidden = !plan || Boolean(agent);
+  const requestRow = byId('user-request-row');
+  requestRow.hidden = !plan || Boolean(agent);
   text('user-request', plan?.text ?? '');
-  byId('plan-empty').hidden = Boolean(plan);
+  if (!requestRow.hidden) {
+    const thread = byId('chat-thread');
+    thread.scrollTop = thread.scrollHeight;
+  }
   byId('rotate').hidden = !plan?.rotation;
   const steps = (plan?.steps ?? []).map((step) => {
     const li = document.createElement('li');
@@ -113,23 +133,82 @@ function renderPlan() {
   text('plan-distance', plan ? (agent ? `계획 버전 ${plan.revision} · ${steps.length}단계` : `${steps.length}단계 · 총 이동 거리 ${Number(plan.distance_cm)} cm`) : '');
 }
 
+function renderProgress(progress) {
+  const steps = byId('execution-steps');
+  const key = JSON.stringify(progress ?? null);
+  if (steps.dataset.content === key) return;
+  steps.dataset.content = key;
+  if (!progress) {
+    text('execution-summary', '실행 기록이 없습니다.');
+    steps.replaceChildren();
+    return;
+  }
+  const count = progress.steps.length;
+  const summary = [`계획 v${progress.revision}`, runStatus[progress.state]];
+  if (count) summary.push(`단계 STOP 확인 ${progress.verified_count}/${count}`);
+  if (progress.last_error) summary.push(progress.last_error);
+  text('execution-summary', summary.join(' · '));
+  steps.replaceChildren(...progress.steps.map((state, index) => {
+    const step = document.createElement('li');
+    const status = document.createElement('small');
+    step.dataset.state = state;
+    step.textContent = progress.labels[index];
+    status.textContent = stepStatus[state];
+    step.append(status);
+    return step;
+  }));
+}
+
+function chatMessage(row) {
+  const user = row.role === 'user';
+  const message = document.createElement('div');
+  message.className = user ? 'dm-message dm-user' : 'dm-message';
+  const avatar = document.createElement(user ? 'span' : 'img');
+  avatar.className = user ? 'dm-avatar user-avatar' : 'dm-avatar mascot';
+  if (user) {
+    avatar.textContent = '나';
+    avatar.setAttribute('aria-hidden', 'true');
+  } else {
+    avatar.src = '/dig-avatar-smile.png';
+    avatar.alt = '';
+  }
+  const content = document.createElement('div');
+  content.className = 'dm-content';
+  const author = document.createElement('span');
+  author.className = 'dm-author';
+  author.textContent = user ? '나' : 'D.I.G.';
+  const bubble = document.createElement('p');
+  bubble.className = 'bubble';
+  bubble.textContent = row.content;
+  content.append(author, bubble);
+  message.append(avatar, content);
+  return message;
+}
+
 function renderAgent(agent) {
   const history = byId('agent-history');
   history.hidden = !agent;
+  byId('execution-progress').hidden = !agent;
   if (!agent) return;
+  renderProgress(agent.progress);
+  const thread = byId('chat-thread');
+  const followLatest = thread.scrollHeight - thread.clientHeight - thread.scrollTop < 32;
+  text('chat-mode', 'Agent 대화');
   text('chat-welcome', '관제 상태를 묻거나 화면 이동과 이동 계획을 요청하세요.');
   text('chat-submit', agent.busy ? '처리 중' : '전송');
   const key = JSON.stringify(agent.messages);
   if (history.dataset.content !== key) {
+    const previous = JSON.parse(history.dataset.content ?? '[]');
     history.dataset.content = key;
-    history.replaceChildren(...agent.messages.map((row) => {
-      const p = document.createElement('p');
-      p.className = row.role === 'user' ? 'bubble user' : 'bubble';
-      p.textContent = row.content;
-      return p;
-    }));
-    history.scrollTop = history.scrollHeight;
+    if (JSON.stringify(agent.messages.slice(0, previous.length)) === JSON.stringify(previous)) {
+      history.append(...agent.messages.slice(previous.length).map(chatMessage));
+    } else {
+      history.replaceChildren(...agent.messages.map(chatMessage));
+    }
   }
+  const thinking = byId('agent-thinking');
+  if (thinking.hidden === agent.busy) thinking.hidden = !agent.busy;
+  if (followLatest && (page === 'ai')) thread.scrollTop = thread.scrollHeight;
   if (agent.navigation_id !== lastNavigation) {
     lastNavigation = agent.navigation_id;
     if (agent.page) selectPage(agent.page === 'ai_chat' ? 'ai' : agent.page);
@@ -146,7 +225,9 @@ function render() {
   text('owner', connected ? `제어권 · ${state.owner}` : '제어권 미확인');
   text('esp32', `ESP32 · ${linked}`);
   text('rail-stop', connected ? state.stop_reason : '정지 상태 미확인');
-  text('camera-badge', `카메라 · ${!connected ? unknown : state.source === 'SYNTHETIC_PREVIEW' ? '합성' : ({ CAPTURING: '수신 중', CAMERA_ERROR: '오류' }[state.camera_status] ?? '대기')}`);
+  const cameraStatus = { CAMERA_OFF: '꺼짐', CLOSING_CAMERA: '해제 중', CAMERA_ERROR: '오류',
+    CAPTURING: state?.source === 'SYNTHETIC_PREVIEW' ? '합성' : '수신 중' };
+  text('camera-badge', `카메라 · ${!connected ? unknown : (cameraStatus[state.camera_status] ?? '대기')}`);
   text('radar', `레이더 ${radar?.state ?? 'UNKNOWN'} · ${radar?.blocked === false ? '차단 해제' : '이동 차단'}${connected && state.estop_latched ? ' · 긴급 정지' : ''}`);
   text('stop-proof', stopProof);
   byId('safety').dataset.tone = (connected && state.estop_latched) || radar?.state === 'EVADE' ? 'danger' : radar?.blocked === false ? 'ok' : 'warn';
@@ -162,12 +243,13 @@ function render() {
     const follow = cameraMode === 'follow';
     byId('follow-controls').hidden = !follow;
     byId('direct-controls').hidden = follow;
-    byId('follow-start').disabled = !state.perception_fresh || state.target == null;
-    const hands = state.perception_fresh ? (state.vision.raw ?? []) : [];
-    text('gesture', hands.length ? hands.map((hand) => `${name(hand.name)} · ${measured(hand.confidence)}`).join(' / ') : '인식 미확인');
-    readout('camera-details', [['검출 인원', state.perception_fresh ? state.people : unknown],
-      ['대상', state.target == null ? '미선택' : `ID ${state.target}`],
-      ['추종', state.following ? '시뮬레이션 추종 중' : '대기'], ['확정 동작', follow ? name(state.gesture.confirmed) : '미리보기'],
+    const fresh = cameraWanted && state.perception_fresh;
+    byId('follow-start').disabled = !fresh || state.target == null;
+    const hands = fresh ? (state.vision.raw ?? []) : [];
+    text('gesture', hands.length ? hands.map((hand) => `${name(hand.name)} · ${measured(hand.confidence)}`).join(' / ') : cameraWanted ? '인식 미확인' : '카메라 꺼짐');
+    readout('camera-details', [['검출 인원', fresh ? state.people : unknown],
+      ['대상', !fresh || state.target == null ? '미선택' : `ID ${state.target}`],
+      ['추종', fresh && state.following ? '시뮬레이션 추종 중' : '대기'], ['확정 동작', follow ? name(fresh ? state.gesture.confirmed : null) : '미리보기'],
       ['적용 동작', follow ? name(state.gesture.applied_action) : '전송 없음']]);
     readout('guide', Object.entries(follow ? state.settings.follow : state.settings.hand).map(([key, value]) => [name(key), name(value)]));
     text('frame-detail', `FPS ${measured(state.fps)} · 처리 ${measured(state.processing_ms, ' ms')}`);
@@ -212,11 +294,33 @@ function renderCells(id, values, tag) {
 }
 
 function clearFrame(message) {
-  byId('frame').hidden = true;
+  const frame = byId('frame');
+  frame.hidden = true;
+  frame.removeAttribute('src');
   byId('overlays').replaceChildren();
   byId('landmarks').replaceChildren();
   text('feed-label', message);
   frameToken = null;
+}
+
+function syncCameraPower(force = false, leaving = false) {
+  const enabled = page === 'camera' && cameraAllowed && !document.hidden && !leaving;
+  if (enabled === cameraWanted && !force) return;
+  cameraWanted = enabled;
+  const version = ++cameraVersion;
+  cameraRegistered = false;
+  text('camera-power', cameraAllowed && page === 'camera' ? '카메라 끄기' : '카메라 켜기');
+  clearFrame(enabled ? '카메라 연결 대기 중' : '카메라 꺼짐');
+  cameraPower = cameraPower.then(async () => {
+    if (enabled && version !== cameraVersion) return;
+    await fetchJson('/api/control', {
+      method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'camera_power', enabled, viewer: cameraViewer }),
+    });
+    if (version === cameraVersion) cameraRegistered = enabled;
+  }).catch(() => {
+    if (enabled && version === cameraVersion) clearFrame('카메라 연결 요청 실패');
+  });
 }
 
 function renderFrame(data) {
@@ -263,8 +367,10 @@ async function refreshState() {
   try {
     const next = await fetchJson('/api/state');
     if (request !== stateRequest) return;
+    const reconnected = !online && state !== null;
     state = next;
     online = true;
+    if (reconnected && cameraWanted) syncCameraPower(true);
   } catch {
     if (request !== stateRequest) return;
     online = false;
@@ -278,17 +384,32 @@ async function pollState() {
 }
 
 async function pollCamera() {
-  if (page === 'camera') {
+  if (cameraWanted) {
+    const version = cameraVersion;
     try {
-      const data = await fetchJson('/api/camera');
-      if (page === 'camera') renderFrame(data);
+      await cameraPower;
+      if (version === cameraVersion && cameraWanted && cameraRegistered) {
+        const data = await fetchJson(`/api/camera?viewer=${cameraViewer}`);
+        if (version === cameraVersion && cameraWanted) {
+          if (data.lease_active === false) syncCameraPower(true);
+          else renderFrame(data);
+        }
+      }
     } catch {
-      clearFrame('영상 연결 끊김');
+      if (version === cameraVersion && cameraWanted) clearFrame('영상 연결 끊김');
     }
   }
   setTimeout(pollCamera, 150);
 }
 
+byId('camera-power').addEventListener('click', () => {
+  cameraAllowed = !cameraAllowed;
+  syncCameraPower();
+  render();
+});
+document.addEventListener('visibilitychange', () => syncCameraPower());
+window.addEventListener('pagehide', () => syncCameraPower(false, true));
+window.addEventListener('pageshow', () => syncCameraPower());
 for (const button of nav) button.addEventListener('click', () => selectPage(button.dataset.page));
 for (const button of cameraButtons) button.addEventListener('click', () => {
   cameraMode = button.dataset.camera;

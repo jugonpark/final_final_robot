@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QCheckBox, QGroupBox, QHBoxLayout, QLineEdit, QPlainTextEdit,
                                QPushButton, QSplitter, QVBoxLayout, QWidget)
 
+from python_controller.llm.unified_agent import STEP_LABELS, progress_summary
 from python_controller.visualization.dig_theme import button_style
 from python_controller.visualization.natural_control import DETAIL_TEXT, PHASE_TEXT, label
 from python_controller.visualization.korean import ko
@@ -73,6 +74,9 @@ class AgentPanel(QWidget):
         self.status = label()
         self.status.setTextInteractionFlags(Qt.TextSelectableByMouse)
         safety_layout.addWidget(self.status)
+        self.execution_progress = label()
+        self.execution_progress.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        safety_layout.addWidget(self.execution_progress)
         self.ack_stop = button_style(QPushButton('긴급 정지 확인 · 새 요청 허용'), 'secondary', 'shield')
         self.ack_stop.clicked.connect(self.acknowledge_stop)
         safety_layout.addWidget(self.ack_stop)
@@ -140,6 +144,8 @@ class AgentPanel(QWidget):
             if card['rotation']:
                 lines.append('각도 제어 미검증 · 전체 실행 차단')
             self.preview.setText('\n'.join(lines))
+        elif state['waiting_mode_plan']:
+            self.preview.setText('제어 모드 전환 · 새 STOP 응답 대기')
         else:
             self.preview.setText('대기 중인 이동 계획이 없습니다.')
         self.prepared.setEnabled(self.can_approve)
@@ -153,3 +159,12 @@ class AgentPanel(QWidget):
             execution += '\n' + ('장치 STOP 응답 확인' if state['stop_result']['stop_verified'] else '장치 STOP 응답 미확인')
         self.ack_stop.setVisible(state['estop_latched'])
         self.status.setText(f'{state["status"]}\n\n{execution}')
+        progress = state['progress']
+        self.execution_progress.setVisible(bool(progress))
+        if progress:
+            lines = [progress_summary(progress).split('\n', 1)[0]]
+            lines.extend(f'{i}. {name} · {STEP_LABELS[status]}' for i, (name, status) in
+                         enumerate(zip(progress['labels'], progress['steps']), 1))
+            if progress['last_error']:
+                lines.append(ko(progress['last_error']))
+            self.execution_progress.setText('\n'.join(lines))

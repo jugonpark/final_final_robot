@@ -142,7 +142,8 @@ MEANINGS={
  'PERCEPTION_STALE_OR_FAILED':'영상 인식 지연 또는 실패','COMMUNICATION_OR_ESP32_FAULT':'통신 또는 ESP32 오류',
  'LIVE_UDP':'실제 UDP 수신','MOCK_UDP':'모의 UDP 수신','LIVE_CAMERA':'실제 카메라','LOADING_MODELS':'모델 준비 중','LOADING_YOLO':'사람 검출 모델 준비 중',
  'LOADING_MEDIAPIPE':'손동작 모델 준비 중','WAITING_FOR_CAMERA':'카메라 대기','INFERENCING_YOLO':'사람 검출 처리 중','INFERENCING_GESTURE':'손동작 처리 중',
- 'CAPTURING':'영상 수집 중','OPENING_CAMERA':'카메라 여는 중','CAMERA_ERROR':'카메라 오류','MODE_CHANGED_REARM_REQUIRED':'모드 변경·재활성화 필요'
+ 'CAPTURING':'영상 수집 중','OPENING_CAMERA':'카메라 여는 중','CAMERA_ERROR':'카메라 오류',
+ 'CAMERA_OFF':'카메라 꺼짐','CLOSING_CAMERA':'카메라 연결 해제 중','MODE_CHANGED_REARM_REQUIRED':'모드 변경·재활성화 필요'
 }
 FRAGMENTS={
  'UI ERROR / STOP LATCHED: ':'화면 오류로 정지 유지: ','LOGGING_FAILED: ':'로그 기록 실패: ',

@@ -1,6 +1,7 @@
-import unittest
 import importlib.util
+import json
 import os
+import unittest
 from decimal import Decimal
 from threading import Event
 from tempfile import TemporaryDirectory
@@ -12,6 +13,15 @@ from python_controller.planning.schema import Move
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 PLAN = '{"intent":"create_plan","plan":{"actions":[{"type":"move","direction":"forward","distance_cm":10}]}}'
 EDIT = '{"intent":"modify_plan","action_index":1,"replacement":{"type":"move","direction":"forward","distance_cm":5}}'
+COMPOSITE = '{"intent":"mode_then_plan","mode":"LLM_COMMAND","motion_text":"앞으로 5cm 가"}'
+
+
+def move(direction, distance):
+    return {'type': 'move', 'direction': direction, 'distance_cm': distance}
+
+
+def sequence(*actions):
+    return json.dumps({'intent': 'create_sequence', 'actions': actions})
 
 
 class Interpreter:
@@ -27,6 +37,22 @@ class Interpreter:
 
 
 class AgentIntentTests(unittest.TestCase):
+    def test_explicit_composite_and_sequence_do_not_invent_movement(self):
+        from python_controller.llm.agent_intent import explicit_composite, new_plan, parse_intent, requested_plan
+
+        self.assertEqual(explicit_composite('LLM 제어로 바꾸고 앞으로 5cm 가', parse_intent(COMPOSITE)), '앞으로 5cm 가')
+        for text in ('수동 제어로 바꿔줘 그리고 앞으로 5cm 가', 'LLM 제어로 바꿔줘 그리고 앞으로 15cm 가'):
+            with self.assertRaisesRegex(ValueError, 'COMPOSITE_DOES_NOT_MATCH_COMMAND'):
+                explicit_composite(text, parse_intent(COMPOSITE))
+        guarded = '앞으로 10cm 갔다가 오른쪽으로 5cm, 뒤로 10cm 가는 계획 만들어줘.'
+        plan = new_plan(guarded, parse_intent(sequence(move('forward', 10), move('right', 5), move('backward', 10))))
+        self.assertEqual(len(plan.actions), 3)
+        with self.assertRaisesRegex(ValueError, 'PLAN_DOES_NOT_MATCH_COMMAND'):
+            new_plan(guarded, parse_intent(sequence(move('forward', 10), move('left', 5), move('backward', 10))))
+        with self.assertRaisesRegex(ValueError, 'ACTION_COUNT'):
+            requested_plan(' 그리고 '.join(['앞으로 5cm 가'] * 5))
+        self.assertTrue(requested_plan('앞으로 5cm 가고 좌회전 90도').requires_angle_control)
+
     def test_schema_reuses_motion_types_and_refuses_permissions(self):
         from python_controller.llm.agent_intent import parse_intent
         intent = parse_intent('{"intent":"create_plan","plan":{"actions":[{"type":"move","direction":"forward","distance_cm":5.5}]}}')
@@ -117,6 +143,86 @@ class AgentIntegrationTests(unittest.TestCase):
             start.assert_not_called()
         self.assertFalse(agent.view()['can_approve'])
 
+    def test_edits_reuse_card_validate_all_steps_and_preserve_previous_on_stale_edit(self):
+        from python_controller.llm.agent_intent import parse_intent
+
+        def edit(kind, revision, index=None, replacement=None):
+            return {'kind': kind, 'expected_revision': revision, 'index': index, 'replacement': replacement}
+
+        updates = iter((edit('delete', 1, 2), edit('append', 2, replacement=move('right', 5)),
+                        edit('insert', 3, 2, move('backward', 5)), edit('replace', 4, 1, move('forward', 25)),
+                        edit('delete', 4, 2), edit('replace', 5, 1, move('forward', 50)),
+                        edit('replace', 5, 1, move('forward', 50)),
+                        edit('append', 6, replacement={'type': 'stop'}),
+                        edit('append', 6, replacement=move('right', 5)),
+                        edit('replace', 6, 3, move('backward', 50))))
+
+        class Editor:
+            def interpret(self, text, *, history, plan):
+                if not plan:
+                    return parse_intent(sequence(move('forward', 50), move('left', 5), move('backward', 40)))
+                return parse_intent(json.dumps({'intent': 'edit_plan', 'plan_id': plan['id'], 'operation': next(updates)}))
+
+        from python_controller.llm.unified_agent import UnifiedAgent
+        agent = UnifiedAgent(self.engine, Editor())
+        agent.submit('앞으로 50cm 가고 왼쪽으로 5cm 가고 뒤로 40cm 가')
+        self.drain(agent)
+        plan_id = agent.view()['card']['id']
+        cases = [('두 번째 동작 삭제해', 2, 2), ('마지막에 오른쪽으로 5cm 추가해', 3, 3),
+                 ('두 번째 단계 앞에 뒤로 5cm 추가해', 4, 4), ('첫 번째 동작 앞으로 25cm로 바꿔', 5, 4),
+                 ('두 번째 동작 삭제해', 5, 4), ('첫 번째 동작 앞으로 30cm로 바꿔', 5, 4),
+                 ('첫 번째 동작 앞으로 50cm로 바꿔', 6, 4), ('마지막에 정지 추가해', 6, 4),
+                 ('마지막에 오른쪽으로 5cm 추가해', 6, 4), ('세 번째 동작 뒤로 50cm로 바꿔', 6, 4)]
+        for text, revision, count in cases:
+            with self.subTest(text=text, revision=revision):
+                agent.ticket = object()
+                agent.submit(text)
+                self.assertIsNone(agent.ticket)
+                self.drain(agent)
+                card = agent.view()['card']
+                self.assertEqual((card['id'], card['revision'], len(card['steps'])), (plan_id, revision, count))
+                self.assertEqual(agent.graph.graph.get_state(agent.graph.config).next, ('review',))
+        with self.assertRaises(ValueError):
+            agent.review(plan_id, 5, approve=True, operator_confirmed=True)
+
+    def test_live_vision_queries_omit_stale_or_synthetic_observations(self):
+        from python_controller.dashboard_runtime import PreviewStream
+
+        stream = PreviewStream()
+        stream.target_id = 7
+        output = stream.latest()
+        output['vision']['raw'] = [{'name': 'Open_Palm', 'confidence': .92}]
+        self.engine.tick(output)
+        agent = self.agent('{"intent":"query_vision","target":"all"}', '{"intent":"query_vision","target":"people"}',
+                           '{"intent":"query_vision","target":"hands"}', '{"intent":"explain_blocked","target":"all"}',
+                           '{"intent":"query_vision","target":"mapping"}')
+        agent.submit('사람과 손동작 보여?')
+        self.drain(agent)
+        self.assertIn('검출 인원 1명', agent.view()['messages'][-1]['content'])
+        self.assertIn('92%', agent.view()['messages'][-1]['content'])
+        with patch('python_controller.llm.unified_agent.monotonic', return_value=output['frame'].timestamp+30):
+            agent.submit('지금 사람 보여?')
+            self.drain(agent)
+            view = agent.view()
+            self.assertIn('최근 유효한 카메라 인식 결과가 없어', view['messages'][-1]['content'])
+            self.assertIsNone(view['vision_facts']['people'])
+        self.engine.source = 'SYNTHETIC_PREVIEW'
+        agent.submit('손동작 보여?')
+        self.drain(agent)
+        self.assertIn('합성 영상 미리보기', agent.view()['messages'][-1]['content'])
+        self.assertEqual(agent.view()['vision_facts']['hands'], [])
+        agent.submit('왜 안 움직여?')
+        self.drain(agent)
+        reply = agent.view()['messages'][-1]['content']
+        for evidence in ('레이더 UNKNOWN', 'ESP32 중앙 제어 통신 미확인', '장치 STOP 응답 미확인'):
+            self.assertIn(evidence, reply)
+        self.engine.client_owner = 'GESTURE_DIRECT'
+        agent.submit('손바닥 펼치면 뭐해?')
+        self.drain(agent)
+        view = agent.view()
+        self.assertIn('손바닥 펼침 (Open_Palm) → 전진 (FORWARD)', view['messages'][-1]['content'])
+        self.assertEqual(view['vision_facts']['mapping'], self.engine.hand.mapping)
+
     def test_stop_preempts_stalled_model_and_discards_late_plan(self):
         entered, release = Event(), Event()
         self.addCleanup(release.set)
@@ -166,6 +272,197 @@ class AgentIntegrationTests(unittest.TestCase):
                     break
             session.rearm_radar()
         return robot, session, gate
+
+    def test_composite_waits_for_fresh_mode_stop_then_only_previews(self):
+        robot, session, _ = self.attach_session()
+        session.select_mode('DIRECT_CONTROL')
+        self.engine.client_owner = 'DIRECT_CONTROL'
+        agent = self.agent(COMPOSITE)
+        agent.submit('LLM 제어로 바꿔줘 그리고 앞으로 5cm 가')
+        self.drain(agent)
+        self.assertEqual(self.engine.pending_mode, 'LLM_COMMAND')
+        self.assertFalse(session.snapshot()['stop_verified'])
+        self.assertTrue(agent.view()['waiting_mode_plan'])
+        self.assertIsNone(agent.view()['card'])
+        self.assertIsNone(agent.ticket)
+        agent.submit('진행 상태 알려줘')
+        self.assertTrue(agent.view()['waiting_mode_plan'])
+        self.assertEqual(len(self.interpreter.contexts), 1)
+        for _ in range(25):
+            session.tick()
+            self.engine._finish_mode_change()
+            if self.engine.pending_mode is None:
+                break
+        view = agent.view()
+        self.assertFalse(view['waiting_mode_plan'])
+        self.assertEqual(view['card']['steps'], ['앞으로 5 cm'])
+        self.assertEqual(agent.graph.graph.get_state(agent.graph.config).next, ('review',))
+        self.assertTrue(view['can_approve'])
+        self.assertIsNone(agent.ticket)
+        self.assertEqual(robot.moves, 0)
+
+    def test_composite_cancels_on_radar_trip_or_estop(self):
+        from test_radar_integration import PI, radar
+
+        robot, session, gate = self.attach_session()
+        session.select_mode('DIRECT_CONTROL')
+        self.engine.client_owner = 'DIRECT_CONTROL'
+        agent = self.agent(COMPOSITE, COMPOSITE)
+        command = 'LLM 제어로 바꿔줘 그리고 앞으로 5cm 가'
+        agent.submit(command)
+        self.drain(agent)
+        self.assertTrue(agent.view()['waiting_mode_plan'])
+        agent.emergency()
+        self.assertFalse(agent.view()['waiting_mode_plan'])
+        self.assertTrue(self.engine.c.estop_latched)
+        for _ in range(20):
+            session.tick()
+            if session.snapshot()['stop_verified']:
+                break
+        agent.acknowledge_estop()
+        agent.submit(command)
+        self.drain(agent)
+        self.assertTrue(agent.view()['waiting_mode_plan'])
+        gate.receive(radar(100, 'EVADE', epoch=1), PI, robot.now)
+        view = agent.view()
+        self.assertFalse(view['waiting_mode_plan'])
+        self.assertIsNone(view['card'])
+        self.assertEqual(robot.moves, 0)
+
+    def test_explicit_mode_correction_replaces_waiting_composite(self):
+        robot, session, _ = self.attach_session()
+        session.select_mode('DIRECT_CONTROL')
+        self.engine.client_owner = 'DIRECT_CONTROL'
+        agent = self.agent(COMPOSITE)
+        agent.submit('LLM 제어로 바꿔줘 그리고 앞으로 5cm 가')
+        self.drain(agent)
+        self.assertEqual(self.engine.pending_mode, 'LLM_COMMAND')
+        agent.submit('아니다 손동작으로')
+        self.assertEqual(self.engine.pending_mode, 'GESTURE_DIRECT')
+        self.assertFalse(agent.view()['waiting_mode_plan'])
+        self.assertIsNone(agent.view()['card'])
+        self.assertEqual(len(self.interpreter.contexts), 1)
+        self.assertEqual(robot.moves, 0)
+
+    def test_four_steps_use_one_executor_and_report_only_stop_verified_completion(self):
+        from python_controller.execution.motion_executor import LLMMotionExecutor
+
+        robot, _, _ = self.attach_session()
+        actions = (move('forward', 5), move('right', 5), move('backward', 5), move('left', 5))
+        agent = self.agent(sequence(*actions))
+        agent.submit('앞으로 5cm 가고 오른쪽으로 5cm 가고 뒤로 5cm 가고 왼쪽으로 5cm 가')
+        self.drain(agent)
+        card = agent.view()['card']
+        with patch.object(LLMMotionExecutor, 'run', autospec=True, side_effect=LLMMotionExecutor.run) as run:
+            agent.review(card['id'], 1, approve=True, operator_confirmed=True)
+            self.drain(agent)
+            deadline = monotonic()+5
+            while self.engine.language.busy and monotonic()<deadline:
+                self.engine.language.poll()
+                sleep(.005)
+            self.engine.language.poll()
+            run.assert_called_once()
+        progress = agent.view()['progress']
+        self.assertEqual(robot.moves, 4)
+        self.assertEqual((progress['plan_id'], progress['revision']), (card['id'], 1))
+        self.assertEqual(progress['verified_count'], 4)
+        self.assertEqual(progress['steps'], ['STOP_VERIFIED'] * 4)
+        self.assertEqual(progress['state'], 'COMPLETED')
+        if importlib.util.find_spec('PySide6'):
+            from PySide6.QtWidgets import QApplication
+            from python_controller.visualization.agent_panel import AgentPanel
+
+            app = QApplication.instance() or QApplication([])
+            panel = AgentPanel(agent, lambda _: None)
+            self.addCleanup(panel.close)
+            app.processEvents()
+            summary = panel.execution_progress.text()
+            self.assertIn('단계 STOP 확인 4/4', summary)
+            self.assertIn('4. 왼쪽으로 5 cm · STOP 확인', summary)
+
+    def test_move_without_stop_ack_does_not_complete_or_start_next(self):
+        from python_controller.execution.motion_executor import LLMMotionExecutor
+
+        robot, _, _ = self.attach_session()
+        agent = self.agent(sequence(move('forward', 5), move('right', 5)))
+        agent.submit('앞으로 5cm 가고 오른쪽으로 5cm 가')
+        self.drain(agent)
+        card = agent.view()['card']
+        waiting, proceed = Event(), Event()
+        confirm = LLMMotionExecutor._confirm_stop
+        sendto = robot.sendto
+
+        def omit_stationary_confirmation(raw, destination):
+            goal = robot.goal
+            sent = sendto(raw, destination)
+            if goal and json.loads(raw)['type'] == 'stop':
+                robot.goal = goal
+            return sent
+
+        def observe_before_stop(executor):
+            if robot.moves:
+                waiting.set()
+                proceed.wait(4)
+                robot.sendto = omit_stationary_confirmation
+            return confirm(executor)
+
+        with patch.object(LLMMotionExecutor, '_confirm_stop', observe_before_stop):
+            try:
+                agent.review(card['id'], 1, approve=True, operator_confirmed=True)
+                self.drain(agent)
+                self.assertTrue(waiting.wait(2))
+                self.engine.language.poll()
+                state = agent.view()['progress']
+                self.assertEqual(state['steps'], ['GOAL_REPORTED', 'WAITING'])
+                self.assertEqual(state['verified_count'], 0)
+                agent.submit('진행 상태 알려줘')
+                self.assertIn('STOP 확인 중', agent.view()['messages'][-1]['content'])
+            finally:
+                proceed.set()
+            deadline = monotonic()+5
+            while self.engine.language.busy and monotonic()<deadline:
+                self.engine.language.poll()
+                sleep(.005)
+            self.engine.language.poll()
+        robot.sendto = sendto
+        progress = agent.view()['progress']
+        self.assertEqual(robot.moves, 1)
+        self.assertEqual((progress['state'], progress['verified_count']), ('ABORTED', 0))
+        self.assertEqual(progress['steps'], ['BLOCKED', 'BLOCKED'])
+
+    def test_radar_trip_during_sequence_blocks_remaining_steps_and_no_resume(self):
+        from python_controller.execution.motion_executor import LLMMotionExecutor
+        from test_radar_integration import PI, radar
+
+        robot, _, gate = self.attach_session()
+        agent = self.agent(sequence(move('forward', 5), move('right', 5)),
+                           '{"intent":"chat","reply":"새 계획과 운영자 승인이 필요합니다."}')
+        agent.submit('앞으로 5cm 가고 오른쪽으로 5cm 가')
+        self.drain(agent)
+        card = agent.view()['card']
+        confirm = LLMMotionExecutor._confirm_stop
+
+        def trip_before_stop(executor):
+            if robot.moves:
+                gate.receive(radar(100, 'EVADE', epoch=1), PI, robot.now)
+            return confirm(executor)
+
+        with patch.object(LLMMotionExecutor, '_confirm_stop', trip_before_stop):
+            agent.review(card['id'], 1, approve=True, operator_confirmed=True)
+            self.drain(agent)
+            deadline = monotonic()+5
+            while self.engine.language.busy and monotonic()<deadline:
+                self.engine.language.poll()
+                sleep(.005)
+            self.engine.language.poll()
+        progress = agent.view()['progress']
+        self.assertEqual(progress['state'], 'ABORTED')
+        self.assertEqual(progress['steps'], ['BLOCKED', 'BLOCKED'])
+        agent.submit('계속해')
+        self.drain(agent)
+        self.assertEqual(robot.moves, 1)
+        self.assertIsNone(agent.view()['card'])
+        self.assertFalse(agent.view()['can_approve'])
 
     def test_mode_waits_for_new_stop_and_keeps_latch_and_disarm(self):
         robot, session, _ = self.attach_session()
