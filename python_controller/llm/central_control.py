@@ -28,6 +28,7 @@ class NaturalControl:
         self._events = SimpleQueue()
         self._last_poll = monotonic()
         self.motion_session = None
+        self.session_guard = None
 
     @property
     def busy(self):
@@ -50,10 +51,15 @@ class NaturalControl:
         self.log_path = self.last_feedback = None
         self.last_echo_age_s = None
 
-    def start_motion(self, host, prepared, *, session=None):
-        if self.busy or self.phase != "READY" or self.plan is None:
+    def start_motion(self, host, prepared, *, session=None, validated_plan=None, session_guard=None):
+        if self.busy or (validated_plan is None and (self.phase != "READY" or self.plan is None)):
             raise ControlError("VALIDATED_PLAN_REQUIRED")
-        if self.plan.requires_angle_control:
+        if validated_plan is not None:
+            from python_controller.planning.validator import ValidatedPlan
+            if not isinstance(validated_plan, ValidatedPlan) or session is None or session_guard is None:
+                raise ControlError('VALIDATED_PLAN_REQUIRED')
+        plan = validated_plan if validated_plan is not None else self.plan
+        if plan.requires_angle_control:
             raise ControlError("ROTATION_CONTROL_NOT_VERIFIED")
         if prepared is not True:
             raise ControlError("HARDWARE_PREPARATION_REQUIRED")
@@ -64,8 +70,9 @@ class NaturalControl:
         except ValueError:
             raise ControlError("INVALID_ESP32_IP") from None
         # A ready plan is a one-use approval. The worker keeps its immutable copy.
-        plan = self.plan
         self.motion_session = session
+        self.session_guard = session_guard
+        self.plan = plan
         self.session_diagnostic = None
         self.session_info = None
         self.stop_result = None
@@ -144,7 +151,7 @@ class NaturalControl:
                 session = self.motion_session
                 snapshot = session.snapshot()
                 from python_controller.communication.esp32_udp import Protocol
-                options.update(clock=session.clock, socket_factory=session.distance_socket,
+                options.update(clock=session.clock, socket_factory=self.session_guard or session.distance_socket,
                                protocol=Protocol(session.protocol.session_id),
                                previous=dict(tx_session_id=session.protocol.session_id,
                                              tx_seq=session.protocol.seq, **{

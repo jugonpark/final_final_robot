@@ -264,6 +264,7 @@ class RobotSessionTests(unittest.TestCase):
                 try:
                     self.assertEqual([window.workspaces.tabText(i) for i in range(2)], ['중앙제어','테스트·진단'])
                     self.assertEqual([window.tabs.tabText(i) for i in range(4)], ['직접 제어','손동작 제어','사람 추종','자연어 제어'])
+                    window.navigate(2)
                     window.connect_button.click()
                     window.poll()
                     self.assertTrue(window.test_buttons['FORWARD'].isEnabled())

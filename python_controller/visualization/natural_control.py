@@ -2,11 +2,12 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox, QFormLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QPlainTextEdit, QPushButton, QVBoxLayout, QWidget,
+    QPlainTextEdit, QPushButton, QVBoxLayout, QWidget, QSplitter, QFrame, QScrollArea,
 )
 
 from python_controller.visualization.korean import ko, movement_block
 from python_controller.planning.schema import describe_action
+from python_controller.visualization.dig_theme import button_style
 
 
 PHASE_TEXT = {
@@ -56,10 +57,35 @@ class NaturalControlPanel(QWidget):
         self.control = engine.language
         self._displayed_plan = None
         layout = QVBoxLayout(self)
-        layout.setSpacing(10)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(16)
+        heading = label('말하듯이, 로봇을 제어하세요.')
+        heading.setProperty('role', 'heroTitle')
+        layout.addWidget(heading)
+        subtitle = label('명령 입력 → 이동 계획 검토 → 실행 승인 · 단일 요청, 대화 기억 없음')
+        subtitle.setProperty('role', 'muted')
+        layout.addWidget(subtitle)
+        self.columns = QSplitter(Qt.Horizontal)
+        self.columns.setChildrenCollapsible(False)
+        layout.addWidget(self.columns, 1)
 
-        plan_box = QGroupBox("명령과 이동 계획")
+        plan_box = QGroupBox('AI 대화')
+        plan_box.setMinimumWidth(290)
         plan_layout = QVBoxLayout(plan_box)
+        welcome = label('이동 명령을 입력해 주세요.\n실행 전에 방향과 거리를 확인할 수 있습니다.')
+        welcome.setObjectName('systemBubble')
+        plan_layout.addWidget(welcome)
+        self.request_bubble = label()
+        self.request_bubble.setObjectName('requestBubble')
+        self.request_bubble.hide()
+        plan_layout.addWidget(self.request_bubble)
+        self.conversation_status = label('한 번의 요청과 현재 계획을 표시합니다. 대화 기억은 사용하지 않습니다.')
+        self.conversation_status.setProperty('role', 'muted')
+        plan_layout.addWidget(self.conversation_status)
+        plan_layout.addStretch()
+        example = label('예: 앞으로 5cm 가고 뒤로 5cm 이동해')
+        example.setProperty('role', 'muted')
+        plan_layout.addWidget(example)
         entry = QHBoxLayout()
         self.command = QLineEdit()
         self.command.setPlaceholderText("예: 앞으로 5cm 가고 뒤로 5cm 이동해")
@@ -67,19 +93,43 @@ class NaturalControlPanel(QWidget):
         self.command.textChanged.connect(self._input_changed)
         self.command.returnPressed.connect(self._plan)
         self.plan_button = QPushButton("계획 생성")
+        button_style(self.plan_button, 'primary', 'send')
         self.plan_button.clicked.connect(self._plan)
         entry.addWidget(self.command, 1)
         entry.addWidget(self.plan_button)
         plan_layout.addLayout(entry)
+        self.columns.addWidget(plan_box)
+        right = QWidget()
+        right.setMinimumWidth(260)
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        self.columns.addWidget(right)
+        self.columns.setSizes([650, 400])
+        preview_box = QGroupBox('실행 계획 미리보기')
+        preview_layout = QVBoxLayout(preview_box)
+        self.plan_steps = QWidget()
+        self.steps_layout = QVBoxLayout(self.plan_steps)
+        self.steps_layout.setContentsMargins(0, 0, 0, 0)
+        self.empty_plan = label('아직 생성된 계획이 없습니다.\n명령을 입력하면 검증된 이동 순서가 표시됩니다.')
+        self.steps_layout.addWidget(self.empty_plan)
+        steps_scroll = QScrollArea()
+        steps_scroll.setWidgetResizable(True)
+        steps_scroll.setMinimumHeight(130)
+        steps_scroll.setWidget(self.plan_steps)
+        preview_layout.addWidget(steps_scroll, 1)
+        self.plan_summary = label('이동 단계 — · 총 이동 거리 —')
+        self.plan_summary.setProperty('role', 'muted')
+        preview_layout.addWidget(self.plan_summary)
+        # Retain the existing accessible plain-text plan and test interface.
         self.preview = QPlainTextEdit()
         self.preview.setReadOnly(True)
         self.preview.setAccessibleName("검증된 이동 순서")
         self.preview.setPlaceholderText("검증된 계획이 이동 순서대로 표시됩니다.")
-        self.preview.setFixedHeight(116)
-        plan_layout.addWidget(self.preview)
-        layout.addWidget(plan_box)
+        self.preview.setMaximumHeight(80)
+        preview_layout.addWidget(self.preview)
+        right_layout.addWidget(preview_box, 1)
 
-        execution = QGroupBox("실제 장치 실행")
+        execution = QGroupBox('실행 승인 · 안전 상태')
         actions = QVBoxLayout(execution)
         form = QFormLayout()
         self.host = QLineEdit(shared_host.text())
@@ -98,17 +148,18 @@ class NaturalControlPanel(QWidget):
         actions.addWidget(self.prepared)
         buttons = QHBoxLayout()
         self.execute_button = QPushButton("계획 실행")
+        button_style(self.execute_button, 'primary', 'play')
         self.execute_button.clicked.connect(self._execute)
         self.stop_button = QPushButton("정지 / 계획 취소")
         self.stop_button.setObjectName("estop")
+        button_style(self.stop_button, 'danger', 'stop')
         self.stop_button.clicked.connect(emergency_stop)
         buttons.addWidget(self.execute_button)
         buttons.addWidget(self.stop_button)
-        buttons.addStretch()
         actions.addLayout(buttons)
         self.gate = label()
         actions.addWidget(self.gate)
-        layout.addWidget(execution)
+        right_layout.addWidget(execution)
 
         feedback = QGroupBox("실행 상태")
         feedback_layout = QVBoxLayout(feedback)
@@ -119,8 +170,7 @@ class NaturalControlPanel(QWidget):
         for widget in (self.status, self.telemetry, self.session_status, self.log):
             widget.setTextInteractionFlags(Qt.TextSelectableByMouse)
             feedback_layout.addWidget(widget)
-        layout.addWidget(feedback)
-        layout.addStretch()
+        right_layout.addWidget(feedback)
         self.refresh()
 
     def _reset_approval(self):
@@ -140,6 +190,36 @@ class NaturalControlPanel(QWidget):
             self.status.setText(DETAIL_TEXT.get(str(exc), str(exc)))
             return
         self._reset_approval()
+
+    def _render_plan(self, plan):
+        while self.steps_layout.count():
+            item = self.steps_layout.takeAt(0)
+            if item.widget() is not None:
+                widget = item.widget()
+                widget.hide()
+                widget.setParent(None)
+                widget.deleteLater()
+        if plan is None:
+            self.steps_layout.addWidget(label('아직 생성된 계획이 없습니다.\n명령을 입력하면 이동 순서를 검토할 수 있습니다.'))
+            self.plan_summary.setText('이동 단계 — · 총 이동 거리 —')
+            return
+        distance = 0
+        for index, action in enumerate(plan.actions, 1):
+            card = QFrame()
+            card.setObjectName('planStep')
+            row = QVBoxLayout(card)
+            step = label(f'{index:02d}   {describe_action(action)}')
+            step.setProperty('role', 'sectionTitle')
+            row.addWidget(step)
+            if action.type == 'rotate':
+                warning = label('각도 제어 미검증 · 이 계획 전체는 실행할 수 없습니다.')
+                warning.setProperty('status', 'warning')
+                row.addWidget(warning)
+            if action.type == 'move':
+                distance += action.distance_cm
+            self.steps_layout.addWidget(card)
+        self.steps_layout.addStretch()
+        self.plan_summary.setText(f'요청 단계 {len(plan.actions)}개 · 총 이동 거리 {distance:g} cm')
 
     def _execute(self):
         if not self.execute_button.isEnabled():
@@ -162,6 +242,7 @@ class NaturalControlPanel(QWidget):
                     step = describe_action(action)
                     rows.append(f"{index}.  {step}")
             self.preview.setPlainText("\n".join(rows))
+            self._render_plan(control.plan)
         self.command.setEnabled(not control.busy)
         self.host.setEnabled(not control.executing)
         self.plan_button.setEnabled(not control.busy and bool(self.command.text().strip()))
@@ -219,6 +300,9 @@ class NaturalControlPanel(QWidget):
             else:
                 message += "  STOP 응답 미확인. 장비에서 정지 여부를 확인하세요."
         self.status.setText(message)
+        self.request_bubble.setText(self.command.text())
+        self.request_bubble.setVisible(bool(self.command.text().strip()))
+        self.conversation_status.setText(message)
         data = control.last_feedback
         if data:
             fields = [f'최근 ESP32 응답 {ko(data["state"])}']

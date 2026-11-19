@@ -31,7 +31,7 @@ class KoreanDiagnosticUiTests(unittest.TestCase):
                 self.assertEqual([w.tabs.tabText(i) for i in range(w.tabs.count())],
                     ['직접 제어','손동작 제어','사람 추종','자연어 제어'])
                 self.assertEqual([w.workspaces.tabText(i) for i in range(w.workspaces.count())],
-                    ['중앙제어','테스트·진단'])
+                    ['중앙제어','테스트·진단','설정'])
                 self.assertIn('긴급 정지',w.estop.text())
                 self.assertIn('ESP32 주소',w.pipeline.text())
                 self.assertIn('처리 지연',w.camera_status.text());self.assertNotIn('Processing',w.camera_status.text())

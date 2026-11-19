@@ -1,0 +1,55 @@
+test_ai_default_sidebar_and_persistent_safety_at_all_sizes (test_blue_dashboard.BlueDashboardTests.test_ai_default_sidebar_and_persistent_safety_at_all_sizes) ... FAIL
+test_camera_segments_share_camera_and_show_distinct_configured_guides (test_blue_dashboard.BlueDashboardTests.test_camera_segments_share_camera_and_show_distinct_configured_guides) ... ERROR
+test_estop_keys_from_each_page_and_svg_resources (test_blue_dashboard.BlueDashboardTests.test_estop_keys_from_each_page_and_svg_resources) ... ERROR
+test_navigation_ends_hold_and_settings_do_not_acquire_control (test_blue_dashboard.BlueDashboardTests.test_navigation_ends_hold_and_settings_do_not_acquire_control) ... ERROR
+test_rejected_mode_does_not_present_requested_owner_as_active (test_blue_dashboard.BlueDashboardTests.test_rejected_mode_does_not_present_requested_owner_as_active) ... ERROR
+
+======================================================================
+ERROR: test_camera_segments_share_camera_and_show_distinct_configured_guides (test_blue_dashboard.BlueDashboardTests.test_camera_segments_share_camera_and_show_distinct_configured_guides)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_blue_dashboard.py", line 69, in test_camera_segments_share_camera_and_show_distinct_configured_guides
+    w.nav_buttons[1].click()
+    ^^^^^^^^^^^^^
+AttributeError: 'Dashboard' object has no attribute 'nav_buttons'. Did you mean: 'test_buttons'?
+
+======================================================================
+ERROR: test_estop_keys_from_each_page_and_svg_resources (test_blue_dashboard.BlueDashboardTests.test_estop_keys_from_each_page_and_svg_resources)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_blue_dashboard.py", line 93, in test_estop_keys_from_each_page_and_svg_resources
+    for button in w.nav_buttons:
+                  ^^^^^^^^^^^^^
+AttributeError: 'Dashboard' object has no attribute 'nav_buttons'. Did you mean: 'test_buttons'?
+
+======================================================================
+ERROR: test_navigation_ends_hold_and_settings_do_not_acquire_control (test_blue_dashboard.BlueDashboardTests.test_navigation_ends_hold_and_settings_do_not_acquire_control)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_blue_dashboard.py", line 60, in test_navigation_ends_hold_and_settings_do_not_acquire_control
+    w.nav_buttons[page].click()
+    ^^^^^^^^^^^^^
+AttributeError: 'Dashboard' object has no attribute 'nav_buttons'. Did you mean: 'test_buttons'?
+
+======================================================================
+ERROR: test_rejected_mode_does_not_present_requested_owner_as_active (test_blue_dashboard.BlueDashboardTests.test_rejected_mode_does_not_present_requested_owner_as_active)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_blue_dashboard.py", line 85, in test_rejected_mode_does_not_present_requested_owner_as_active
+    w.nav_buttons[2].click()
+    ^^^^^^^^^^^^^
+AttributeError: 'Dashboard' object has no attribute 'nav_buttons'. Did you mean: 'test_buttons'?
+
+======================================================================
+FAIL: test_ai_default_sidebar_and_persistent_safety_at_all_sizes (test_blue_dashboard.BlueDashboardTests.test_ai_default_sidebar_and_persistent_safety_at_all_sizes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "tests\test_blue_dashboard.py", line 39, in test_ai_default_sidebar_and_persistent_safety_at_all_sizes
+    self.assertEqual(w.tabs.currentIndex(), w.language_tab_index)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 3
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.343s
+
+FAILED (failures=1, errors=4)

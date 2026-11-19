@@ -14,3 +14,5 @@ logs/
 settings/connection.json
 settings/radar.json
 settings/radar.json.tmp
+# The source ZIP previews are local references. Share regenerated verification captures.
+design_reference/dig_blue/assets/previews/

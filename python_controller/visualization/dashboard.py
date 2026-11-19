@@ -6,11 +6,11 @@ from pathlib import Path
 import time
 import signal
 
-from PySide6.QtCore import Qt,QTimer,QRectF,QPointF,Signal,QEvent,QTranslator,QLibraryInfo
+from PySide6.QtCore import Qt,QTimer,QRectF,QPointF,Signal,QEvent,QTranslator,QLibraryInfo,QSignalBlocker
 from PySide6.QtGui import QImage,QPainter,QColor,QPen,QFontDatabase
 from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,
     QFormLayout,QLabel,QPushButton,QGroupBox,QTabWidget,QScrollArea,QSplitter,QLineEdit,QCheckBox,
-    QMessageBox,QTableWidget,QTableWidgetItem,QHeaderView,QComboBox,QPlainTextEdit,QProgressBar,QDoubleSpinBox,QSpinBox)
+    QMessageBox,QTableWidget,QTableWidgetItem,QHeaderView,QComboBox,QPlainTextEdit,QProgressBar,QDoubleSpinBox,QSpinBox,QSizePolicy)
 
 from python_controller.control.hand_drive import DEFAULT_MAPPING, DIRECTIONS, HandDrive
 from python_controller.dashboard_runtime import DashboardEngine,VisionStream,PreviewStream
@@ -18,6 +18,7 @@ from python_controller.monitoring import motor_feedback
 from python_controller.visualization.korean import ko,add_choices,MEANINGS,movement_block
 from python_controller.visualization.natural_control import NaturalControlPanel
 from python_controller.visualization.follow_control import FollowControlPanel
+from python_controller.visualization.dig_theme import button_style, stylesheet
 from python_controller.diagnostics import NetworkProbe,diagnostic_report,save_report
 
 
@@ -162,7 +163,10 @@ def scroll(widget):
 
 
 class Dashboard(QMainWindow):
-    def __init__(self,config,hardware=False,preview=False,folder=None,stream=None,engine=None):
+    # Keep the last annotated preview briefly across inference gaps. Control uses its own deadline.
+    CAMERA_PREVIEW_HOLD_S=1.0
+
+    def __init__(self,config,hardware=False,preview=False,folder=None,stream=None,engine=None,agent_enabled=False,agent_interpreter=None):
         super().__init__()
         # Restricted/offscreen Windows sessions can expose an empty font database.
         if not QFontDatabase.families():
@@ -183,6 +187,11 @@ class Dashboard(QMainWindow):
         self.background_control=engine is None
         self.engine=engine or DashboardEngine(config,folder or root/'logs',source)
         self.engine.central_ui=True
+        self.agent = None
+        if agent_enabled:
+            from python_controller.llm.unified_agent import UnifiedAgent
+            self.agent = UnifiedAgent(self.engine, agent_interpreter)
+        self.input_control_generation = self.engine.control_generation
         self.stream=stream or (PreviewStream() if preview else VisionStream(config))
         self.last_image_at=None;self.last_data=None;self.closing=False
         self.held_direction=None;self.pending_direct=None
@@ -190,6 +199,10 @@ class Dashboard(QMainWindow):
         self.network_probe=NetworkProbe();self.last_diagnostic_report=None
         self.build_ui()
         self.apply_style()
+        for readout in (self.camera_status,self.hand_readout,self.pipeline):
+            readout.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+            readout.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Fixed)
+            readout.setFixedHeight(2*readout.fontMetrics().lineSpacing()+2)
         if hardware:
             try:self.engine.connect_robot(config['communication']['host'])
             except Exception as exc:
@@ -201,28 +214,64 @@ class Dashboard(QMainWindow):
         self.timer=QTimer(self);self.timer.timeout.connect(self.poll);self.timer.start(50)
 
     def build_ui(self):
-        central=QWidget();outer=QVBoxLayout(central);outer.setContentsMargins(16,12,16,12);outer.setSpacing(10)
-        top=QHBoxLayout();title=QLabel('D.I.G. 중앙 제어');title.setObjectName('title')
+        central=QWidget();shell=QHBoxLayout(central);shell.setContentsMargins(0,0,0,0);shell.setSpacing(0)
+        self.sidebar=QWidget();self.sidebar.setObjectName('digSidebar');self.sidebar.setFixedWidth(248)
+        sidebar=QVBoxLayout(self.sidebar);sidebar.setContentsMargins(18,28,18,20);sidebar.setSpacing(10)
+        brand=QLabel('D.I.G.');brand.setObjectName('brand');sidebar.addWidget(brand)
+        tagline=QLabel('로봇 중앙관제');tagline.setProperty('role','muted');sidebar.addWidget(tagline)
+        sidebar.addSpacing(24)
+        self.nav_buttons=[]
+        for i,(name,svg) in enumerate((('AI 대화 제어','chat'),('카메라 · 손동작','hand'),('수동 제어','gamepad'),('상태 · 진단','activity'),('설정','settings'))):
+            button=QPushButton(name);button.setCheckable(True);button.setAccessibleName(name)
+            button_style(button,'navigation',svg);button.clicked.connect(lambda checked=False,page=i:self.navigate(page))
+            sidebar.addWidget(button);self.nav_buttons.append(button)
+        sidebar.addStretch()
         self.mode=QLabel(ko('SIMULATION'));self.mode.setObjectName('mode')
         self.state=QLabel(ko('STARTING'));self.arm_state=QLabel(ko('DISARMED'))
+        for widget in (self.mode,self.state,self.arm_state):widget.setWordWrap(True);sidebar.addWidget(widget)
+        self.release_control=QPushButton('정지 후 연결 해제')
+        self.release_control.clicked.connect(self.disconnect);sidebar.addWidget(self.release_control)
+        if self.agent:
+            self.control_mode_choice=QComboBox()
+            from python_controller.llm.unified_agent import MODE_LABELS
+            for mode,label in MODE_LABELS.items():self.control_mode_choice.addItem(label,mode)
+            sidebar.addWidget(self.control_mode_choice)
+            self.control_mode_button=QPushButton('제어 모드 전환')
+            self.control_mode_button.setEnabled(False)
+            self.control_mode_button.clicked.connect(self.request_operator_mode);sidebar.addWidget(self.control_mode_button)
+        shell.addWidget(self.sidebar)
+        main=QWidget();outer=QVBoxLayout(main);outer.setContentsMargins(22,16,22,12);outer.setSpacing(12)
+        shell.addWidget(main,1)
+        header=QWidget();header.setObjectName('digHeader');top=QHBoxLayout(header);top.setContentsMargins(0,0,0,12)
+        self.page_title=QLabel('AI 대화 제어');self.page_title.setProperty('role','sectionTitle')
+        self.connection_badge=QLabel('ESP32 · 미연결');self.connection_badge.setObjectName('connectionBadge')
+        self.camera_badge=QLabel('카메라 · 대기');self.camera_badge.setObjectName('cameraBadge')
+        self.camera_badge.setFixedWidth(120)
         self.estop=QPushButton(ko('EMERGENCY STOP   [SPACE]'));self.estop.setObjectName('estop');self.estop.setMinimumHeight(46)
         self.estop.clicked.connect(lambda:self.action('ESTOP'))
-        self.release_control=QPushButton('정지 후 연결 해제')
-        self.release_control.clicked.connect(self.disconnect)
-        top.addWidget(title);top.addStretch();top.addWidget(self.mode);top.addWidget(self.state);top.addWidget(self.arm_state);top.addWidget(self.estop)
-        top.addWidget(self.release_control)
-        outer.addLayout(top)
-        radar_row=QHBoxLayout()
+        top.addWidget(self.page_title);top.addStretch();top.addWidget(self.connection_badge);top.addWidget(self.camera_badge);top.addWidget(self.estop)
+        outer.addWidget(header)
+        radar_box=QWidget();radar_box.setObjectName('radarBanner');radar_row=QVBoxLayout(radar_box);radar_row.setContentsMargins(12,8,12,8);radar_row.setSpacing(6)
         self.radar_status=QLabel('레이더 · ESP32 연결 대기')
         self.radar_status.setWordWrap(True)
         self.radar_rearm=QPushButton('레이더 해제 확인 · 새 이동 허용')
         self.radar_rearm.setEnabled(False)
         self.radar_rearm.clicked.connect(self.rearm_radar)
-        radar_row.addWidget(self.radar_status,1)
-        radar_row.addWidget(self.radar_rearm)
-        outer.addLayout(radar_row)
+        radar_row.addWidget(self.radar_status)
+        radar_row.addWidget(self.radar_rearm,0,Qt.AlignRight)
+        outer.addWidget(radar_box)
         self.pipeline=QLabel(ko('Initializing camera and models in background...'));self.pipeline.setWordWrap(True)
-        outer.addWidget(self.pipeline)
+        self.pipeline.setProperty('role','muted');self.pipeline.setSizePolicy(QSizePolicy.Ignored,QSizePolicy.Preferred)
+        self.camera_modes=QWidget();segments=QHBoxLayout(self.camera_modes);segments.setContentsMargins(0,0,0,0)
+        self.camera_mode_buttons=[]
+        for index,name in enumerate(('손동작 직접 제어','사람 추종')):
+            button=QPushButton(name);button.setCheckable(True)
+            button_style(button,'secondary','hand' if index==0 else 'eye')
+            button.clicked.connect(lambda checked=False,follow=index:self.navigate_camera(follow))
+            self.camera_mode_buttons.append(button);segments.addWidget(button)
+        segments.addStretch();outer.addWidget(self.camera_modes)
+        self.gesture_guide=QLabel();self.gesture_guide.setWordWrap(True);self.gesture_guide.setObjectName('gestureGuide')
+        outer.addWidget(self.gesture_guide)
         actions=QGridLayout()
         for i,(label,action) in enumerate([('목표 확정','CONFIRM'),('준비 [A]','ARM'),('재개 [R]','RESUME'),('일시정지','PAUSE'),('목표 해제','CLEAR')]):
             button=QPushButton(label);button.setObjectName(action);button.clicked.connect(lambda checked=False,a=action:self.action(a));actions.addWidget(button,i//3,i%3)
@@ -264,18 +313,21 @@ class Dashboard(QMainWindow):
         self.authorize=QCheckBox(ko('Authorize UDP connection only (does not authorize motor motion)'))
         connect_button=self.connect_button=QPushButton('ESP32 연결');connect_button.clicked.connect(self.connect_hardware)
         save_ip=QPushButton(ko('Save IP'));save_ip.clicked.connect(self.save_ip)
-        row.addWidget(self.host,1);row.addWidget(save_ip);row.addWidget(connect_button);cl.addLayout(row)
+        cl.addWidget(QLabel('ESP32 IPv4'));cl.addWidget(self.host)
+        row.addWidget(save_ip);row.addWidget(connect_button);cl.addLayout(row)
         radar_settings=QHBoxLayout()
         self.radar_host=QLineEdit(self.engine.cfg['radar']['source_ip'])
         self.radar_host.setPlaceholderText('레이더 Raspberry Pi IPv4')
         self.radar_host.setAccessibleName('레이더 Raspberry Pi IPv4')
         self.save_radar_button=QPushButton('Pi 주소 저장')
         self.save_radar_button.clicked.connect(self.save_radar_ip)
-        radar_settings.addWidget(QLabel('레이더 Pi'))
-        radar_settings.addWidget(self.radar_host,1)
+        radar_config_box=QGroupBox('레이더 Raspberry Pi');radar_config_layout=QVBoxLayout(radar_config_box)
+        radar_config_layout.addWidget(QLabel('Raspberry Pi IPv4'));radar_config_layout.addWidget(self.radar_host)
         radar_settings.addWidget(self.save_radar_button)
-        cl.addLayout(radar_settings)
-        outer.insertWidget(1,connect)
+        radar_config_layout.addLayout(radar_settings)
+        radar_note=QLabel('연결을 해제한 상태에서 저장하세요. 수신 주소를 저장해도 이동은 자동 허용되지 않습니다.')
+        radar_note.setWordWrap(True);radar_config_layout.addWidget(radar_note)
+        self.connection_settings=connect
         self.log_path=QLabel(ko(str(self.engine.logger.directory) if self.engine.logger else 'Logging disabled (test)'));self.log_path.setWordWrap(True)
         tl.addWidget(QLabel(ko('JSONL session log (10 Hz + operator events; no camera images):')));tl.addWidget(self.log_path)
         self.test_table=QTableWidget(7,3);self.test_table.setHorizontalHeaderLabels([ko(s) for s in ['Validation step','Operator result','Evidence / notes']])
@@ -333,14 +385,17 @@ class Dashboard(QMainWindow):
             if name in ('M1','M2','M3'):
                 self.wheel_buttons[name]=button;wheel_buttons.addWidget(button)
             else:
+                button.setProperty('role','direction')
                 self.test_buttons[name]=button;buttons.addWidget(button,row,col)
         stop_button=QPushButton(ko('STOP'));stop_button.setObjectName('estop');stop_button.clicked.connect(lambda:self.action('PAUSE'));buttons.addWidget(stop_button,1,1)
-        drive_columns=QHBoxLayout()
+        stop_button.setProperty('role','direction')
+        drive_columns=self.manual_columns=QSplitter(Qt.Horizontal);drive_columns.setChildrenCollapsible(False)
         jog_box=QGroupBox('직접 구동');jog_box.setLayout(buttons)
-        drive_columns.addWidget(jog_box, 4)
+        jog_box.setMinimumWidth(300);buttons.setSpacing(12)
+        drive_columns.addWidget(jog_box)
         motor_box=QGroupBox('바퀴 텔레메트리');motor_layout=QVBoxLayout(motor_box)
-        drive_columns.addWidget(motor_box, 6)
-        bl.addLayout(drive_columns)
+        motor_box.setMinimumWidth(300);drive_columns.addWidget(motor_box);drive_columns.setSizes([480,520])
+        bl.addWidget(drive_columns)
         self.bench_motors=QTableWidget(3,5);self.bench_motors.setHorizontalHeaderLabels(['바퀴','목표 RPM','실측 RPM','PWM','엔코더'])
         self.bench_motors.verticalHeader().hide()
         self.bench_motors.verticalHeader().setDefaultSectionSize(27)
@@ -372,16 +427,38 @@ class Dashboard(QMainWindow):
         self.motor_tab_index=self.tabs.addTab(scroll(bench),'직접 제어')
         self.follow_panel=FollowControlPanel(self.engine,self.host,self.disconnect)
         hand_controls=self.build_hand_control()
-        rl.addWidget(scroll(hand_controls))
+        hand_live=QWidget();live_layout=QVBoxLayout(hand_live);live_layout.setContentsMargins(0,0,0,0)
+        recognition=QGroupBox('인식 결과');recognition_layout=QVBoxLayout(recognition)
+        self.live_raw=QLabel('카메라 인식 대기');self.live_raw.setWordWrap(True)
+        self.live_confirmation=QLabel('지속 확인된 제스처 없음');self.live_confirmation.setWordWrap(True)
+        self.live_progress=QProgressBar();self.live_progress.setRange(0,100)
+        recognition_layout.addWidget(self.live_raw);recognition_layout.addWidget(self.live_progress)
+        recognition_layout.addWidget(self.live_confirmation);live_layout.addWidget(recognition)
+        applied_box=QGroupBox('실제 적용 상태');applied_layout=QVBoxLayout(applied_box)
+        applied_layout.addWidget(self.hand_summary)
+        self.live_applied=QLabel('장치 명령 · 전송 없음');self.live_applied.setWordWrap(True)
+        applied_layout.addWidget(self.live_applied)
+        applied_layout.addWidget(self.hand_enable);applied_layout.addWidget(self.hand_message)
+        live_layout.addWidget(applied_box)
+        mapping_button=QPushButton('손동작 매핑 · 인식 설정');mapping_button.clicked.connect(lambda:self.navigate(4))
+        live_layout.addWidget(mapping_button);live_layout.addStretch()
+        rl.addWidget(scroll(hand_live))
         follow_flow=QWidget();follow_layout=QVBoxLayout(follow_flow)
         follow_layout.addLayout(actions);follow_layout.addWidget(self.distance);follow_layout.addWidget(self.follow_panel)
+        follow_result=QGroupBox('인식 · 적용 상태');follow_result_layout=QVBoxLayout(follow_result)
+        self.follow_readout=QLabel('추종 인식 대기');self.follow_readout.setWordWrap(True)
+        follow_result_layout.addWidget(self.follow_readout);follow_layout.addWidget(follow_result)
         follow_layout.addWidget(self.tracking);follow_layout.addStretch()
         self.follow_tab_index=self.tabs.addTab(split,'손동작 제어')
         self.people_split=QSplitter(Qt.Horizontal);self.people_split.addWidget(scroll(follow_flow))
         self.people_tab_index=self.tabs.addTab(self.people_split,'사람 추종')
         for action in ('CONFIRM','ARM','RESUME'):
             central.findChild(QPushButton,action).hide()
-        self.language_panel=NaturalControlPanel(self.engine,self.host,lambda:self.action('ESTOP'))
+        if self.agent:
+            from python_controller.visualization.agent_panel import AgentPanel
+            self.language_panel=AgentPanel(self.agent,self.navigate_page)
+        else:
+            self.language_panel=NaturalControlPanel(self.engine,self.host,lambda:self.action('ESTOP'))
         self.language_tab_index=self.tabs.addTab(scroll(self.language_panel),'자연어 제어')
         self.diagnosis_pages=QTabWidget()
         self.diagnosis_pages.addTab(scroll(diagnostic_box),'연결')
@@ -416,10 +493,38 @@ class Dashboard(QMainWindow):
         self.recovery_notice=QLabel('실제 적용 정책과 수명 설정은 ESP32 응답으로 확인합니다. 복구 후에는 새 입력이 필요합니다.')
         self.recovery_notice.setWordWrap(True);recovery_layout.addWidget(self.recovery_notice);recovery_layout.addStretch()
         self.diagnosis_pages.addTab(scroll(recovery_page),'엔코더·복구')
+        settings_page=QWidget();settings_layout=QVBoxLayout(settings_page)
+        self.settings_columns=QSplitter(Qt.Horizontal);self.settings_columns.setChildrenCollapsible(False)
+        settings_layout.addWidget(self.settings_columns)
+        settings_left=QWidget();settings_left_layout=QVBoxLayout(settings_left);settings_left_layout.setContentsMargins(0,0,0,0)
+        settings_right=QWidget();settings_right_layout=QVBoxLayout(settings_right);settings_right_layout.setContentsMargins(0,0,0,0)
+        self.settings_columns.addWidget(settings_left);self.settings_columns.addWidget(settings_right)
+        settings_left_layout.addWidget(connect);settings_right_layout.addWidget(radar_config_box)
+        self.tracking_settings_area=self.diagnosis_pages.widget(5)
+        self.tracking_settings_area.takeWidget()
+        settings_right_layout.addWidget(self.follow_panel.settings)
+        settings_left_layout.addWidget(hand_controls)
+        self.hand_apply=QPushButton('손동작 설정 적용')
+        if self.agent:
+            self.hand_apply.clicked.connect(lambda:self.enable_hand_drive(activate=False))
+        else:
+            self.hand_apply.clicked.connect(self.hand_enable.click)
+        hand_controls.layout().addRow(self.hand_apply)
+        settings_left_layout.addStretch();settings_right_layout.addStretch()
+        settings_layout.addStretch()
+        # Preserve the legacy diagnostic tab index with a link to the moved settings.
+        settings_shortcut=QPushButton('인식·추종 설정 열기')
+        settings_shortcut.clicked.connect(lambda:self.navigate(4))
+        self.tracking_settings_area.setWidget(settings_shortcut)
+        self.settings_tab_index=self.workspaces.addTab(scroll(settings_page),'설정')
+        self.workspaces.tabBar().hide();self.tabs.tabBar().hide()
+        self.tabs.setCurrentIndex(self.language_tab_index)
         self.tabs.currentChanged.connect(self.select_page_mode)
         self.workspaces.currentChanged.connect(self.select_page_mode)
         self.diagnosis_pages.currentChanged.connect(self.select_page_mode)
         self.authorize.hide()
+        outer.addWidget(self.pipeline)
+        self.sync_navigation()
         self.setCentralWidget(central)
         QApplication.instance().installEventFilter(self)
 
@@ -522,9 +627,14 @@ class Dashboard(QMainWindow):
                     hold=self.hand_hold.value(),
                     mapping={'Closed_Fist':'STOP',**{name:box.currentData() for name,box in self.hand_mapping.items()}})
 
-    def enable_hand_drive(self):
+    def enable_hand_drive(self, *, activate=True):
         try:
-            self.engine.configure_hand(**self.hand_settings())
+            with self.engine.control_lock:
+                if self.agent and activate and self.engine.c.estop_latched:
+                    raise ValueError('AI 대화 화면에서 긴급 정지 상태를 먼저 확인하세요.')
+                if self.agent and (self.engine.language.executing or (self.engine.client and self.engine.client.active)):
+                    raise ValueError('현재 제어가 정지한 뒤 손동작 설정을 적용하세요.')
+                self.engine.configure_hand(activate=activate, **self.hand_settings())
             self.hand_message.clear()
         except (OSError,ValueError) as exc:
             self.hand_message.setText(str(exc))
@@ -535,7 +645,9 @@ class Dashboard(QMainWindow):
         if event.type()==QEvent.KeyPress and isinstance(watched,QWidget) and (watched is self or self.isAncestorOf(watched)):
             editing=isinstance(QApplication.focusWidget(),(QLineEdit,QPlainTextEdit,QComboBox,QTableWidget))
             if event.key()==Qt.Key_Space:
-                if QApplication.focusWidget() is self.language_panel.command and not self.engine.language.executing:
+                session=self.engine.shared_session if self.agent else None
+                motion_permitted=bool(session and (session.armed or session.active or session.distance_leased))
+                if QApplication.focusWidget() is self.language_panel.command and not self.engine.language.executing and not motion_permitted:
                     return super().eventFilter(watched,event)
                 self.action('ESTOP')
                 return not isinstance(QApplication.focusWidget(),(QLineEdit,QPlainTextEdit))
@@ -559,7 +671,8 @@ class Dashboard(QMainWindow):
         if action=='ESTOP':
             self.held_direction=None
             self.pending_direct=None
-        self.engine.request(action)
+        if action=='ESTOP' and self.agent:self.agent.emergency()
+        else:self.engine.request(action)
         self.language_panel.refresh()
         if action=='ESTOP':self.pipeline.setText(ko('EMERGENCY STOP LATCHED / explicit re-arm required'))
 
@@ -597,19 +710,77 @@ class Dashboard(QMainWindow):
 
     def select_page_mode(self, *_):
         self.end_motor_hold()
+        self._show_page()
+        if self.agent:
+            return
+        workspace=self.workspaces.currentIndex()
+        if workspace==self.settings_tab_index:
+            mode=None
+        elif workspace==self.diagnostic_tab_index:
+            mode='MOTOR_TEST' if self.diagnosis_pages.currentIndex()==4 else None
+        else:
+            mode={self.motor_tab_index:'DIRECT_CONTROL',self.follow_tab_index:'GESTURE_DIRECT',
+                  self.people_tab_index:'GESTURE_FOLLOW',self.language_tab_index:'LLM_COMMAND'}[self.tabs.currentIndex()]
+        if mode is not None:
+            try:self.engine.select_control_mode(mode)
+            except ValueError as exc:self.statusBar().showMessage(str(exc),3000)
+
+    def _show_page(self):
+        self.sync_navigation()
         if self.tabs.currentIndex() in (self.follow_tab_index,self.people_tab_index):
             split=self.people_split if self.tabs.currentIndex()==self.people_tab_index else self.hand_split
             split.insertWidget(0,self.camera_column)
             split.setSizes([700,470])
-        mode=('MOTOR_TEST' if self.diagnosis_pages.currentIndex()==4 else None) if self.workspaces.currentIndex()==1 else {
-            self.motor_tab_index:'DIRECT_CONTROL',self.follow_tab_index:'GESTURE_DIRECT',
-            self.people_tab_index:'GESTURE_FOLLOW',self.language_tab_index:'LLM_COMMAND'}[self.tabs.currentIndex()]
-        if mode is None:
-            return
+
+    def request_operator_mode(self):
         try:
-            self.engine.select_control_mode(mode)
+            self.end_motor_hold()
+            self.engine.select_control_mode(self.control_mode_choice.currentData(),auto_arm=False)
         except ValueError as exc:
             self.statusBar().showMessage(str(exc),3000)
+
+    def _select_page_widgets(self, page):
+        with QSignalBlocker(self.workspaces), QSignalBlocker(self.tabs), QSignalBlocker(self.diagnosis_pages):
+            if page in (3,4):
+                if page==3:self.diagnosis_pages.setCurrentIndex(0)
+                self.workspaces.setCurrentIndex(self.diagnostic_tab_index if page==3 else self.settings_tab_index)
+            else:
+                self.workspaces.setCurrentIndex(0)
+                self.tabs.setCurrentIndex({0:self.language_tab_index,1:self.follow_tab_index,2:self.motor_tab_index}[page])
+
+    def navigate(self, page):
+        self._select_page_widgets(page)
+        self.select_page_mode()
+
+    def navigate_page(self, page):
+        if self.held_direction is not None or self.pending_jog is not None:
+            self.statusBar().showMessage('수동 입력 해제 후 화면을 이동하세요.',3000)
+            return
+        self._select_page_widgets(('ai_chat','camera','manual','diagnostics','settings').index(page))
+        self._show_page()
+
+    def navigate_camera(self, follow):
+        with QSignalBlocker(self.workspaces), QSignalBlocker(self.tabs):
+            self.workspaces.setCurrentIndex(0)
+            self.tabs.setCurrentIndex(self.people_tab_index if follow else self.follow_tab_index)
+        self.select_page_mode()
+
+    def sync_navigation(self):
+        workspace=self.workspaces.currentIndex()
+        page=4 if workspace==getattr(self,'settings_tab_index',-1) else 3 if workspace==self.diagnostic_tab_index else {
+            self.language_tab_index:0,self.follow_tab_index:1,self.people_tab_index:1,self.motor_tab_index:2}[self.tabs.currentIndex()]
+        for i,button in enumerate(self.nav_buttons):button.setChecked(i==page)
+        self.page_title.setText(self.nav_buttons[page].text())
+        self.camera_modes.setVisible(page==1);self.gesture_guide.setVisible(page==1)
+        follow=self.tabs.currentIndex()==self.people_tab_index
+        for i,button in enumerate(self.camera_mode_buttons):button.setChecked(i==int(follow))
+        mapping=self.engine.cfg['gesture']['mapping'] if follow else self.engine.hand.mapping
+        directions={'FORWARD':'전진','BACKWARD':'후진','LEFT':'좌측','RIGHT':'우측','TURN_LEFT':'좌회전','TURN_RIGHT':'우회전','STOP':'정지',
+                    'RESUME':'재개','PAUSE':'일시 정지','CLOSER':'목표 간격 감소','FARTHER':'목표 간격 증가'}
+        guide='   ·   '.join(f'{ko(gesture)} → {directions.get(direction,ko(direction))}' for gesture,direction in mapping.items())
+        if not follow and self.hand_settings()['mapping']!=mapping:
+            guide+='\n설정 변경 미적용 · 설정 화면에서 “손동작 설정 적용”을 누르세요.'
+        self.gesture_guide.setText(guide)
 
     def disconnect(self):
         self.end_motor_hold();self.pending_direct=None
@@ -648,6 +819,8 @@ class Dashboard(QMainWindow):
 
     def start_motor_test(self,direction):
         try:
+            if self.agent and self.engine.c.estop_latched:
+                raise ValueError('AI 대화 화면에서 긴급 정지 상태를 먼저 확인하세요.')
             if self.held_direction is None:
                 session = self.engine.shared_session
                 if session and direction in self.test_buttons:
@@ -664,6 +837,8 @@ class Dashboard(QMainWindow):
 
     def start_turn_trial(self):
         try:
+            if self.agent and self.engine.c.estop_latched:
+                raise ValueError('AI 대화 화면에서 긴급 정지 상태를 먼저 확인하세요.')
             self.engine.operator_alive()
             self.engine.begin_hold('TURN_LEFT', timed_trial=True)
         except (OSError,ValueError) as exc:
@@ -679,7 +854,8 @@ class Dashboard(QMainWindow):
             self.engine.end_hold()
 
     def _jog_available(self, transport, *, waiting=False):
-        return bool(self.engine.client_owner=='DIRECT_CONTROL' and not self.engine.pending_mode and
+        return bool(not (self.agent and self.engine.c.estop_latched) and
+                    self.engine.client_owner=='DIRECT_CONTROL' and not self.engine.pending_mode and
                     not self.engine.release_future and not movement_block(transport) and
                     (transport.get('reason')=='HOLD_RELEASED' if waiting else
                      transport.get('ready') and transport.get('stop_verified')))
@@ -739,34 +915,60 @@ class Dashboard(QMainWindow):
             self.action('ESTOP');self.pipeline.setText(ko(f'UI ERROR / STOP LATCHED: {type(exc).__name__}: {exc}'))
 
     def update_camera(self, d, result, capture, now):
-        if result and d['perception_fresh']:
-            frame_key=('inference',result['completed_at'])
+        timeout=self.engine.cfg['safety']['perception_timeout_s']
+        has_capture=capture is not None and 0<=now-capture[1]<=timeout
+        health=d.get('pipeline_health') or {}
+        camera_failed=health.get('camera')=='CAMERA_ERROR'
+        result_age=now-result['frame'].timestamp if result else None
+        fresh=result_age is not None and 0<=result_age<=timeout and d['perception_fresh']
+        shown=self.last_image_at
+        holding_recent_inference=(shown is not None and shown[0]=='inference'
+                                  and timeout<now-shown[2]<=self.CAMERA_PREVIEW_HOLD_S)
+        hold_preview=(has_capture and not camera_failed and not self.stream.error and not self.engine.error
+                      and (not health.get('tracking_error') or d.get('control_source')=='GESTURE_DIRECT')
+                      and holding_recent_inference)
+        if fresh and not camera_failed:
+            frame_key=('inference',result['completed_at'],result['frame'].timestamp)
             status=ko(f'People {d["detected_people"]} | FPS {text(d["fps"],1)} | Processing {text(d["processing_ms"],1)} ms | Frame age {text(d["frame_age_s"])} s')
             if frame_key!=self.last_image_at:
                 self.camera.set_frame(result,d['target_id'])
-        elif capture is not None and 0<=now-capture[1]<=self.engine.cfg['safety']['perception_timeout_s']:
+        elif hold_preview:
+            frame_key=shown
+            self.camera.people=()
+            status='인식 결과 지연 · 마지막 인식 영상 표시 중 · 대상 선택 불가'
+        elif has_capture and not camera_failed:
             image, timestamp, _ = capture
             frame_key=('raw',timestamp)
             if frame_key!=self.last_image_at:
                 self.camera.show_capture(image)
-            detail=(d.get('pipeline_health') or {}).get('tracking_error') or ko(self.stream.status)
+            detail=health.get('tracking_error') or ko(self.stream.status)
             status=f'원본 영상 수신 중 · 인식 결과 대기 · {detail}'
         else:
             frame_key=None
-            status='카메라 오류' if (d.get('pipeline_health') or {}).get('camera')=='CAMERA_ERROR' else '새 카메라 프레임 대기 중'
+            status='카메라 오류' if camera_failed else '새 카메라 프레임 대기 중'
             if self.last_image_at is not None:
                 self.camera.clear_capture()
         self.last_image_at=frame_key
         self.camera_status.setText(status)
+        self.camera_status.setToolTip(status)
+        if self.engine.source!='LIVE_CAMERA':
+            badge='카메라 · 합성'
+        elif camera_failed:
+            badge='카메라 · 오류'
+        else:
+            badge='카메라 · 수신 중' if self.camera.image is not None else '카메라 · 대기'
+        self.camera_badge.setText(badge)
 
     def update_display(self,d,result,capture=None):
         self.last_data=d;now=time.monotonic();tr=d['transport'];g=d['gesture'];v=d['vision']
+        self.sync_navigation()
+        self.connection_badge.setText('ESP32 · '+('연결됨' if tr.get('connected') else '미연결'))
         radar = tr.get('radar') or d.get('radar')
         if radar:
             if radar['blocked']:
                 self.held_direction = self.pending_jog = None
             reason = ko(radar['reason'])
-            action = '이동 차단' if radar['blocked'] else '새 입력 허용'
+            action = '새 입력 허용' if (not radar['blocked'] and tr.get('ready') and tr.get('stop_verified') and not movement_block(tr)) else '이동 차단'
             proof = ('ESP32 정지 확인' if tr.get('stop_verified') else 'ESP32 정지 미확인')
             age_ms = None if radar['age_s'] is None else radar['age_s']*1000
             self.radar_status.setText(
@@ -774,8 +976,12 @@ class Dashboard(QMainWindow):
             self.radar_rearm.setEnabled(bool(self.engine.shared_session and radar['blocked'] and
                 radar['state']=='CLEAR' and tr.get('stop_verified') and not self.engine.language.executing))
         else:
-            self.radar_status.setText('레이더 · ESP32 연결 대기')
+            self.radar_status.setText('레이더 UNKNOWN · 이동 차단 · ESP32 연결 대기 · 정지 미확인')
             self.radar_rearm.setEnabled(False)
+        radar_color='danger' if radar and radar['state']=='EVADE' else 'warning' if not radar or action=='이동 차단' else 'success'
+        if self.radar_status.property('status')!=radar_color:
+            self.radar_status.setProperty('status',radar_color)
+            self.radar_status.style().unpolish(self.radar_status);self.radar_status.style().polish(self.radar_status)
         generation=tr.get('recovery_generation')
         if generation is not None:
             if generation!=getattr(self,'_displayed_recovery_generation',generation):
@@ -788,6 +994,11 @@ class Dashboard(QMainWindow):
         hand_state=d.get('hand_control')
         natural=self.engine.language.executing
         self.language_panel.refresh()
+        if self.agent:
+            self.control_mode_button.setEnabled(bool(self.engine.shared_session and not self.engine.release_future))
+            if self.engine.control_generation != self.input_control_generation:
+                self.input_control_generation = self.engine.control_generation
+                self.held_direction = self.pending_jog = self.pending_direct = None
         self.follow_panel.refresh(tr)
         mode_label={'LLM_COMMAND':'실제 장치 · 자연어 시험',
                     'MANUAL_MOTOR_TEST':'실제 장치 · 수동 시험',
@@ -812,6 +1023,7 @@ class Dashboard(QMainWindow):
         self.connect_button.setEnabled(not self.engine.client and not natural and self.engine.source=='LIVE_CAMERA')
         self.hand_host.setEnabled(self.host.isEnabled())
         self.hand_enable.setEnabled(not natural and not (self.engine.client and self.engine.client.active))
+        self.hand_apply.setEnabled(self.hand_enable.isEnabled())
         for widget in (*self.hand_mapping.values(),self.hand_confidence,self.hand_frames,self.hand_hold):widget.setEnabled(not hand)
         if not hand and d['frame_at'] is not None:
             options=self.hand_settings()
@@ -829,6 +1041,9 @@ class Dashboard(QMainWindow):
             self.hand_summary.setText(f'{"" if hand else "미리보기 · "}{reason} · {ko(hand_state.get("label") or "없음")} · '
                                       f'신뢰도 {text(hand_state.get("confidence"),2)} · '
                                       f'{hand_state["elapsed"]:.2f}초 / {hand_state["frames"]}프레임 · {ko(hand_state["direction"])}')
+        applied=d['safe']
+        self.live_applied.setText('장치 명령 · 전송 없음 (미리보기)' if not self.engine.client else
+            f'안전 적용 명령 · 전후 {applied["vx_cm_s"]:+.2f} · 좌우 {applied["vy_cm_s"]:+.2f} cm/s · 회전 {applied["w_rad_s"]:+.3f} rad/s\n{ko(d["stop_reason"])}')
         for action in ('ARM','RESUME'):
             self.findChild(QPushButton,action).setEnabled(not (manual or hand or natural))
         restriction='MULTIPLE PERSONS DETECTED - GESTURE CONTROL BLOCKED' if d['detected_people']>1 and not hand else ''
@@ -837,6 +1052,7 @@ class Dashboard(QMainWindow):
         if self.engine.client or natural:
             fault=(d.get('telemetry') or tr.get('last_rx_json') or {}).get('fault')
             self.pipeline.setText(self.pipeline.text()+f' | 장치 Fault: {text(fault)} | 수신 검증: {text(tr.get("validation_detail"))}')
+        self.pipeline.setToolTip(self.pipeline.text())
         self.distance.setText(ko(f'Relative height target: {d["desired_height_ratio"]:.2f} (uncalibrated)'))
         self.update_camera(d,result,capture,now)
         def age(timestamp):return max(0,now-timestamp) if timestamp is not None else None
@@ -846,6 +1062,18 @@ class Dashboard(QMainWindow):
         raw_labels='\n'.join(f'{ko(r["name"])} / 신뢰도 {r["confidence"]:.2f} / 연결 목표 {text(r["associated_target"])}' for r in v['raw'])
         samples=', '.join(f'{ko(r["name"])} {r["confidence"]:.2f}' for r in v['raw']) or '미인식'
         self.hand_readout.setText(f'손 {v["hand_count"]}개 · {samples}')
+        self.hand_readout.setToolTip(self.hand_readout.text())
+        self.live_raw.setText('최초 인식 · '+samples+('' if d['perception_fresh'] else ' · 영상 만료 / 인식 미확인'))
+        follow_view=self.tabs.currentIndex()==self.people_tab_index
+        confirmed=g.get('confirmed') if follow_view else (hand_state or {}).get('label') if (hand_state or {}).get('reason')=='GESTURE_DRIVING' else None
+        frames=g.get('frames',0) if follow_view else (hand_state or {}).get('frames',0)
+        required=self.engine.cfg['gesture']['min_frames'] if follow_view else self.hand_frames.value()
+        progress=g.get('progress',0) if follow_view else min(1,(hand_state or {}).get('elapsed',0)/self.hand_hold.value(),frames/required)
+        self.live_progress.setValue(round(progress*100))
+        self.live_confirmation.setText(f'지속 확인 · {ko(confirmed or "없음")} · {frames} / {required} 프레임')
+        self.follow_readout.setText(f'최초 인식 · {samples}\n지속 확인 · {ko(g.get("confirmed") or "없음")}\n'
+            f'적용 명령 · {ko(g.get("applied_action") or "없음")}\n'
+            f'보류 / 정지 · {ko(movement_block(tr) or g.get("rejection") or d["stop_reason"])}')
         self.raw.update_values({'Hands':v['hand_count'],'Raw labels / confidence / owner':raw_labels or '없음','Sample age (s)':age(v.get('recognized_at'))})
         self.confirmed.update_values({'Current confirmation':g.get('confirmed') or 'NOT CONFIRMED',
             'Time / required (s)':f'{g.get("elapsed_s",0):.2f} / {g.get("required_s",0):.2f}',
@@ -911,7 +1139,7 @@ class Dashboard(QMainWindow):
         last=trial or (history[-1] if history else None)
         shared=self.engine.shared_session
         if shared:
-            session_ok=not movement_block(tr)
+            session_ok=not movement_block(tr) and not (self.agent and self.engine.c.estop_latched)
             ready=not self.engine.pending_mode and not self.engine.release_future and tr.get('stop_verified',False) and tr.get('ready',False) and session_ok
             jog_ready = self._jog_available(tr)
             jog_wait = self._jog_available(tr, waiting=True)
@@ -1020,27 +1248,24 @@ class Dashboard(QMainWindow):
         if self.communication_text.toPlainText()!=value:self.communication_text.setPlainText(value)
 
     def apply_style(self):
-        self.setStyleSheet('''
-          QMainWindow,QWidget { background:#111923; color:#dfE7f0; font-family:Malgun Gothic; font-size:12px; }
-          QLabel#title { font-size:17px; font-weight:700; letter-spacing:1px; }
-          QLabel#mode { background:#654719; color:#ffda91; padding:8px; border-radius:5px; font-weight:700; }
-          QLabel#mode[hardware="true"] { background:#772c35; color:#ffe0e2; }
-          QGroupBox { background:#1a2533; border:1px solid #2d3d50; border-radius:6px; margin-top:12px; padding:12px 8px 6px; font-weight:600; }
-          QGroupBox::title { subcontrol-origin:margin; left:10px; color:#83b8f9; }
-          QGroupBox QLabel { background:transparent; font-weight:400; }
-          QPushButton { background:#293e55; border:1px solid #3a5571; padding:9px 12px; border-radius:4px; }
-          QPushButton:hover { background:#365573; }
-          QPushButton:pressed { background:#406f92; border-color:#95c7ff; }
-          QPushButton:disabled { background:#1a2634; border-color:#293849; color:#66788e; }
-          QPushButton#estop { background:#ba3e48; border:1px solid #df626c; color:white; font-weight:700; }
-          QTabWidget::pane { border:1px solid #2d3d50; }
-          QTabBar::tab { padding:10px 22px; background:#172332; }
-          QTabBar::tab:selected { color:#9dcaff; background:#26394f; }
-          QLineEdit,QPlainTextEdit,QComboBox,QTableWidget { background:#101923; border:1px solid #34465d; padding:6px; }
-          QHeaderView::section { background:#26394f; color:#dfe7f0; padding:8px; border:0; }
-          QProgressBar { border:1px solid #34465d; text-align:center; height:18px; }
-          QProgressBar::chunk { background:#3f86bd; }
-        ''')
+        for button in self.findChildren(QPushButton):
+            if button.objectName()=='estop':button_style(button,'danger','stop')
+            elif button.property('variant') is None:button_style(button)
+        for button,svg in ((self.connect_button,'plug'),(self.release_control,'link'),(self.radar_rearm,'shield'),
+                           (self.hand_enable,'hand'),(self.follow_panel.connect_button,'play'),(self.save_radar_button,'settings')):
+            button_style(button,'secondary',svg)
+        for name,svg in (('FORWARD','arrow-up'),('BACKWARD','arrow-down'),('LEFT','arrow-left'),('RIGHT','arrow-right'),('TURN_LEFT','rotate-left'),('TURN_RIGHT','rotate-right')):
+            button=self.test_buttons[name];button_style(button,'secondary',svg)
+            button.setText({'FORWARD':'전진','BACKWARD':'후진','LEFT':'좌측','RIGHT':'우측','TURN_LEFT':'좌회전','TURN_RIGHT':'우회전'}[name])
+            button.setMinimumHeight(76)
+        self.setStyleSheet(stylesheet())
+
+    def resizeEvent(self,event):
+        super().resizeEvent(event)
+        if hasattr(self,'manual_columns'):
+            orientation=Qt.Vertical if self.width()<1150 else Qt.Horizontal
+            for splitter in (self.manual_columns,self.settings_columns,self.language_panel.columns):
+                splitter.setOrientation(orientation)
 
     def closeEvent(self,event):
         if not self.closing:
@@ -1052,9 +1277,9 @@ class Dashboard(QMainWindow):
         event.accept()
 
 
-def run_dashboard(config,hardware=False,preview=False,smoke_seconds=None):
+def run_dashboard(config,hardware=False,preview=False,smoke_seconds=None,agent_enabled=False):
     app=QApplication.instance() or QApplication([])
-    window=Dashboard(config,hardware,preview)
+    window=Dashboard(config,hardware,preview,agent_enabled=agent_enabled)
     window.show()
     if smoke_seconds is not None:QTimer.singleShot(int(smoke_seconds*1000),window.close)
     previous=signal.getsignal(signal.SIGINT)

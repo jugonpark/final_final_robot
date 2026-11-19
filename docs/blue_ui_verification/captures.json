@@ -1,0 +1,143 @@
+{
+  "source": "SYNTHETIC_PREVIEW",
+  "network": "socket creation prohibited",
+  "radar_scenarios": "display-only injected snapshots",
+  "hardware": "NOT TESTED",
+  "captures": [
+    {
+      "file": "ai_chat_940x680.png",
+      "size": [
+        940,
+        680
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "camera_gestures_940x680.png",
+      "size": [
+        940,
+        680
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "manual_940x680.png",
+      "size": [
+        940,
+        680
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "diagnostics_940x680.png",
+      "size": [
+        940,
+        680
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "settings_940x680.png",
+      "size": [
+        940,
+        680
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "ai_chat_1320x920.png",
+      "size": [
+        1320,
+        920
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "camera_gestures_1320x920.png",
+      "size": [
+        1320,
+        920
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "manual_1320x920.png",
+      "size": [
+        1320,
+        920
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "diagnostics_1320x920.png",
+      "size": [
+        1320,
+        920
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "settings_1320x920.png",
+      "size": [
+        1320,
+        920
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "ai_chat_1600x980.png",
+      "size": [
+        1600,
+        980
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "camera_gestures_1600x980.png",
+      "size": [
+        1600,
+        980
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "manual_1600x980.png",
+      "size": [
+        1600,
+        980
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "diagnostics_1600x980.png",
+      "size": [
+        1600,
+        980
+      ],
+      "estop": true,
+      "radar": true
+    },
+    {
+      "file": "settings_1600x980.png",
+      "size": [
+        1600,
+        980
+      ],
+      "estop": true,
+      "radar": true
+    }
+  ]
+}

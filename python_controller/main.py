@@ -119,7 +119,10 @@ def main(argv=None):
     parser.add_argument('--config',help='JSON overrides; defaults are always merged')
     parser.add_argument('--mode',choices=('SIMULATION','HARDWARE'),default='SIMULATION')
     parser.add_argument('--demo',action='store_true',help='Synthetic, headless, dependency-free control demo; never sends UDP')
-    parser.add_argument('--ui',choices=('opencv','dashboard'),default='opencv',help='Dashboard is the default in run_simulation.bat; OpenCV retained for compatibility')
+    parser.add_argument('--ui',choices=('opencv','dashboard','web'),default='opencv',help='Select the OpenCV, Qt or local web console')
+    parser.add_argument('--web-camera',action='store_true',help='Use the local camera in the web simulation instead of the synthetic preview')
+    parser.add_argument('--web-port',type=int,default=8765,help='Local web console port')
+    parser.add_argument('--agent-enabled',action='store_true',help='Enable the opt-in unified conversation agent')
     parser.add_argument('--dashboard-preview',action='store_true',help='Clearly labeled synthetic dashboard; no hardware allowed')
     parser.add_argument('--smoke-seconds',type=float,help='Close dashboard after this many seconds (0.1 to 60)')
     parser.add_argument('--esp32-host',help='Numeric ESP32 IPv4 address; never the laptop IP')
@@ -133,16 +136,23 @@ def main(argv=None):
         parser.error('HARDWARE requires --esp32-host and --acknowledge-hardware-risk; --demo cannot use HARDWARE')
     if args.mode=='HARDWARE' and args.ui!='dashboard':
         parser.error('Hardware control requires --ui dashboard')
+    if args.web_camera and args.ui!='web':
+        parser.error('--web-camera requires --ui web')
+    if args.agent_enabled and (args.demo or args.ui not in ('dashboard','web')):
+        parser.error('--agent-enabled requires --ui dashboard or --ui web')
     try:
-        config = load_config(args.config, radar_path=RADAR_SETTINGS if args.ui=='dashboard' else None)
+        config = load_config(args.config, radar_path=RADAR_SETTINGS if args.ui in ('dashboard','web') else None)
         if args.esp32_host: config['communication']['host'] = args.esp32_host
         for key in ('model_path','gesture_model_path'):
             p = Path(config['vision'][key])
             if not p.is_absolute(): config['vision'][key] = str(ROOT/p)
         if args.demo: return demo(config)
+        if args.ui=='web':
+            from python_controller.web_dashboard import run_web_dashboard
+            return run_web_dashboard(config,camera=args.web_camera,port=args.web_port,agent_enabled=args.agent_enabled)
         if args.ui=='dashboard':
             from python_controller.visualization.dashboard import run_dashboard
-            return run_dashboard(config,args.mode=='HARDWARE',args.dashboard_preview,args.smoke_seconds)
+            return run_dashboard(config,args.mode=='HARDWARE',args.dashboard_preview,args.smoke_seconds,args.agent_enabled)
         return run(config,args.mode=='HARDWARE')
     except (ValueError,OSError,ImportError) as exc:
         print(f'STOP: {exc}')

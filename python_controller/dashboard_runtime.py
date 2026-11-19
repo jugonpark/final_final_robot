@@ -194,11 +194,14 @@ class DashboardEngine:
         self.client_owner=None
         self.hand = HandDrive()
         self.hand_armed_once = False
+        self.hand_requires_activation = False
         self.hand_connected_at = None
         self.follow_auto_arm = False
         self.language_authorized_host = None
         self.release_future = None
         self.pending_mode = None
+        self.pending_mode_auto_arm = True
+        self.control_generation = 0
         self.central_ui = False
         from python_controller.llm.central_control import NaturalControl
         self.language = NaturalControl(folder, config['motor_test']['ui_lease_s'])
@@ -298,7 +301,7 @@ class DashboardEngine:
         self.pending = None
         self.hand.reset()
         self.hand_connected_at = session.clock()
-        self.hand_armed_once = False
+        self.hand_armed_once = self.c.estop_latched or self.hand_requires_activation
         self.radar_neutral_required = True
         self.follow_auto_arm = False
         self.notice = '레이더 CLEAR 확인 · 새 이동 입력 대기'
@@ -321,15 +324,17 @@ class DashboardEngine:
         return self.shared_session.set_encoder_policy(policy)
 
     @control_locked
-    def configure_hand(self, **settings):
+    def configure_hand(self, *, activate=True, **settings):
         hand = HandDrive(**settings)
         client = self.shared_session
         if client and self.client_owner == 'GESTURE_DIRECT':
             client.stop('HAND_SETTINGS_CHANGED')
             self.hand_connected_at = client.clock()
+            if activate:
+                self.c.estop_latched = False
         self.hand = hand
-        self.hand_armed_once = False
-        self.c.estop_latched = False
+        self.hand_requires_activation = not activate
+        self.hand_armed_once = not activate or self.c.estop_latched
 
     @control_locked
     def connect_robot(self, host):
@@ -371,7 +376,7 @@ class DashboardEngine:
                                    host=host, controller_owner=self.client_owner), True)
 
     @control_locked
-    def select_control_mode(self, mode):
+    def select_control_mode(self, mode, *, auto_arm=True):
         from python_controller.communication.robot_session import CONTROL_MODES
         if mode not in CONTROL_MODES:
             raise ValueError('지원하지 않는 제어 기능입니다.')
@@ -385,7 +390,9 @@ class DashboardEngine:
         if self.language.executing:
             self.language.cancel()
         client.stop('MODE_CHANGE')
+        self.control_generation += 1
         self.pending_mode = mode
+        self.pending_mode_auto_arm = auto_arm
         self.pending = None
         self.c.halt('PAUSED', 'MODE_CHANGE', True)
         self.notice = '기능 전환 중 · 정지 응답 대기'
@@ -398,15 +405,16 @@ class DashboardEngine:
         if not status['stop_verified'] or not status['ready']:
             return
         mode = self.pending_mode
+        allow_auto_arm = self.pending_mode_auto_arm and not self.c.estop_latched
         client.select_mode(mode)
         self.pending_mode = None
         self.client_owner = mode
         self.c.halt('PAUSED', 'MODE_READY', True)
-        self.c.estop_latched = False
         self.hand.reset()
-        self.hand_armed_once = False
+        self.hand_requires_activation = mode == 'GESTURE_DIRECT' and not self.pending_mode_auto_arm
+        self.hand_armed_once = not allow_auto_arm
         self.hand_connected_at = client.clock()
-        self.follow_auto_arm = mode == 'GESTURE_FOLLOW'
+        self.follow_auto_arm = allow_auto_arm and mode == 'GESTURE_FOLLOW'
         self.notice = '제어 기능 준비됨'
         if self.logger:
             self.logger.write(dict(event='CONTROL_MODE_CHANGED', controller_owner=mode,
@@ -527,6 +535,7 @@ class DashboardEngine:
         self.language_authorized_host = None
         self.client, self.client_owner = client, 'GESTURE_DIRECT'
         self.hand, self.hand_armed_once = hand, False
+        self.hand_requires_activation = False
         self.hand_connected_at = client.clock()
         self.c.hardware = True
         self.c.estop_latched = False
@@ -602,7 +611,7 @@ class DashboardEngine:
         self.request('RESUME')
 
     @control_locked
-    def start_natural_motion(self, host, prepared):
+    def start_natural_motion(self, host, prepared, *, validated_plan=None, session_guard=None):
         if self.source != 'LIVE_CAMERA':
             raise ValueError('합성 미리보기에서 실제 장치 실행은 차단됩니다.')
         if self.shared_session:
@@ -612,10 +621,18 @@ class DashboardEngine:
             if (self.client_owner != 'LLM_COMMAND' or self.pending_mode or self.release_future or
                 self.shared_session.host != host or not self.shared_session.snapshot()['stop_verified']):
                 raise ValueError('자연어 제어로 전환하고 ESP32 정지 응답을 확인하세요.')
-            self.language.start_motion(host, True, session=self.shared_session)
+            if validated_plan is not None:
+                if not self.central_ui or session_guard is None or self.c.estop_latched:
+                    raise ValueError('Agent 실행 승인과 정지 상태를 확인하세요.')
+                self.language.start_motion(host, prepared, session=self.shared_session,
+                                           validated_plan=validated_plan, session_guard=session_guard)
+            else:
+                self.language.start_motion(host, True, session=self.shared_session)
             self.c.estop_latched = False
             self.pending = None
             return
+        if validated_plan is not None:
+            raise ValueError('기존 중앙 제어 세션이 필요합니다.')
         if self.client:
             raise ValueError('모터 동작 시험의 UDP 연결을 먼저 해제하세요.')
         self.language.previous = self._previous_session(host)
@@ -705,6 +722,10 @@ class DashboardEngine:
 
     @control_locked
     def request(self,action,target_id=None):
+        if action in ('ESTOP','PAUSE'):
+            self.control_generation += 1
+        if action=='PAUSE' and self.shared_session:
+            self.shared_session.stop('USER_PAUSE')
         if action == 'ESTOP' or (action == 'PAUSE' and self.language.executing):
             self.language.cancel()
         if action=='ESTOP':
@@ -771,13 +792,14 @@ class DashboardEngine:
             if action in ('ARM','RESUME'):
                 self.notice='AUTOMATIC_HARDWARE_FOLLOWING_DISABLED: use separate MOTOR TEST authorization'
                 action=None
-        if (self.client_owner == 'GESTURE_FOLLOW' and self.follow_auto_arm and self.c.confirmed and
+        if (self.client_owner == 'GESTURE_FOLLOW' and self.follow_auto_arm and self.c.confirmed and not self.c.estop_latched and
             not self.release_future and f.camera_ok and 0 <= now-f.timestamp <= self.cfg['safety']['perception_timeout_s'] and
             (f.gesture is None or f.gesture.name != 'Open_Palm') and action is None and transport['stop_verified']):
             action='ARM'
         if hand_direct and action == 'PAUSE':
             self.hand_armed_once = True
-            self.client.stop('USER_STOP')
+            if not shared:
+                self.client.stop('USER_STOP')
         if action=='ARM' and self.client and not hand_direct and (self.release_future or not self.client.arm()):
             action=None
             self.notice='ARM_DENIED: fresh, matching STOPPED telemetry required'
@@ -800,6 +822,7 @@ class DashboardEngine:
         hand_applied = None
         if hand_direct:
             valid = bool(r and fresh and r.get('hand_only') and f.timestamp >= self.hand_connected_at
+                         and not self.c.estop_latched and not self.hand_requires_activation
                          and self.release_future is None)
             hand_status = self.hand.observe(vision, f.timestamp, now, self.cfg['safety']['perception_timeout_s'], valid)
             neutral = vision['hand_count'] == 0 or hand_status.get('label') == 'Closed_Fist'

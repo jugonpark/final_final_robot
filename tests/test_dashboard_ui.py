@@ -82,3 +82,69 @@ class DashboardUiTests(unittest.TestCase):
                     self.assertFalse(window.grab().isNull())
                 self.assertTrue(all(r['result']=='NOT TESTED' for r in engine.book.rows))
             finally:window.close()
+
+    def test_inference_delay_keeps_preview_stable_without_stale_target_selection(self):
+        from time import monotonic
+        from dataclasses import replace
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from python_controller.config import load_config
+        from python_controller.dashboard_runtime import DashboardEngine, PreviewStream
+        from python_controller.visualization.dashboard import Dashboard
+
+        config = load_config()
+        timeout = config['safety']['perception_timeout_s']
+        engine = DashboardEngine(config, '.tmp', logger=False)
+        stream = PreviewStream()
+        with patch('socket.socket', side_effect=AssertionError('Simulation must not open sockets')):
+            window = Dashboard(config, engine=engine, stream=stream)
+            window.timer.stop()
+            self.addCleanup(window.close)
+            window.navigate_camera(1)
+            window.show()
+            now = monotonic()
+            result = stream.latest()
+            result.update(frame=replace(result['frame'], timestamp=now), completed_at=now)
+
+            def render(result, at, *, error=None, camera_status=None):
+                capture = (result['image'], at, 0)
+                data = engine.tick(result, now=at, pipeline_error=error, pipeline_health={'camera':camera_status})
+                with patch('python_controller.visualization.dashboard.time.monotonic', return_value=at):
+                    window.update_display(data, result, capture)
+                self.app.processEvents()
+                return data
+
+            render(result, now+.01)
+            badge = window.camera_badge.text()
+            size = window.camera.size()
+            self.assertTrue(window.camera.people)
+            displayed = window.camera.image.cacheKey()
+            stale = render(result, now+timeout+.05)
+            self.assertFalse(stale['perception_fresh'])
+            self.assertEqual(window.camera.image.cacheKey(), displayed)
+            self.assertIn('지연', window.camera_status.text())
+            self.assertEqual(window.camera.size(), size)
+            self.assertEqual(window.camera_badge.text(), badge)
+            # A newly completed inference can also arrive already too old to use.
+            late = dict(result, frame=replace(result['frame'], timestamp=now+.01),
+                        completed_at=now+timeout+.07)
+            render(late, now+timeout+.08)
+            self.assertEqual(window.camera.image.cacheKey(), displayed)
+            with patch.object(engine, 'request') as request:
+                QTest.mouseClick(window.camera, Qt.LeftButton, pos=window.camera.rect().center())
+                request.assert_not_called()
+
+            at = now+timeout+.12
+            updated = dict(result, frame=replace(result['frame'], timestamp=at), completed_at=at)
+            render(updated, at+.01)
+            self.assertTrue(window.camera.people)
+            self.assertNotEqual(window.camera.image.cacheKey(), displayed)
+            self.assertEqual(window.camera.size(), size)
+
+            stream.error='VISION: failed'
+            render(updated, at+timeout+.05, error=stream.error)
+            self.assertIn('원본 영상 수신 중', window.camera_status.text())
+            self.assertFalse(window.camera.people)
+            render(updated, at+2, error='CAMERA: failed', camera_status='CAMERA_ERROR')
+            self.assertIsNone(window.camera.image)
+            self.assertIn('오류', window.camera_badge.text())

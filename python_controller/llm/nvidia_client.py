@@ -80,14 +80,20 @@ class NvidiaPlanner:
         return options
 
     def plan(self, command):
+        return self.complete(_plan_messages(command))
+
+    def complete(self, messages):
         try:
             with self._client() as client:
                 result = client.chat.completions.create(
-                    messages=_plan_messages(command), **self._request_options(),
+                    messages=messages, **self._request_options(),
                 )
         except (APIError, ValueError) as exc:
             raise NvidiaError(_error_code(exc)) from None
-        return _completion_content(result)
+        content = _completion_content(result)
+        if self.api_key in content:
+            raise NvidiaError('NVIDIA_UNSAFE_RESPONSE')
+        return content
 
     def probe(self, command=None):
         """Measure a minimal request or a plan request without opening the robot executor."""

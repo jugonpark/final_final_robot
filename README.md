@@ -2,13 +2,43 @@
 
 기본 실행은 **SIMULATION**이다. 웹캠에서 사람을 선택·추적하고 목표 인물의 손 제스처에 따라 추종 명령을 계산해 화면에 표시한다. **SIMULATION은 UDP 소켓을 열지 않으며 ESP32에 명령을 보내지 않는다.**
 
+## D.I.G. 웹 관제 1차
+
+`run_web.bat`를 실행하고 [로컬 웹 관제](http://127.0.0.1:8765)를 연다. 기본은 합성 영상이며, 웹캠과 모델을 쓰려면 `run_web.bat --web-camera`로 실행한다. 같은 카메라를 사용할 경우 데스크톱 관제를 먼저 닫는다. 포트가 사용 중이면 `--web-port`로 다른 포트를 지정하고 콘솔에 표시된 주소를 연다.
+
+웹은 기존 Python 관제 상태, 카메라 영상과 인식 결과, 정지 사유, 모터 텔레메트리, 설정값을 읽는다. 합성 장면에서 사람 선택·추종·긴급 정지를 확인할 수 있다. 이동 계획 미리보기는 기존 로컬 검증기를 사용한다. 실물 구동·연결·설정 변경은 기존 `run_simulation.bat`의 데스크톱 화면에서 사용한다. 웹과 데스크톱 실행은 각자의 Python 관제 세션을 사용한다.
+
+## 통합 AI Agent
+
+프로젝트 가상환경에서 `.venv\Scripts\python.exe -m pip install -r requirements-agent.txt`로 선택 의존성을 설치한다. 기존 NVIDIA 키와 모델 설정을 사용한다. 기본 관제는 이전대로 실행되고, Agent 화면은 `--agent-enabled`로 켠다.
+
+- 웹 시뮬레이션은 `run_web.bat --agent-enabled`로 실행한다.
+- 데스크톱 합성 영상은 `run_simulation.bat --dashboard-preview --agent-enabled`로 실행한다.
+- 데스크톱 실카메라는 `run_simulation.bat --agent-enabled`로 실행한다. Agent의 실물 이동 승인에는 기존 중앙 ESP32 연결과 LLM 제어권, 레이더 CLEAR 및 차단 해제, 새 STOP 응답이 필요하다.
+
+“카메라 화면 보여줘”, “지금 레이더 상태 알려줘”, “앞으로 10cm 가고 뒤로 5cm 가”, “아니 첫 번째 5cm로 수정”을 입력해 볼 수 있다. 실행 승인과 긴급 정지 확인은 Qt의 명시적 운영자 조작으로 처리한다. “멈춰”와 긴급 정지 버튼은 모델 응답과 별개로 처리한다. [Agent 통합 및 검증 기록](docs/UNIFIED_AGENT_VALIDATION.md)
+
+## D.I.G. Blue UI (2026-11-19)
+
+`run_simulation.bat`로 실행하면 **AI 대화 제어** 화면이 먼저 열린다. 왼쪽 사이드바에서
+카메라·손동작, 수동 제어, 상태·진단, 설정으로 이동한다. 카메라 화면의 **손동작 직접 제어**와
+**사람 추종**은 같은 영상을 공유하며 각 모드의 제스처 의미를 따로 표시한다.
+ESP32와 레이더 Pi 주소, 손동작 매핑, 추종 설정은 **설정**에서 변경한다.
+비상 정지와 레이더 차단 상태는 모든 화면에서 유지된다.
+
+이번 변경은 PySide6 UI와 시각 리소스에 한정하며 기존 연결·승인·정지 조건을 유지한다.
+화면 선택은 실제 제어권과 구분되며 기본 화면을 여는 것으로 장치가 연결되지 않는다.
+[UI 변경 및 검증 보고서](docs/blue_ui_verification/REPORT.md),
+[1320×920 화면 모음](docs/blue_ui_verification/overview_1320x920.png).
+아래의 탭 구성과 테스트 수치는 이전 단계의 기록이다.
+
 ESP32 공식 개발 기준은 [단일 파일 control_simple_v2.ino](esp32_firmware/control_simple_v2/control_simple_v2/control_simple_v2.ino)다. 수동과 자연어 이동에서 공통 Feedforward+PI를 사용하는 사용자 실물 확인 버전이다. Arduino IDE에서는 같은 폴더의 `secrets.example.h`를 로컬 `secrets.h`로 복사해 Wi-Fi 설정을 입력한다. 기존 `control_v2`와 원본 펌웨어는 참고용이다. [기준선과 개선 계획](docs/CONTROL_SIMPLE_V2_PLAN.md)
 
 ## 자연어 제어 Prototype A+B
 
 별도 `python -m python_controller.llm_cli`에서 NVIDIA API의 한국어 거리 이동 계획을 검증하고 기본 dry-run으로 표시한다. 사용법, 실물 승인 절차, 단계별 결과는 [Prototype A+B 검증 기록](docs/PROTOTYPE_AB_VALIDATION.md)에 있다. [Mode Guard 후보](esp32_firmware/PATCH_NOTES_LLM_AB.md)는 별도 패치로 관리한다.
 
-`run_simulation.bat`를 실행하고 **자연어 제어** 탭을 선택하면 중앙 대시보드에서도 같은 검증기를 사용할 수 있다. `앞으로 5cm 이동해`를 입력하고 **계획 생성**을 누르면 이동 순서가 표시된다. 프로젝트의 로컬 `.env`에서 NVIDIA 키와 모델을 읽는다.
+`run_simulation.bat`의 기본 **AI 대화 제어** 화면에서도 같은 검증기를 사용할 수 있다. `앞으로 5cm 이동해`를 입력하고 **계획 생성**을 누르면 이동 순서가 표시된다. 프로젝트의 로컬 `.env`에서 NVIDIA 키와 모델을 읽는다.
 
 실제 장치 시험은 [C6 절차](docs/C6_HARDWARE_PREFLIGHT.md)의 정지 통신과 바퀴 방향을 확인한 뒤 진행한다. 모터 동작 시험 연결을 해제하고 현재 ESP32 주소, 공중 고정과 전원 차단 준비를 확인한 뒤 **이 계획 1회 실행**을 누른다. 상단 긴급 정지와 탭의 **정지 / 계획 취소**는 실행을 중단하며, 결과는 `logs/.../llm/`에 기록된다.
 
