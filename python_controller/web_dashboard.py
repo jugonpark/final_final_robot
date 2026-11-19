@@ -1,7 +1,10 @@
 """Local web console backed by the D.I.G. simulation supervisor."""
 import base64
+import binascii
 import json
 import re
+import sqlite3
+from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from time import monotonic
@@ -10,9 +13,11 @@ from urllib.parse import parse_qs
 from python_controller.communication.motor_test import load_connection
 from python_controller.dashboard_runtime import DashboardEngine, PreviewStream, VisionStream
 from python_controller.execution.history_store import HistoryUnavailable
+from python_controller.knowledge.library import KnowledgeError, MAX_DOCUMENT
+from python_controller.mission.draft_store import DraftConflict, DraftOperation
 from python_controller.planning.dashboard_command import normalize_dashboard_command
 from python_controller.planning.schema import describe_action
-from python_controller.planning.validator import ValidatedPlan, parse_operator_command
+from python_controller.planning.validator import ValidatedPlan, parse_operator_command, strict_json_object
 from python_controller.visualization.korean import ko
 
 ROOT = Path(__file__).resolve().parent
@@ -267,11 +272,65 @@ def handler(web, port):
         def send_json(self, value, status=200):
             self.send(json.dumps(value, ensure_ascii=False, allow_nan=False).encode(), 'application/json; charset=utf-8', status)
 
+        def stream_agent_reply(self, stream_id):
+            self.close_connection = True
+            self.connection.settimeout(5)
+            try:
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/event-stream; charset=utf-8')
+                self.send_header('Cache-Control', 'no-store')
+                self.send_header('X-Content-Type-Options', 'nosniff')
+                self.end_headers()
+                previous = None
+                deadline = monotonic() + 75
+                while monotonic() < deadline:
+                    active, reply = web.agent.wait_reply(stream_id, previous, timeout=5)
+                    if not active:
+                        self.wfile.write(b'data: {"done":true}\n\n')
+                        return
+                    if reply == previous:
+                        self.wfile.write(b': keepalive\n\n')
+                    else:
+                        self.wfile.write(('data: ' + json.dumps({'text': reply}, ensure_ascii=False) + '\n\n').encode())
+                        previous = reply
+            except OSError:
+                return
+
         def do_GET(self):
             if self.headers.get('Host') != authority:
                 self.send_json({'error': '로컬 관제 주소를 사용하세요.'}, 403)
             elif self.path == '/api/state':
                 self.send_json(web.state())
+            elif web.agent and (match := re.fullmatch(r'/api/agent/stream/([0-9a-f]{32})', self.path)):
+                if (self.headers.get('Origin') not in (None, f'http://{authority}') or
+                        self.headers.get('Sec-Fetch-Site') == 'cross-site'):
+                    self.send_json({'error': '관제 화면에서 요청해 주세요.'}, 403)
+                else:
+                    self.stream_agent_reply(match[1])
+            elif self.path == '/api/draft' and web.agent:
+                try:
+                    self.send_json({'draft': web.agent.drafts.current()[1]})
+                except sqlite3.Error:
+                    self.send_json({'error': '초안 저장소를 읽을 수 없습니다.'}, 503)
+            elif self.path.startswith('/api/knowledge/') and web.agent:
+                library = web.agent.knowledge
+                path, _, query = self.path.partition('?')
+                try:
+                    if path == '/api/knowledge/documents':
+                        self.send_json({'documents': library.documents()})
+                    elif path == '/api/knowledge/search':
+                        text = parse_qs(query).get('q', [''])[0].strip()
+                        if not 0 < len(text) <= 350:
+                            raise KnowledgeError('검색어를 1~350자로 입력하세요.')
+                        self.send_json({'results': library.search_robot_documents(text)})
+                    elif (match := re.fullmatch(r'/api/knowledge/chunks/([1-9][0-9]{0,9})', path)) and (chunk := library.get_document_chunk(int(match[1]))):
+                        self.send_json(chunk)
+                    else:
+                        self.send_json({'error': '문서 발췌를 찾을 수 없습니다.'}, 404)
+                except KnowledgeError as exc:
+                    self.send_json({'error': str(exc)}, 400)
+                except (OSError, sqlite3.Error):
+                    self.send_json({'error': '문서 색인을 읽을 수 없습니다.'}, 503)
             elif self.path in ('/api/history', '/api/history/latest') or re.fullmatch(r'/api/history/[0-9a-f]{32}', self.path):
                 history = web.engine.language.history
                 try:
@@ -303,7 +362,8 @@ def handler(web, port):
                     self.send_json({'error': '찾을 수 없습니다.'}, 404)
 
         def do_POST(self):
-            if self.path != '/api/control':
+            upload = self.path == '/api/knowledge/documents'
+            if self.path not in ('/api/control', '/api/draft', '/api/knowledge/documents') or (self.path != '/api/control' and not web.agent):
                 self.send_json({'error': '찾을 수 없습니다.'}, 404)
                 return
             if (self.headers.get('Host') != authority or self.headers.get('Origin') != f'http://{authority}'
@@ -312,15 +372,33 @@ def handler(web, port):
                 return
             try:
                 length = int(self.headers.get('Content-Length', '0'))
-                if not 0 < length <= 4096:
+                if not 0 < length <= (4 * ((MAX_DOCUMENT+2)//3) + 4096 if upload else 4096):
                     raise ValueError('요청 크기를 확인하세요.')
                 self.connection.settimeout(3)
-                body = json.loads(self.rfile.read(length))
+                payload = self.rfile.read(length)
+                body = strict_json_object(payload, parse_float=Decimal) if self.path == '/api/draft' else json.loads(payload)
             except (ValueError, OSError):
                 self.send_json({'error': '요청 형식을 확인하세요.'}, 400)
                 return
             try:
-                self.send_json(web.command(body))
+                if upload:
+                    if not isinstance(body, dict) or set(body) != {'name', 'content'} or not isinstance(body['content'], str):
+                        raise KnowledgeError('파일 첨부 형식을 확인하세요.')
+                    try:
+                        raw = base64.b64decode(body['content'], validate=True)
+                    except (ValueError, binascii.Error) as exc:
+                        raise KnowledgeError('파일 첨부 형식을 확인하세요.') from exc
+                    document = web.agent.knowledge.register(body['name'], raw)
+                    self.send_json({'document': document})
+                elif self.path == '/api/draft':
+                    message, draft = web.agent.apply_draft(DraftOperation.model_validate(body))
+                    self.send_json({'message': message, 'draft': draft})
+                else:
+                    self.send_json(web.command(body))
+            except DraftConflict:
+                self.send_json({'error': '다른 화면에서 초안이 변경됐습니다. 최신 버전을 확인하세요.', 'code': 'STALE_REVISION'}, 409)
+            except (OSError, sqlite3.Error):
+                self.send_json({'error': '로컬 저장소를 지금 사용할 수 없습니다.'}, 503)
             except ValueError as exc:
                 self.send_json({'error': str(exc)}, 400)
 
@@ -349,4 +427,6 @@ def run_web_dashboard(config, *, camera=False, port=8765, agent_enabled=False):
         engine.request('ESTOP')
         engine.close()
         web.close_camera()
+        if web.agent:
+            web.agent.close()
     return 0

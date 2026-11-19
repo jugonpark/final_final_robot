@@ -1,0 +1,17 @@
+signal,2026_10_candidate_gpio,2026_08_test_firmware_gpio,current_firmware_gpio,kicad_net_gpio,kicad_physical_header_pin,match_status,evidence_file_line,action_required
+M1_IN1,18,19,19,18,MD1:3; U1:28,FIRMWARE_MISMATCH,control_simple_v2.ino:144 | V18_FINAL_RELEASE schematic /M1_IN1,Resolve firmware/CAD mismatch against installed harness before approval
+M1_IN2,19,18,18,19,MD1:2; U1:27,FIRMWARE_MISMATCH,control_simple_v2.ino:145 | V18_FINAL_RELEASE schematic /M1_IN2,Resolve firmware/CAD mismatch against installed harness before approval
+M1_PWM,25,25,25,25,MD1:1; U1:9,STATIC_MATCH,control_simple_v2.ino:146 | V18_FINAL_RELEASE schematic /M1_PWM,Confirm installed module orientation and continuity before approval
+M1_ENC_A,34,34,34,34,JM1:5; U1:5,STATIC_MATCH,control_simple_v2.ino:147 | V18_FINAL_RELEASE schematic /ENC1_A,Confirm installed module orientation and continuity before approval
+M1_ENC_B,35,35,35,35,JM1:6; U1:6,STATIC_MATCH,control_simple_v2.ino:148 | V18_FINAL_RELEASE schematic /ENC1_B,Confirm installed module orientation and continuity before approval
+M2_IN1,21,21,21,21,MD1:5; U1:25,STATIC_MATCH,control_simple_v2.ino:150 | V18_FINAL_RELEASE schematic /M2_IN1,Confirm installed module orientation and continuity before approval
+M2_IN2,22,22,22,22,MD1:6; U1:22,STATIC_MATCH,control_simple_v2.ino:151 | V18_FINAL_RELEASE schematic /M2_IN2,Confirm installed module orientation and continuity before approval
+M2_PWM,26,26,26,26,MD1:7; U1:10,STATIC_MATCH,control_simple_v2.ino:152 | V18_FINAL_RELEASE schematic /M2_PWM,Confirm installed module orientation and continuity before approval
+M2_ENC_A,36,16,16,36,JM2:5; U1:3,FIRMWARE_MISMATCH,control_simple_v2.ino:153 | V18_FINAL_RELEASE schematic /ENC2_A,Resolve firmware/CAD mismatch against installed harness before approval
+M2_ENC_B,39,17,17,39,JM2:6; U1:4,FIRMWARE_MISMATCH,control_simple_v2.ino:154 | V18_FINAL_RELEASE schematic /ENC2_B,Resolve firmware/CAD mismatch against installed harness before approval
+M3_IN1,23,23,23,23,MD2:3; U1:21,STATIC_MATCH,control_simple_v2.ino:156 | V18_FINAL_RELEASE schematic /M3_IN1,Confirm installed module orientation and continuity before approval
+M3_IN2,13,13,13,13,MD2:2; U1:15,STATIC_MATCH,control_simple_v2.ino:157 | V18_FINAL_RELEASE schematic /M3_IN2,Confirm installed module orientation and continuity before approval
+M3_PWM,14,14,14,14,MD2:1; U1:12,STATIC_MATCH,control_simple_v2.ino:158 | V18_FINAL_RELEASE schematic /M3_PWM,Confirm installed module orientation and continuity before approval
+M3_ENC_A,16,32,32,16,JM3:5; U1:31,FIRMWARE_MISMATCH,control_simple_v2.ino:159 | V18_FINAL_RELEASE schematic /ENC3_A,Resolve firmware/CAD mismatch against installed harness before approval
+M3_ENC_B,17,33,33,17,JM3:6; U1:30,FIRMWARE_MISMATCH,control_simple_v2.ino:160 | V18_FINAL_RELEASE schematic /ENC3_B,Resolve firmware/CAD mismatch against installed harness before approval
+STBY,27,27,27,27,MD1:4; MD2:4; U1:11,STATIC_MATCH,control_simple_v2.ino:142 | V18_FINAL_RELEASE schematic /STBY,Confirm installed module orientation and continuity before approval

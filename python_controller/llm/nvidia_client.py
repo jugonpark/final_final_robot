@@ -10,6 +10,7 @@ from python_controller.llm.prompt import SYSTEM_PROMPT
 
 DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
 NEMOTRON_ULTRA_MODEL = "nvidia/nemotron-3-ultra-550b-a55b"
+MODEL_ID = re.compile(r"[A-Za-z0-9_.:/-]{1,128}")
 
 
 class NvidiaError(ValueError):
@@ -50,7 +51,7 @@ class NvidiaPlanner:
             raise NvidiaError("NVIDIA_API_KEY_MISSING")
         if not model or not model.strip():
             raise NvidiaError("NVIDIA_MODEL_MISSING")
-        if not re.fullmatch(r"[A-Za-z0-9_.:/-]{1,128}", model):
+        if not MODEL_ID.fullmatch(model):
             raise NvidiaError("NVIDIA_MODEL_INVALID")
         api_key = api_key.strip()
         if api_key in model:
@@ -94,6 +95,29 @@ class NvidiaPlanner:
         if self.api_key in content:
             raise NvidiaError('NVIDIA_UNSAFE_RESPONSE')
         return content
+
+    def stream_text(self, messages):
+        """Yield only visible answer content from NVIDIA's completion stream."""
+        options = {**self._request_options(), 'stream': True}
+        finish = None
+        try:
+            with self._client() as client, client.chat.completions.create(messages=messages, **options) as stream:
+                for chunk in stream:
+                    if not chunk.choices:
+                        continue
+                    choice = chunk.choices[0]
+                    if len(chunk.choices) != 1 or choice.delta.tool_calls or choice.delta.function_call:
+                        raise NvidiaError('NVIDIA_INCOMPLETE_RESPONSE')
+                    if choice.delta.content:
+                        yield choice.delta.content
+                    if choice.finish_reason:
+                        finish = choice.finish_reason
+        except (APIError, ValueError) as exc:
+            if isinstance(exc, NvidiaError):
+                raise
+            raise NvidiaError(_error_code(exc)) from None
+        if finish != 'stop':
+            raise NvidiaError('NVIDIA_INCOMPLETE_RESPONSE')
 
     def probe(self, command=None):
         """Measure a minimal request or a plan request without opening the robot executor."""

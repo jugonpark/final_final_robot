@@ -1,0 +1,39 @@
+{
+  "package_version": "0.2",
+  "created_on": "2026-11-19",
+  "status": "REVIEW_ONLY",
+  "source_repo": "https://github.com/jugonpark/final_robot",
+  "source_git_revision": "b03f7d2",
+  "hardware_variants": [
+    "BREADBOARD_PROTO",
+    "PCB_V18_DESIGN",
+    "PCB_V19_DESIGN"
+  ],
+  "original_assets": [
+    {
+      "path": "assets/breadboard_bom_original.png",
+      "sha256": "87a31f9cd9b6f5185b34efd7ad19bfc45e53f02c9c9b56765780dcd3b1d58fc3",
+      "evidence": "USER_BOM_IMAGE"
+    },
+    {
+      "path": "source_archives/omni_3wd_v18_final_FAB_AUDIT.zip",
+      "sha256": "4e10bce57db457397119bf5def0c8c9e149884bd74b4324fdf0db604adc450d2",
+      "evidence": "CAD_AUDIT_ARCHIVE"
+    },
+    {
+      "path": "FINAL_PROJECT_V1.zip",
+      "sha256": "5674b8d9beaa1cdecd8da37d9e68d0071faff8f283e3797236fa71d736337219",
+      "evidence": "CANONICAL_PCB_V19_CAD_ARCHIVE"
+    },
+    {
+      "path": "sources/Omnidirectional_3WD_datasheet.pdf",
+      "sha256": "3bf0ecc200dec9897695ba9c6b246868d33a267e3690367d22f137754508411f",
+      "evidence": "VENDOR_REFERENCE"
+    }
+  ],
+  "fabrication_approved": {
+    "PCB_V18_DESIGN": false,
+    "PCB_V19_DESIGN": false
+  },
+  "index_original_archive_recursively": false
+}

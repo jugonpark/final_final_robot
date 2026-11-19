@@ -67,6 +67,9 @@ class AgentPanel(QWidget):
         self.approve.clicked.connect(lambda: self.review(True))
         self.reject = button_style(QPushButton('계획 취소'), 'secondary')
         self.reject.clicked.connect(lambda: self.review(False))
+        self.request_review = button_style(QPushButton('현재 버전 실행 요청'), 'secondary')
+        self.request_review.clicked.connect(self.request_execution)
+        review_layout.addWidget(self.request_review)
         actions = QHBoxLayout()
         actions.addWidget(self.reject)
         actions.addWidget(self.approve)
@@ -105,13 +108,21 @@ class AgentPanel(QWidget):
         self.refresh()
 
     def clear_conversation(self):
-        choice = QMessageBox.question(self, '대화 기록 삭제', '현재 대화의 메시지와 승인 대기 계획을 삭제할까요?',
+        choice = QMessageBox.question(self, '대화 기록 삭제', '대화와 실행 요청을 지울까요? 저장된 초안은 보존됩니다.',
                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if choice == QMessageBox.Yes:
             self.agent.clear_conversation()
             self.command.clear()
             self.feedback.clear()
             self.refresh()
+
+    def request_execution(self):
+        try:
+            self.agent.submit('이 계획들 실행해')
+            self.feedback.clear()
+        except ValueError as exc:
+            self.feedback.setText(str(exc))
+        self.refresh()
 
     def review(self, approve):
         if not self.displayed_card or (approve and not self.approve.isEnabled()):
@@ -141,19 +152,23 @@ class AgentPanel(QWidget):
             self.last_navigation = state['navigation_id']
             if state['page']:
                 self.navigate(state['page'])
-        if state['messages'] != self.displayed_messages:
-            self.displayed_messages = state['messages']
-            self.history.setPlainText('\n\n'.join(f'{"나" if row["role"] == "user" else "D.I.G."} · {row["content"]}' for row in state['messages']))
+        messages = state['messages']
+        if state.get('partial_reply'):
+            messages = [*messages, {'role': 'assistant', 'content': state['partial_reply']}]
+        if messages != self.displayed_messages:
+            self.displayed_messages = messages
+            self.history.setPlainText('\n\n'.join(f'{"나" if row["role"] == "user" else "D.I.G."} · {row["content"]}' for row in messages))
             self.history.verticalScrollBar().setValue(self.history.verticalScrollBar().maximum())
         card = state['card']
-        self.clear_button.setEnabled(bool(state['messages'] or card or state['busy']))
+        self.clear_button.setEnabled(bool(state['messages'] or state['busy'] or (card and card['review_requested'])))
         shown = (card['id'], card['revision']) if card else None
         self.can_approve = state['can_approve']
         if self.displayed_card != shown or not self.can_approve:
             self.prepared.setChecked(False)
         self.displayed_card = shown
         if card:
-            lines = [f'계획 버전 {card["revision"]}', *(f'{i}. {step}' for i, step in enumerate(card['steps'], 1))]
+            summary = 'Qt 운영자 승인 대기' if card['review_requested'] else '미실행 초안'
+            lines = [f'{summary} · v{card["revision"]}', *(f'{i}. {step}' for i, step in enumerate(card['steps'], 1))]
             if card.get('before'):
                 lines.extend(['', f'수정 전 v{card["revision"] - 1}',
                               *(f'{i}. {step}' for i, step in enumerate(card['before'], 1))])
@@ -165,7 +180,9 @@ class AgentPanel(QWidget):
         else:
             self.preview.setText('대기 중인 이동 계획이 없습니다.')
         self.prepared.setEnabled(self.can_approve)
-        self.reject.setEnabled(bool(card and not state['busy']))
+        self.request_review.setEnabled(bool(card and not card['rotation'] and not card['review_requested'] and not state['busy']
+                                            and state['execution'] not in ('EXECUTING', 'STOPPING')))
+        self.reject.setEnabled(bool(card and card['review_requested'] and not state['busy']))
         self._update_approve()
         self.send_button.setText('처리 중 · 정지 가능' if state['busy'] else '전송')
         phase = PHASE_TEXT.get(state['execution'], state['execution'])

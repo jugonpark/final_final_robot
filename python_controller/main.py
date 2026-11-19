@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import time
 
-from python_controller.config import RADAR_SETTINGS, load_config
+from python_controller.config import HARDWARE_PROFILES, RADAR_SETTINGS, load_config
 from python_controller.control.state_machine import Controller
 from python_controller.models import PersonObservation, PerceptionFrame, RadarObservation
 
@@ -126,6 +126,7 @@ def main(argv=None):
     parser.add_argument('--dashboard-preview',action='store_true',help='Clearly labeled synthetic dashboard; no hardware allowed')
     parser.add_argument('--smoke-seconds',type=float,help='Close dashboard after this many seconds (0.1 to 60)')
     parser.add_argument('--esp32-host',help='Numeric ESP32 IPv4 address; never the laptop IP')
+    parser.add_argument('--hardware-profile', choices=HARDWARE_PROFILES, help='Expected ESP32 hardware profile')
     parser.add_argument('--acknowledge-hardware-risk',action='store_true',help='Explicit hardware opt-in; physical sign verification also required')
     args = parser.parse_args(argv)
     if args.dashboard_preview and (args.mode=='HARDWARE' or args.ui!='dashboard'):
@@ -143,6 +144,7 @@ def main(argv=None):
     try:
         config = load_config(args.config, radar_path=RADAR_SETTINGS if args.ui in ('dashboard','web') else None)
         if args.esp32_host: config['communication']['host'] = args.esp32_host
+        if args.hardware_profile: config['communication']['hardware_profile'] = args.hardware_profile
         for key in ('model_path','gesture_model_path'):
             p = Path(config['vision'][key])
             if not p.is_absolute(): config['vision'][key] = str(ROOT/p)

@@ -20,7 +20,7 @@ TELEMETRY_KEYS.update({'protocol_version','heartbeat_age_ms','velocity_age_ms','
     'fault_latched','stop_applied_ms','goal_elapsed_ms','remaining_cm','lateral_error_cm','goal_active','goal_reached',
     'encoder_recent_bad','fault_sample_ms','last_fault','last_fault_at_ms',
     'control_style','wheel_control_target','wheel_ff_pwm','wheel_pi_trim_pwm',
-    'wheel_target_rpm','wheel_measured_rpm'})
+    'wheel_target_rpm','wheel_measured_rpm','hardware_profile','firmware_version','pinmap_revision'})
 
 
 def safe_payload(value):

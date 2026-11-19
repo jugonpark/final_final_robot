@@ -1,16 +1,25 @@
 """Host-side tools and live operator authorization for the conversation graph."""
 import re
+import sqlite3
 from dataclasses import dataclass
 from math import isfinite
+from pathlib import Path
 from queue import Empty, SimpleQueue
 from secrets import token_hex
-from threading import Thread
+from threading import Condition, Thread
 from time import monotonic
+from uuid import uuid4
 
 from python_controller.execution.history_store import HistoryUnavailable
-from python_controller.llm.agent_graph import ConversationGraph, load_plan
-from python_controller.llm.agent_intent import NvidiaIntentInterpreter, corrected_mode, emergency_stop, explicit_mode, program_question
-from python_controller.planning.schema import describe_action
+from python_controller.knowledge.answer import document_question
+from python_controller.knowledge.library import KnowledgeLibrary
+from python_controller.llm.agent_dialogue import NvidiaDialogueResponder, local_dialogue, program_detail
+from python_controller.llm.agent_graph import ConversationGraph
+from python_controller.llm.agent_semantics import REFERENCE_CLARIFY, distance_reference, vague_reference
+from python_controller.llm.menu_help import explain_menu, menu_question
+from python_controller.llm.agent_intent import (NvidiaIntentInterpreter, corrected_mode, draft_command, emergency_stop,
+                                               explicit_mode, program_question, reorder_coordinates)
+from python_controller.mission.draft_store import DraftConflict, DraftOperation, DraftStore, load_action, load_plan
 from python_controller.planning.validator import ValidatedPlan
 from python_controller.visualization.korean import ko, movement_block
 
@@ -211,36 +220,64 @@ class PendingModePlan:
 
 
 class UnifiedAgent:
-    def __init__(self, engine, interpreter=None):
+    def __init__(self, engine, interpreter=None, responder=None):
         self.engine = engine
         self.bridge = RobotCommandFacade(engine)
-        self.graph = ConversationGraph(interpreter or NvidiaIntentInterpreter())
+        self.knowledge = KnowledgeLibrary(engine.language.folder.parent / 'robot_knowledge.sqlite3', Path(__file__).resolve().parents[2])
+        self.graph = ConversationGraph(interpreter or NvidiaIntentInterpreter(), self.knowledge,
+                                       responder or NvidiaDialogueResponder())
         self.events = SimpleQueue()
         self.messages = []
+        self.dialogue_history = []
+        self.operator_turn = 0
+        self.draft_reference = None
+        self.partial_reply = ''
+        self.chat_stream_id = None
+        self._reply_changed = Condition(engine.control_lock)
         self.busy = False
-        self.card = self.card_binding = self.ticket = None
+        self.drafts = DraftStore(engine.language.folder.parent / 'mission_drafts.sqlite3')
+        self.draft_serial, self.card = self.drafts.current()
+        self.card_binding = self.ticket = None
+        self.work_id = None
+        self._draft_reader = None
+        self._next_draft_refresh = 0
+        self._draft_workers = []
+        self._closed = False
         self.mode_plan = None
         self.navigation = None
         self.navigation_id = 0
         self.generation = 0
         self._seen_control_generation = engine.control_generation
 
-    def _append(self, role, text):
-        self.messages = [*self.messages[-39:], {'role': role, 'content': text}]
+    def _append(self, role, text, citations=None, *, retain_in_dialogue=False):
+        entry = {'role': role, 'content': text}
+        if citations:
+            entry['citations'] = citations
+        self.messages = [*self.messages[-39:], entry]
+        if role == 'user' or retain_in_dialogue:
+            self.dialogue_history = [*self.dialogue_history[-9:], {'role': role, 'content': text}]
+        if role == 'user':
+            self.operator_turn += 1
 
     def _invalidate(self):
         self.generation += 1
-        self.card = self.card_binding = self.ticket = None
+        with self._reply_changed:
+            self.partial_reply = ''
+            self.chat_stream_id = None
+            self._reply_changed.notify_all()
+        self.draft_reference = None
+        self.card_binding = self.ticket = None
         self.mode_plan = None
         self.navigation = None
 
     def clear_conversation(self):
         with self.engine.control_lock:
             self._invalidate()
-            self.graph = ConversationGraph(self.graph.interpreter)
-            self.events = SimpleQueue()
+            self.graph = ConversationGraph(self.graph.interpreter, self.knowledge, self.graph.responder)
             self.messages = []
+            self.dialogue_history = []
             self.busy = False
+            self.work_id = None
 
     def _sync(self):
         if self._seen_control_generation != self.engine.control_generation:
@@ -248,9 +285,91 @@ class UnifiedAgent:
             if self.mode_plan:
                 self._append('assistant', '제어 상태가 바뀌어 전환 후 계획 요청을 취소했습니다.')
             self._invalidate()
-        elif self.card and self.card_binding != self.bridge.binding():
+        elif self.card_binding is not None and self.card_binding != self.bridge.binding():
             self._invalidate()
-            self._append('assistant', '제어 또는 안전 상태가 바뀌어 대기 계획을 폐기했습니다.')
+            self._append('assistant', '제어 또는 안전 상태가 바뀌어 실행 요청을 취소했습니다. 초안은 보존했습니다.')
+
+    def _adopt(self, saved):
+        serial, card = saved
+        if serial > self.draft_serial:
+            self.draft_serial, self.card = serial, card
+            self._invalidate()
+
+    def _refresh_draft(self):
+        if self._closed or self.busy or monotonic() < self._next_draft_refresh or (self._draft_reader and self._draft_reader.is_alive()):
+            return
+        self._next_draft_refresh = monotonic()+.6
+
+        def read():
+            try:
+                saved = self.drafts.current()
+            except sqlite3.Error:
+                return
+            with self.engine.control_lock:
+                if not self.busy:
+                    self._adopt(saved)
+
+        self._draft_reader = Thread(target=read, name='dig-draft-read', daemon=True)
+        self._draft_reader.start()
+
+    def apply_draft(self, op):
+        if self._closed:
+            raise ValueError('초안 편집기가 종료되었습니다.')
+        if op.kind == 'request_execution':
+            saved = self.drafts.current()
+            DraftStore._check(saved[1], op.mission_id, op.expected_revision)
+            if op.actions or op.target_block_id or op.before_block_id:
+                raise ValueError('INVALID_DRAFT_OPERATION')
+            with self.engine.control_lock:
+                self._adopt(saved)
+                return self._request_execution(op.mission_id, op.expected_revision), saved[1]
+        saved = self.drafts.apply(op)
+        with self.engine.control_lock:
+            self._adopt(saved)
+        return '미실행 초안을 저장했습니다.', saved[1]
+
+    def _request_execution(self, mission_id, revision):
+        self._sync()
+        DraftStore._check(self.card, mission_id, revision)
+        if self.busy or self.engine.language.executing or self.mode_plan:
+            raise ValueError('이전 요청 또는 실행이 끝난 뒤 새로 요청하세요.')
+        if not self.card:
+            raise ValueError('실행을 요청할 초안이 없습니다.')
+        if load_plan(self.card['actions']).requires_angle_control:
+            raise ValueError('회전각 제어 미검증으로 이 초안은 미리보기만 가능합니다.')
+        self.ticket = None
+        self.card_binding = self.bridge.binding()
+        return f'미션 v{revision} 검토 요청 · Qt 현장 승인 필요. 안전 조건 확인 후 현재 버전을 Qt에서 승인하세요.'
+
+    def _queue_edit(self, kind, *, previous, source=None, **fields):
+        op = DraftOperation(kind=kind, mission_id=previous['id'] if previous else None,
+                            expected_revision=previous['revision'] if previous else 0, request_id=uuid4().hex, **fields)
+        self._run('draft_write', None, lambda: {'saved': self.drafts.apply(op, source_turn_id=source)})
+
+    def _commit_proposal(self, edit, previous):
+        kind = edit['kind']
+        rows = edit['actions']
+        fields = {}
+        if kind == 'append':
+            fields['actions'] = [load_action(row) for row in rows[edit.get('index', 0):]]
+        else:
+            index = edit['index']
+            if kind == 'insert':
+                fields['before_block_id'] = previous['blocks'][index]['block_id'] if index < len(previous['blocks']) else None
+            else:
+                fields['target_block_id'] = previous['blocks'][index]['block_id']
+            if kind in ('insert', 'replace'):
+                fields['actions'] = [load_action(rows[index])]
+        self._queue_edit(kind, previous=previous, source=uuid4().hex, **fields)
+
+    def _reorder(self, coordinates):
+        source, destination = coordinates
+        ids = [block['block_id'] for block in self.card['blocks']] if self.card else []
+        if not (1 <= source <= len(ids) and 1 <= destination <= len(ids)):
+            raise ValueError('변경할 단계 번호를 확인하세요.')
+        block = ids.pop(source-1)
+        self._queue_edit('reorder', previous=self.card, target_block_id=block,
+                         before_block_id=ids[destination-1] if destination <= len(ids) else None)
 
     def emergency(self):
         with self.engine.control_lock:
@@ -280,20 +399,36 @@ class UnifiedAgent:
             self._sync()
             self._append('assistant', '정지 상태를 확인했습니다. 제어를 재개하려면 새 입력이 필요합니다.')
 
-    def _run(self, kind, value, operation):
+    def _run(self, kind, value, operation, *, stream=False):
         token, binding = self.generation, self.bridge.binding()
-        events = self.events
-        self.busy = True
+        with self._reply_changed:
+            job = self.work_id = uuid4().hex
+            self.busy = True
+            self.partial_reply = ''
+            self.chat_stream_id = job if stream else None
+            self._reply_changed.notify_all()
+
+        def publish(content):
+            with self.engine.control_lock:
+                if self._closed or self.work_id != job or self.generation != token:
+                    return False
+                self.partial_reply = content
+                self._reply_changed.notify_all()
+                return True
 
         def work():
             try:
-                result = operation()
+                result = operation(publish) if stream else operation()
             except Exception as exc:
                 code = str(exc)
                 result = {'error': code if re.fullmatch(r'[A-Z][A-Z0-9_]{2,79}', code) else 'INVALID_AGENT_RESPONSE'}
-            events.put((token, binding, kind, value, result))
+            self.events.put((job, token, binding, kind, value, result))
 
-        Thread(target=work, name=f'dig-agent-{kind}', daemon=True).start()
+        worker = Thread(target=work, name=f'dig-agent-{kind}', daemon=True)
+        if kind in ('draft_write', 'review'):
+            self._draft_workers = [thread for thread in self._draft_workers if thread.is_alive()]
+            self._draft_workers.append(worker)
+        worker.start()
 
     def submit(self, text):
         if not isinstance(text, str) or not text.strip() or len(text) > 350:
@@ -309,11 +444,33 @@ class UnifiedAgent:
             if cancel:
                 self._append('user', text)
                 self._invalidate()
-                self._append('assistant', '대기 계획을 취소했습니다.')
+                self._append('assistant', '실행 요청을 취소했습니다. 초안도 삭제하려면 “초안 삭제 확인”이라고 말해 주세요.')
+                return
+            referential = distance_reference(text)
+            reference = bool(referential and self._fresh_draft_reference())
+            if vague_reference(text) or (referential and not reference):
+                self._append('user', text)
+                self._append('assistant', REFERENCE_CLARIFY)
+                return
+            if not reference and not document_question(text) and (reply := local_dialogue(text)):
+                self._append('user', text)
+                self._append('assistant', reply)
+                return
+            if detail := program_detail(text):
+                self._append('user', text)
+                self._append('assistant', detail, retain_in_dialogue=True)
+                return
+            if help_intent := menu_question(text):
+                self._append('user', text)
+                self._append('assistant', explain_menu(help_intent.menu), retain_in_dialogue=True)
+                return
+            if re.fullmatch(r'(?:지금\s*)?레이더(?:가|는)?\s*CLEAR(?:야|인가요|인지\s*알려\s*줘)?[?!.]?', text, re.I):
+                self._append('user', text)
+                self._append('assistant', self.bridge.get_status('radar'))
                 return
             if program_question(text):
                 self._append('user', text)
-                self._append('assistant', self._describe_program())
+                self._append('assistant', self._describe_program(), retain_in_dialogue=True)
                 return
             if self.busy or self.mode_plan or self.engine.language.executing:
                 reply = self._read_during_operation(text)
@@ -323,25 +480,35 @@ class UnifiedAgent:
                     return
             if self.busy:
                 raise ValueError('이전 요청을 처리하고 있습니다.')
-            if self.mode_plan:
+            local = draft_command(text)
+            coordinates = reorder_coordinates(text, len(self.card['blocks'])) if self.card else None
+            if local or coordinates:
+                self._append('user', text)
+                if local:
+                    reply = self._dispatch({'intent': local}, text)
+                    if reply:
+                        self._append('assistant', reply)
+                else:
+                    self._reorder(coordinates)
+                return
+            if self.mode_plan and (mode := corrected_mode(text)):
                 self._invalidate()
-                if mode := corrected_mode(text):
-                    self._append('user', text)
-                    reply = self.bridge.request_mode_change(mode)
-                    self._sync()
-                    self._append('assistant', f'전환 후 계획 요청을 취소했습니다. {reply}')
-                    return
-                self._append('assistant', '새 요청으로 전환 후 계획 요청을 취소했습니다.')
-            # Only prior operator text is sent back. Live tool responses remain local.
-            history = [item for item in self.messages if item['role'] == 'user'][-8:]
+                self._append('user', text)
+                reply = self.bridge.request_mode_change(mode)
+                self._sync()
+                self._append('assistant', f'전환 후 계획 요청을 취소했습니다. {reply}')
+                return
+            # Device readings, document excerpts and execution receipts stay outside model dialogue.
+            history = self.dialogue_history
             previous = self.card
             self.ticket = None
             self._append('user', text)
             graph = self.graph
-            self._run('message', text, lambda: self._interpret(graph, text, history, previous))
+            self._run('message', (text, previous, self.engine.language.executing),
+                      lambda publish: self._interpret(graph, text, history, previous, publish, reference), stream=True)
 
-    def _interpret(self, graph, text, history, previous):
-        result = graph.turn(text, history, previous)
+    def _interpret(self, graph, text, history, previous, on_partial=None, reference=False):
+        result = graph.turn(text, history, previous, on_partial=on_partial, reference=reference)
         intent = result.get('intent') or {}
         if intent.get('intent') != 'query_history':
             return result
@@ -368,7 +535,7 @@ class UnifiedAgent:
             reply = '실행 이력 저장소를 지금 읽을 수 없습니다.'
         if store.degraded:
             reply += '\n저장 오류로 일부 이력이 누락됐을 수 있습니다.'
-        return {**result, 'intent': {'intent': 'chat', 'reply': reply}}
+        return {**result, 'intent': None, 'reply': reply}
 
     def _read_during_operation(self, text):
         text = text.rstrip('.!?。！？').strip()
@@ -393,20 +560,27 @@ class UnifiedAgent:
                 raise ValueError('현재 표시된 계획을 다시 확인하세요.')
             if type(approve) is not bool:
                 raise ValueError('승인 또는 취소를 선택하세요.')
-            if not approve and card['rotation']:
+            if not approve:
                 self._invalidate()
-                self._append('assistant', '회전 미리보기를 취소했습니다.')
+                self._append('assistant', '실행 요청을 취소했습니다. 초안은 보존했습니다.')
                 return
-            if approve:
-                if operator_confirmed is not True or card['rotation']:
-                    raise ValueError('운영자 승인과 검증된 이동 계획이 필요합니다.')
-                self.bridge.motion_session()
-                plan = load_plan(card['actions'])
-                self.ticket = ApprovalTicket(token_hex(16), plan_id, revision, plan, self.card_binding, monotonic()+5)
+            if operator_confirmed is not True or card['rotation'] or self.card_binding is None:
+                raise ValueError('현재 버전의 실행 요청과 운영자 승인이 필요합니다.')
+            self.bridge.motion_session()
+            plan = load_plan(card['actions'])
+            self.ticket = ApprovalTicket(token_hex(16), plan_id, revision, plan, self.card_binding, monotonic()+5)
             ticket = self.ticket
-            decision = 'approve' if approve else 'reject'
             graph = self.graph
-            self._run('review', ticket, lambda: {'decision': graph.review(card, decision)})
+
+            def approve_frozen():
+                graph.turn('', [], None, frozen=card)
+                decision = graph.review(card, 'approve')
+                with self.engine.control_lock:
+                    if self._closed or ticket is not self.ticket or ticket.binding != self.bridge.binding():
+                        return {'decision': 'invalid'}
+                return {'decision': decision, 'claim': (self.drafts.claim(card), card) if decision == 'approve' else None}
+
+            self._run('review', ticket, approve_frozen)
 
     def _start_motion(self, ticket):
         current = self.ticket
@@ -442,7 +616,7 @@ class UnifiedAgent:
 
     def _poll_mode_plan(self):
         pending = self.mode_plan
-        if not pending:
+        if not pending or self.busy:
             return
         try:
             tr, identity = self.bridge.mode_preview_state()
@@ -451,12 +625,8 @@ class UnifiedAgent:
             if self.engine.pending_mode == 'LLM_COMMAND' or not tr.get('stop_verified'):
                 return
             self.bridge.motion_session()
-            binding = self.bridge.binding()
-            result = self.graph.turn(pending.motion, [], None, preview=True)
-            if result.get('error') or binding != self.bridge.binding():
-                raise ValueError('현재 제어 상태와 이동 구문을 다시 확인하세요.')
-            self.card, self.card_binding = result['card'], binding
-            self._announce_card()
+            graph, previous = self.graph, self.card
+            self._run('message', (pending.motion, previous, False), lambda: graph.turn(pending.motion, [], previous, preview=True))
         except ValueError as exc:
             self._append('assistant', f'전환 후 계획 요청을 취소했습니다. {exc}')
         self.mode_plan = None
@@ -464,7 +634,15 @@ class UnifiedAgent:
     def _announce_card(self):
         edit = f'계획을 v{self.card["revision"]}로 수정했습니다. 수정 전후를 확인해 주세요. ' if self.card.get('before') else ''
         self._append('assistant', edit + ('각도 제어 미검증으로 전체 계획은 미리보기만 가능합니다.' if self.card['rotation'] else
-                     '실물 실행은 Qt에서 현재 버전을 승인해야 합니다.'))
+                     '미실행 초안을 저장했습니다. 검토를 시작하려면 “이 계획들 실행해”라고 말해 주세요.'))
+
+    def _reference_key(self):
+        return (self.card['id'], self.card['revision'], self.operator_turn, self.bridge.binding())
+
+    def _fresh_draft_reference(self):
+        return (self.draft_reference and self.card and len(self.card['actions']) == 1 and
+                self.card['actions'][0]['type'] == 'move' and monotonic() < self.draft_reference[1] and
+                self.draft_reference[0] == self._reference_key())
 
     @staticmethod
     def _describe_program():
@@ -477,6 +655,30 @@ class UnifiedAgent:
 
     def _dispatch(self, intent, text):
         kind = intent['intent']
+        if kind == 'show_draft':
+            if not self.card:
+                return '저장된 미실행 초안이 없습니다.'
+            return f'미실행 초안 v{self.card["revision"]} · ' + ' → '.join(self.card['steps'])
+        if kind in ('new_draft', 'request_execution') and draft_command(text) != kind:
+            return '초안을 변경하거나 검토하려면 요청을 명확하게 입력해 주세요.'
+        if kind == 'request_execution':
+            try:
+                return self._request_execution(self.card['id'] if self.card else None, self.card['revision'] if self.card else 0)
+            except ValueError as exc:
+                return str(exc)
+        if kind == 'new_draft':
+            if self.card and '확인' not in text:
+                return '현재 초안을 보관하고 새로 시작하려면 “새 계획 시작 확인”이라고 말해 주세요.'
+            if self.card:
+                self._queue_edit('clear', previous=self.card)
+                return None
+            return '새 이동 명령을 입력하면 미실행 초안을 만듭니다.'
+        if kind == 'reorder_draft':
+            coordinates = reorder_coordinates(text, len(self.card['blocks'])) if self.card else None
+            if coordinates != (intent['source'], intent['destination']):
+                return '옮길 단계와 위치를 명시해 주세요.'
+            self._reorder(coordinates)
+            return None
         if kind == 'explain_program':
             return self._describe_program()
         if kind == 'navigate':
@@ -502,18 +704,46 @@ class UnifiedAgent:
             return reply
         if kind in ('stop', 'cancel_plan'):
             return '정지하려면 “멈춰”, 대기 계획을 지우려면 “계획 취소”라고 입력하세요.'
-        return intent['reply']
+        raise ValueError('지원되지 않는 관제 의도입니다.')
 
     def poll(self):
         with self.engine.control_lock:
+            if self._closed:
+                return
             self._sync()
             self._poll_mode_plan()
             try:
-                token, binding, kind, value, result = self.events.get_nowait()
+                job, token, binding, kind, value, result = self.events.get_nowait()
             except Empty:
+                self._refresh_draft()
+                return
+            claim = result.get('claim')
+            if job != self.work_id:
+                if claim:
+                    self._restore_claim(claim)
                 return
             self.busy = False
-            if token != self.generation or binding != self.bridge.binding():
+            self.partial_reply = ''
+            self.chat_stream_id = None
+            self._reply_changed.notify_all()
+            current_ticket = token == self.generation and binding == self.bridge.binding()
+            if kind == 'draft_write' and 'saved' in result:
+                self._adopt(result['saved'])
+                if self.card:
+                    if result['saved'][0] == self.draft_serial:
+                        self.draft_reference = (self._reference_key(), monotonic() + 60)
+                    self._announce_card()
+                else:
+                    self._append('assistant', '초안을 비웠습니다.')
+                return
+            if kind == 'message' and result.get('reply'):
+                self._append('assistant', result['reply'], result.get('citations'),
+                             retain_in_dialogue=result.get('retain_in_dialogue', False))
+                return
+            staged_during_run = kind == 'message' and result.get('edit') and value[2]
+            if not current_ticket and not (token == self.generation and staged_during_run):
+                if claim:
+                    self._restore_claim(claim)
                 self.ticket = None
                 return
             try:
@@ -521,45 +751,90 @@ class UnifiedAgent:
                     if kind != 'message' or not result.get('card'):
                         self._invalidate()
                     reply = ('어느 단계에서 무엇을 바꿀지 다시 알려 주세요. 예를 들어 “마지막 거리를 10cm로”라고 말할 수 있습니다.'
-                             if result['error'] in ('EDIT_NOT_EXPLICIT', 'ACTION_INDEX_MISMATCH')
+                             if result['error'] in ('EDIT_NOT_EXPLICIT', 'ACTION_INDEX_MISMATCH', 'REFERENCE_CONTEXT_REQUIRED',
+                                                    'NO_PENDING_PLAN', 'EXPLICIT_REVISION_REQUIRED', 'PLAN_STALE_OR_MISSING')
                              else f'요청을 확인하지 못했습니다. ({result["error"]})')
                 elif kind == 'review':
-                    if result['decision'] == 'approve':
+                    if claim and result['decision'] == 'approve':
                         reply = self._start_motion(value)
+                        self._adopt((claim[0], None))
                     else:
                         self._invalidate()
                         reply = '계획을 취소했습니다.' if result['decision'] == 'reject' else '계획을 다시 생성해 주세요.'
                 elif result.get('intent'):
-                    reply = self._dispatch(result['intent'], value)
-                elif result.get('card'):
-                    card = result['card']
-                    if card.get('before') and (not self.card or self.card['id'] != card['id'] or
-                                               self.card['revision'] != card['revision'] - 1):
-                        raise ValueError('현재 계획 버전에서 다시 요청해 주세요.')
-                    self.card, self.card_binding = card, binding
-                    self._announce_card()
+                    intent = result['intent']
+                    if self.mode_plan and intent['intent'] in ('switch_mode', 'mode_then_plan'):
+                        text = value[0]
+                        if intent['intent'] == 'mode_then_plan' or explicit_mode(text, intent['mode']):
+                            self._invalidate()
+                    reply = self._dispatch(intent, value[0])
+                elif result.get('edit'):
+                    if value[1] is not self.card:
+                        raise ValueError('현재 초안 버전에서 다시 요청해 주세요.')
+                    if self.mode_plan:
+                        self._invalidate()
+                        self._append('assistant', '새 미션 편집 요청으로 전환 후 계획을 취소했습니다.')
+                    self._commit_proposal(result['edit'], value[1])
                     reply = None
                 else:
                     raise ValueError('Agent가 사용할 수 있는 의도를 반환하지 않았습니다.')
             except ValueError as exc:
+                if claim:
+                    self._restore_claim(claim)
                 self._invalidate()
                 reply = str(exc)
             if reply:
-                self._append('assistant', reply)
+                self._append('assistant', reply, retain_in_dialogue=(result.get('intent') or {}).get('intent') == 'explain_program')
+
+    def _restore_claim(self, claim):
+        def restore():
+            try:
+                self.drafts.restore(*claim)
+            except sqlite3.Error:
+                pass
+
+        worker = Thread(target=restore, name='dig-draft-restore', daemon=True)
+        self._draft_workers = [thread for thread in self._draft_workers if thread.is_alive()]
+        self._draft_workers.append(worker)
+        worker.start()
+
+    def close(self):
+        with self.engine.control_lock:
+            self._closed = True
+            self._invalidate()
+            workers = [*self._draft_workers, self._draft_reader]
+        for worker in workers:
+            if worker:
+                worker.join(timeout=2.5)
+        # The control loop no longer consumes results during shutdown.
+        while not self.events.empty():
+            result = self.events.get_nowait()[-1]
+            if claim := result.get('claim'):
+                try:
+                    self.drafts.restore(*claim)
+                except sqlite3.Error:
+                    pass
+
+    def wait_reply(self, stream_id, previous, timeout):
+        with self._reply_changed:
+            self._reply_changed.wait_for(
+                lambda: self.chat_stream_id != stream_id or self.partial_reply != previous, timeout=timeout)
+            return self.chat_stream_id == stream_id, self.partial_reply
 
     def view(self):
         self.poll()
         with self.engine.control_lock:
             can_approve = False
             card = self.card
-            if card and not card['rotation'] and not self.busy:
+            if card and self.card_binding is not None and not card['rotation'] and not self.busy:
                 try:
                     self.bridge.motion_session()
                     can_approve = True
                 except ValueError:
                     pass
-            return {'messages': self.messages, 'busy': self.busy, 'can_approve': can_approve,
-                    'card': {**card, 'steps': [describe_action(a) for a in load_plan(card['actions']).actions]} if card else None,
+            return {'messages': self.messages, 'partial_reply': self.partial_reply, 'chat_stream_id': self.chat_stream_id,
+                    'busy': self.busy, 'can_approve': can_approve,
+                    'card': {**card, 'review_requested': self.card_binding is not None} if card else None,
                     'page': self.navigation, 'navigation_id': self.navigation_id,
                     'status': self.bridge.get_status(), 'execution': self.engine.language.phase,
                     'execution_detail': self.engine.language.detail,

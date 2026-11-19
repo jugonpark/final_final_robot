@@ -17,6 +17,7 @@
     <nav aria-label="중앙관제 메뉴">
       <button type="button" data-page="ai" aria-current="page"><img src="/icons/chat.svg" alt="">미션 컨트롤</button>
       <button type="button" data-page="history"><img src="/icons/clock.svg" alt="">작업 이력</button>
+      <button type="button" data-page="knowledge"><img src="/icons/file-text.svg" alt="">로봇 문서</button>
       <button type="button" data-page="camera"><img src="/icons/hand.svg" alt="">카메라 · 손동작</button>
       <button type="button" data-page="manual"><img src="/icons/gamepad.svg" alt="">수동 제어</button>
       <button type="button" data-page="diagnostics"><img src="/icons/activity.svg" alt="">상태 · 진단</button>
@@ -62,6 +63,27 @@
               <form id="plan-form"><label class="sr-only" for="prompt">D.I.G.에게 보내는 메시지</label><input id="prompt" maxlength="350" placeholder="예: 앞으로 5cm 이동해" required><button class="primary" type="submit"><img src="/icons/send.svg" alt=""><span id="chat-submit">계획 생성</span></button></form>
             </div>
           </article>
+          <article class="card draft-panel">
+            <h2><img src="/icons/file-text.svg" alt="">미션 블록</h2>
+            <div class="card-body">
+              <p class="empty muted" id="plan-empty">이동을 요청하거나 블록을 추가하면 미실행 초안이 만들어집니다.</p>
+              <p class="warning" id="plan-waiting" role="status" hidden>제어 모드 전환 · 새 STOP 응답 대기</p>
+              <div class="draft-toolbar">
+                <p id="plan-distance" class="muted"></p>
+                <button type="button" class="outline" id="add-block" hidden>+ 블록 추가</button>
+              </div>
+              <p id="draft-order-help" class="muted" hidden>손잡이를 끌거나 ↑ ↓ 버튼으로 순서를 바꿀 수 있습니다.</p>
+              <ol class="steps draft-blocks" id="plan-steps" aria-describedby="draft-order-help"></ol>
+              <details class="plan-diff" id="plan-diff" hidden><summary id="plan-before-label">수정 전</summary><ol class="steps" id="plan-before"></ol></details>
+              <p class="warning" id="rotate" hidden>각도 제어 미검증 · 회전 계획 실행 차단</p>
+              <p id="draft-feedback" class="muted" role="status"></p>
+              <div class="plan-actions">
+                <p class="muted" id="approval-note"><img src="/icons/lock.svg" alt=""><span id="draft-review-state">실물 실행 승인 · Qt 관제</span></p>
+                <div class="actions"><button type="button" class="outline" id="discard" disabled>초안 비우기</button><button type="button" class="primary" id="request-review" aria-describedby="approval-note" hidden disabled>실행 요청</button></div>
+              </div>
+            </div>
+          </article>
+          <div class="stack mission-timeline">
           <article class="card spatial">
             <header class="spatial-header"><h2><img src="/icons/robot.svg" alt="">로봇 동작 시각화</h2><span>3WD · 위에서 본 모습</span></header>
             <div class="spatial-body">
@@ -89,8 +111,6 @@
               <p id="route-status" class="muted" role="status">대화에서 이동 계획을 만들면 경로가 표시됩니다.</p>
             </div>
           </article>
-          <div class="stack mission-timeline">
-            <article class="card"><h2><img src="/icons/file-text.svg" alt="">실행 계획</h2><div class="card-body"><p class="empty muted" id="plan-empty">대화에서 이동을 요청하면 여기에서 계획을 검토할 수 있습니다.</p><p class="warning" id="plan-waiting" role="status" hidden>제어 모드 전환 · 새 STOP 응답 대기</p><ol class="steps" id="plan-steps"></ol><p class="muted" id="plan-distance"></p><details class="plan-diff" id="plan-diff" hidden><summary id="plan-before-label">수정 전</summary><ol class="steps" id="plan-before"></ol></details><p class="warning" id="rotate" hidden>각도 제어 미검증 · 회전 계획 실행 차단</p><div class="plan-actions"><p class="muted" id="approval-note"><img src="/icons/lock.svg" alt="">실물 실행 승인 · 데스크톱 관제</p><div class="actions"><button type="button" class="secondary" id="discard" disabled>계획 지우기</button><button type="button" class="primary" aria-describedby="approval-note" disabled>계획 실행</button></div></div></div></article>
             <article class="card" id="execution-progress">
               <h2><img src="/icons/activity.svg" alt="">실행 타임라인</h2>
               <div class="card-body execution-body">
@@ -125,6 +145,29 @@
           </div>
         </div>
       </section>
+      <section data-panel="knowledge" hidden>
+        <h1>로봇 문서</h1>
+        <p class="intro">매뉴얼과 운영 문서를 검색하고 파일명, 절 또는 페이지, 버전을 확인하세요.</p>
+        <div class="columns equal">
+          <article class="card">
+            <h2>문서 검색</h2>
+            <div class="card-body knowledge-body">
+              <form id="knowledge-query"><label class="sr-only" for="knowledge-question">문서 검색어</label><input id="knowledge-question" placeholder="예: 레이더 UNKNOWN 또는 STOP_NOT_CONFIRMED" maxlength="350" required><button type="submit" class="primary">검색</button></form>
+              <p class="muted" id="knowledge-results-status" role="status">한국어 질문이나 영문 기술 용어로 검색하세요.</p>
+              <ol class="knowledge-list" id="knowledge-results"></ol>
+            </div>
+          </article>
+          <article class="card">
+            <h2>문서 라이브러리</h2>
+            <div class="card-body knowledge-body">
+              <form id="knowledge-upload"><label class="sr-only" for="knowledge-file">등록할 문서</label><input type="file" id="knowledge-file" accept=".pdf,.md,.txt" required><button type="submit" class="outline">등록</button></form>
+              <p class="muted">PDF·Markdown·TXT, 최대 4MB. 등록한 파일의 내용은 로컬 검색에 사용됩니다.</p>
+              <p class="muted" id="knowledge-library-status" role="status"></p>
+              <ul class="knowledge-list" id="knowledge-library"></ul>
+            </div>
+          </article>
+        </div>
+      </section>
       <section data-panel="manual" hidden>
         <h1>수동 제어</h1><p class="intro">로봇 이동 방향과 바퀴 피드백을 확인합니다.</p>
         <div class="columns"><article class="card"><h2><img src="/icons/gamepad.svg" alt="">본체 방향 제어</h2><div class="card-body"><div class="pad"><button disabled><img src="/icons/rotate-left.svg" alt="">좌회전</button><button disabled><img src="/icons/arrow-up.svg" alt="">전진</button><button disabled><img src="/icons/rotate-right.svg" alt="">우회전</button><button disabled><img src="/icons/arrow-left.svg" alt="">좌측</button><button type="button" class="danger" data-command="estop"><img src="/icons/stop.svg" alt="">정지</button><button disabled><img src="/icons/arrow-right.svg" alt="">우측</button><button class="back" disabled><img src="/icons/arrow-down.svg" alt="">후진</button></div><p class="warning">실물 수동 구동은 기존 데스크톱 관제에서 사용할 수 있습니다.</p></div></article><div class="stack"><article class="card"><h2><img src="/icons/shield.svg" alt="">구동 준비</h2><dl class="card-body data" id="manual-safety"></dl></article><article class="card"><h2><img src="/icons/activity.svg" alt="">바퀴 상태</h2><div class="card-body"><div id="motor-summary" class="wheel-summary"></div></div></article></div></div>
@@ -144,8 +187,33 @@
   <dialog id="clear-chat-dialog" aria-labelledby="clear-chat-title">
     <form method="dialog" class="clear-chat-form">
       <h2 id="clear-chat-title">대화 기록을 삭제할까요?</h2>
-      <p class="muted">현재 대화의 메시지와 승인 대기 계획이 삭제됩니다.</p>
+      <p class="muted">현재 대화와 실행 요청을 지웁니다. 저장된 초안은 보존됩니다.</p>
       <div class="actions"><button value="cancel" autofocus>취소</button><button class="danger" value="clear">삭제</button></div>
+    </form>
+  </dialog>
+  <dialog id="draft-dialog" aria-labelledby="draft-dialog-title">
+    <form method="dialog" class="clear-chat-form" id="draft-form">
+      <h2 id="draft-dialog-title">블록 편집</h2>
+      <div id="draft-action-fields">
+        <label for="draft-action">동작</label>
+        <select id="draft-action"><option value="forward">앞으로</option><option value="backward">뒤로</option><option value="left">왼쪽으로</option><option value="right">오른쪽으로</option><option value="rotate-left">좌회전 · 미리보기</option><option value="rotate-right">우회전 · 미리보기</option><option value="rotate-unspecified">방향 미지정 회전 · 미리보기</option><option value="stop">정지</option></select>
+        <label id="draft-amount-label" for="draft-amount">거리 (cm)</label>
+        <input id="draft-amount" type="number" value="5" step="any" required>
+      </div>
+      <div id="draft-position-field" hidden>
+        <label for="draft-position">추가 위치</label>
+        <select id="draft-position"></select>
+      </div>
+      <p class="muted" id="draft-clear-note" hidden>현재 초안을 비웁니다.</p>
+      <div class="actions"><button value="cancel" formnovalidate autofocus>취소</button><button class="primary" value="apply" id="draft-submit">저장</button></div>
+    </form>
+  </dialog>
+  <dialog id="source-dialog" aria-labelledby="source-title">
+    <form method="dialog" class="clear-chat-form">
+      <h2 id="source-title">문서 출처</h2>
+      <p id="source-meta" class="muted"></p>
+      <p id="source-text" role="status"></p>
+      <div class="actions"><button autofocus>닫기</button></div>
     </form>
   </dialog>
 </body>

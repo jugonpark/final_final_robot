@@ -39,6 +39,11 @@ let online = false;
 let stateRequest = 0;
 let planBusy = false;
 let chatClearing = false;
+let chatFeed = null;
+let chatFeedId = null;
+let chatFeedText = null;
+let draftBusy = false;
+let draftDialogContext = null;
 let lastPlan = '';
 let stopPending = false;
 let lastNavigation = 0;
@@ -54,6 +59,7 @@ let archiveRequest = 0;
 let archiveSelection = null;
 let latestRun = null;
 let timelineUnavailable = false;
+let sourceRequest = 0;
 
 function text(id, value) {
   const node = byId(id);
@@ -120,6 +126,7 @@ function selectPage(pageId) {
   window.scrollTo(0, 0);
   render();
   if (page === 'history') refreshHistory();
+  if (page === 'knowledge') refreshKnowledge();
 }
 
 function renderPlan() {
@@ -131,6 +138,13 @@ function renderPlan() {
   byId('plan-form').querySelector('button').disabled = planBusy || chatClearing || !online || !prompt.value.trim();
   byId('clear-chat').disabled = !online || planBusy || chatClearing || !(agent && (agent.messages.length || agent.busy || agent.card));
   byId('discard').disabled = !online || planBusy || (agent ? agent.busy || !agent.card : !state?.plan);
+  byId('add-block').hidden = !agent;
+  byId('add-block').disabled = !online || draftBusy || (plan?.blocks?.length ?? 0) >= 4;
+  byId('draft-order-help').hidden = !(plan?.blocks?.length > 1);
+  byId('request-review').hidden = !agent;
+  byId('request-review').disabled = !online || draftBusy || agent?.busy || !plan || plan.rotation || plan.review_requested ||
+    ['EXECUTING', 'STOPPING'].includes(agent?.execution);
+  text('draft-review-state', plan?.review_requested ? `v${plan.revision} 검토 요청 · Qt 현장 승인 필요` : '실물 실행 승인 · Qt 관제');
   const key = JSON.stringify(plan);
   if (key === lastPlan) return;
   lastPlan = key;
@@ -143,7 +157,8 @@ function renderPlan() {
   }
   byId('rotate').hidden = !plan?.rotation;
   const steps = plan?.steps ?? [];
-  renderSteps('plan-steps', steps);
+  if (plan?.blocks) renderDraftBlocks(plan);
+  else renderSteps('plan-steps', steps);
   const diff = byId('plan-diff');
   diff.hidden = !plan?.before;
   diff.open = false;
@@ -156,7 +171,167 @@ function renderPlan() {
   }
   renderSteps('plan-before', plan?.before ?? []);
   renderMissionRoute(plan?.actions ?? []);
-  text('plan-distance', plan ? (agent ? `계획 버전 ${plan.revision} · ${steps.length}단계` : `${steps.length}단계 · 총 이동 거리 ${Number(plan.distance_cm)} cm`) : '');
+  text('plan-distance', plan ? (agent ? `미션 ${plan.id.slice(0, 6)} · v${plan.revision} · ${steps.length}블록 · ${Number(plan.distance_cm)} cm` : `${steps.length}단계 · 총 이동 거리 ${Number(plan.distance_cm)} cm`) : '');
+}
+
+async function changeDraft(plan, kind, fields = {}, focusBlock = undefined) {
+  if (!online || draftBusy) return;
+  draftBusy = true;
+  renderPlan();
+  text('draft-feedback', '초안을 확인하는 중입니다.');
+  try {
+    const data = await fetchJson('/api/draft', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({kind, mission_id: plan?.id ?? null, expected_revision: plan?.revision ?? 0,
+        request_id: crypto.randomUUID().replaceAll('-', ''), ...fields}),
+    });
+    text('draft-feedback', data.message);
+  } catch (error) {
+    const messages = { ACTION_COUNT: '한 미션은 최대 4블록입니다.', TOTAL_DISTANCE_LIMIT: '한 미션의 이동 거리는 합계 100cm 이하여야 합니다.',
+      STOP_MUST_BE_LAST: '정지 블록은 맨 끝에 있어야 합니다.' };
+    text('draft-feedback', messages[error.message] ?? error.message);
+  } finally {
+    draftBusy = false;
+    await refreshState();
+    if (focusBlock !== undefined && page === 'ai') {
+      (byId('plan-steps').querySelector(`[data-block="${focusBlock}"] button:not(:disabled)`) ?? byId('add-block')).focus();
+    }
+  }
+}
+
+function renderDraftBlocks(plan) {
+  const list = byId('plan-steps');
+  const ids = plan.blocks.map(block => block.block_id);
+  const canMove = (id, before) => {
+    const index = ids.indexOf(id);
+    return index >= 0 && before !== id && before !== (ids[index + 1] ?? null);
+  };
+  const move = (id, before) => {
+    if (canMove(id, before)) changeDraft(plan, 'reorder', {target_block_id: id, before_block_id: before}, id);
+  };
+
+  const mime = 'application/x-dig-block';
+  let dragged = null;
+  let marker = null;
+  const clearMarker = () => {
+    if (marker) delete marker.dataset.drop;
+    marker = null;
+  };
+  const finishDrag = () => {
+    if (dragged) delete dragged.dataset.dragging;
+    dragged = null;
+    clearMarker();
+  };
+  const insertionIndex = y => {
+    const index = rows.findIndex(row => {
+      const rect = row.getBoundingClientRect();
+      return y < rect.top + rect.height / 2;
+    });
+    return index === -1 ? rows.length : index;
+  };
+  const rows = plan.blocks.map((block, index) => {
+    const row = document.createElement('li');
+    row.dataset.block = block.block_id;
+    const grip = document.createElement('span');
+    grip.className = 'block-grip';
+    grip.textContent = '⠿';
+    grip.title = '드래그해서 순서 변경';
+    grip.setAttribute('aria-hidden', 'true');
+    grip.hidden = ids.length < 2;
+    grip.draggable = !grip.hidden;
+    const title = document.createElement('strong');
+    title.textContent = plan.steps[index];
+    const source = document.createElement('small');
+    source.textContent = block.source_turn_id ? '대화에서 추가·편집' : '편집기에서 추가·편집';
+    const actions = document.createElement('div');
+    actions.className = 'block-actions';
+    const button = (name, title, action, disabled = false) => {
+      const node = document.createElement('button');
+      node.type = 'button';
+      node.className = 'ghost';
+      node.textContent = name;
+      node.disabled = disabled;
+      node.setAttribute('aria-label', `${index + 1}번 블록 ${title}`);
+      node.addEventListener('click', action);
+      actions.append(node);
+    };
+    button('↑', '위로', () => move(block.block_id, ids[index - 1]), index === 0);
+    button('↓', '아래로', () => move(block.block_id, ids[index + 2] ?? null), index === ids.length - 1);
+    button('편집', '편집', () => openDraftDialog(plan, block));
+    button('삭제', '삭제', () => changeDraft(plan, 'delete', {target_block_id: block.block_id}, ids[index + 1] ?? ids[index - 1] ?? null));
+    grip.addEventListener('dragstart', event => {
+      if (!online || draftBusy) {
+        event.preventDefault();
+        return;
+      }
+      dragged = row;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData(mime, block.block_id);
+      event.dataTransfer.setDragImage(row, 16, 16);
+      row.dataset.dragging = '';
+    });
+    grip.addEventListener('dragend', finishDrag);
+    row.append(title, grip, source, actions);
+    return row;
+  });
+  list.replaceChildren(...rows);
+  list.ondragover = event => {
+    if (!dragged || !event.dataTransfer.types.includes(mime)) return;
+    const slot = insertionIndex(event.clientY);
+    clearMarker();
+    if (!canMove(dragged.dataset.block, ids[slot] ?? null)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    marker = rows[slot] ?? rows.at(-1);
+    marker.dataset.drop = slot === rows.length ? 'after' : 'before';
+  };
+  list.ondragleave = event => {
+    if (!list.contains(event.relatedTarget)) clearMarker();
+  };
+  list.ondrop = event => {
+    if (!dragged) return;
+    event.preventDefault();
+    const id = dragged.dataset.block;
+    finishDrag();
+    if (event.dataTransfer.getData(mime) === id) move(id, ids[insertionIndex(event.clientY)] ?? null);
+  };
+}
+
+function updateDraftAmount() {
+  const type = byId('draft-action').value;
+  const angle = type.startsWith('rotate-');
+  const amount = byId('draft-amount');
+  amount.disabled = amount.hidden = type === 'stop';
+  byId('draft-amount-label').hidden = amount.hidden;
+  text('draft-amount-label', angle ? '각도 (°)' : '거리 (cm)');
+  amount.min = angle ? '0.01' : '5';
+  amount.max = angle ? '360' : '50';
+}
+
+function openDraftDialog(plan, block = null, clear = false) {
+  draftDialogContext = { plan, block, clear };
+  const dialog = byId('draft-dialog');
+  const action = block?.action;
+  byId('draft-action-fields').hidden = byId('draft-amount').disabled = clear;
+  byId('draft-clear-note').hidden = !clear;
+  const position = byId('draft-position');
+  byId('draft-position-field').hidden = clear || Boolean(block) || !plan?.blocks?.length;
+  position.replaceChildren(new Option('맨 뒤', ''));
+  if (!byId('draft-position-field').hidden) {
+    plan.blocks.forEach((item, index) => {
+      position.add(new Option(`${index + 1}번 앞 · ${plan.steps[index]}`, item.block_id));
+    });
+  }
+  text('draft-dialog-title', clear ? '초안을 비울까요?' : block ? '블록 편집' : '블록 추가');
+  text('draft-submit', clear ? '초안 비우기' : '저장');
+  if (!clear) {
+    byId('draft-action').value = action?.type === 'rotate' ? `rotate-${action.direction ?? 'unspecified'}` :
+      action?.type === 'stop' ? 'stop' : action?.direction ?? 'forward';
+    byId('draft-amount').value = action?.distance_cm ?? action?.angle_deg ?? 5;
+    updateDraftAmount();
+  }
+  dialog.returnValue = '';
+  dialog.showModal();
 }
 
 function renderSteps(id, labels) {
@@ -409,8 +584,116 @@ function chatMessage(row) {
   bubble.className = 'bubble';
   bubble.textContent = row.content;
   content.append(author, bubble);
+  if (row.citations?.length) {
+    const sources = document.createElement('div');
+    sources.className = 'chat-citations';
+    for (const [index, citation] of row.citations.entries()) {
+      sources.append(citationButton(citation, `${index + 1}. ${citation.path.split('/').at(-1)}`));
+    }
+    content.append(sources);
+  }
   message.append(avatar, content);
   return message;
+}
+
+const sourceScope = row => ({
+  BREADBOARD_PROTO: row.source_kind === 'FIRMWARE_SOURCE' ? '브레드보드 · 펌웨어 소스' : '브레드보드 · 제공 BOM',
+  PCB_V18_DESIGN: 'PCB V18 · CAD 설계 · 제작 승인 보류',
+  PCB_V19_DESIGN: 'PCB V19 · CAD 설계 · 제작 승인 보류',
+}[row.variant_id] ?? (row.evidence_status === 'REVIEW_ONLY' ? '검토본 · 정본 후보' : ''));
+const sourceLabel = row => [
+  sourceScope(row), row.page ? `${row.page}쪽` : `${row.section ?? row.heading}${row.line ? ` · ${row.line}행` : ''}`,
+  `리비전 ${row.source_kind === 'FIRMWARE_SOURCE' ? row.revision : (row.revision ?? row.version).slice(0, 12)}`,
+].filter(Boolean).join(' · ');
+
+function citationButton(row, title = row.path.split('/').at(-1)) {
+  const button = document.createElement('button');
+  const details = document.createElement('small');
+  button.type = 'button';
+  button.className = 'outline source-link';
+  button.textContent = title;
+  details.textContent = sourceLabel(row);
+  button.append(details);
+  button.addEventListener('click', () => openSource(row.id));
+  return button;
+}
+
+async function openSource(id) {
+  const request = ++sourceRequest;
+  const dialog = byId('source-dialog');
+  text('source-title', '문서 출처');
+  text('source-meta', '');
+  text('source-text', '발췌를 읽는 중입니다.');
+  if (!dialog.open) dialog.showModal();
+  try {
+    const row = await fetchJson(`/api/knowledge/chunks/${id}`);
+    if (request !== sourceRequest) return;
+    text('source-title', row.path);
+    const digest = row.source_sha256 ?? row.sha;
+    const excerpt = digest !== row.sha ? `\n색인 발췌 SHA-256 ${row.sha}` : '';
+    text('source-meta', `${sourceLabel(row)}\n${row.source_kind ?? ''} · ${row.evidence_status ?? ''}\n${row.source_path ?? row.path}\n출처 SHA-256 ${digest}${excerpt}`);
+    text('source-text', row.body);
+  } catch (error) {
+    if (request === sourceRequest) text('source-text', error.message);
+  }
+}
+
+async function refreshKnowledge() {
+  text('knowledge-library-status', '문서 목록을 읽는 중입니다.');
+  try {
+    const { documents } = await fetchJson('/api/knowledge/documents', {signal: AbortSignal.timeout(12000)});
+    const labels = {indexed: '색인됨', scoped: '버전 지정 검색', review_only: '검토용', outdated: '이전 버전', failed: '색인 실패'};
+    byId('knowledge-library').replaceChildren(...documents.map((row) => {
+      const item = document.createElement('li');
+      const title = document.createElement('strong');
+      const detail = document.createElement('small');
+      title.textContent = row.path;
+      detail.textContent = [labels[row.status], sourceScope(row), `리비전 ${row.version.slice(0, 12)}`, row.detail].filter(Boolean).join(' · ');
+      item.append(title, detail);
+      return item;
+    }));
+    text('knowledge-library-status', documents.length ? '' : '등록된 문서가 없습니다.');
+  } catch (error) {
+    text('knowledge-library-status', error.message);
+  }
+}
+
+function renderChatPreview(reply) {
+  const preview = byId('agent-thinking').querySelector('.bubble');
+  const thread = byId('chat-thread');
+  const follow = thread.scrollHeight - thread.clientHeight - thread.scrollTop < 32;
+  const content = reply || '응답을 준비하고 있어요.';
+  if (preview.textContent !== content) preview.textContent = content;
+  preview.classList.toggle('thinking', !reply);
+  if (follow && page === 'ai') thread.scrollTop = thread.scrollHeight;
+}
+
+function connectChatFeed(id) {
+  if (id === chatFeedId) return;
+  chatFeed?.close();
+  chatFeed = null;
+  chatFeedId = id;
+  chatFeedText = null;
+  if (!id) return;
+  const feed = new EventSource(`/api/agent/stream/${id}`);
+  chatFeed = feed;
+  function finish() {
+    if (chatFeed !== feed) return;
+    feed.close();
+    chatFeed = null;
+    chatFeedText = null;
+    void refreshState();
+  }
+  feed.onmessage = event => {
+    if (chatFeed !== feed) return;
+    const data = JSON.parse(event.data);
+    if (data.done) finish();
+    else {
+      chatFeedText = data.text;
+      renderChatPreview(chatFeedText);
+    }
+  };
+  feed.onerror = finish;
 }
 
 function renderAgent(agent) {
@@ -418,6 +701,7 @@ function renderAgent(agent) {
   history.hidden = !agent;
   byId('clear-chat').hidden = !agent;
   byId('program-example').hidden = !agent;
+  connectChatFeed(agent?.chat_stream_id ?? null);
   if (!agent) return;
   const thread = byId('chat-thread');
   const followLatest = thread.scrollHeight - thread.clientHeight - thread.scrollTop < 32;
@@ -436,6 +720,7 @@ function renderAgent(agent) {
   }
   const thinking = byId('agent-thinking');
   if (thinking.hidden === agent.busy) thinking.hidden = !agent.busy;
+  renderChatPreview(chatFeedText ?? agent.partial_reply);
   if (followLatest && (page === 'ai')) thread.scrollTop = thread.scrollHeight;
   if (agent.navigation_id !== lastNavigation) {
     lastNavigation = agent.navigation_id;
@@ -460,6 +745,8 @@ function render() {
   text('stop-proof', stopProof);
   byId('safety').dataset.tone = (connected && state.estop_latched) || radar?.state === 'EVADE' ? 'danger' : radar?.blocked === false ? 'ok' : 'warn';
   if (connected) renderAgent(state.agent);
+  const knowledgeNav = nav.find(button => button.dataset.page === 'knowledge');
+  knowledgeNav.hidden = connected && !state.agent;
   renderProgress((connected && state.agent?.progress) || latestRun);
   byId('history-warning').hidden = !state?.history_degraded;
   renderPlan();
@@ -641,6 +928,56 @@ byId('play-route').addEventListener('click', playRoute);
 byId('reset-route').addEventListener('click', resetRoute);
 byId('open-history').addEventListener('click', () => selectPage('history'));
 byId('refresh-history').addEventListener('click', refreshHistory);
+byId('knowledge-query').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const field = byId('knowledge-question');
+  const button = event.currentTarget.querySelector('button');
+  button.disabled = true;
+  text('knowledge-results-status', '문서를 검색하는 중입니다.');
+  byId('knowledge-results').replaceChildren();
+  try {
+    const { results } = await fetchJson(`/api/knowledge/search?q=${encodeURIComponent(field.value.trim())}`, {signal: AbortSignal.timeout(12000)});
+    byId('knowledge-results').replaceChildren(...results.map(row => {
+      const item = document.createElement('li');
+      item.append(citationButton(row));
+      return item;
+    }));
+    text('knowledge-results-status', results.length ? `${results.length}개 발췌` : '색인된 문서에서 근거를 찾지 못했습니다.');
+  } catch (error) {
+    text('knowledge-results-status', error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+byId('knowledge-upload').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const input = byId('knowledge-file');
+  const file = input.files[0];
+  const button = event.currentTarget.querySelector('button');
+  if (!file || file.size > 4 * 1024 * 1024) {
+    text('knowledge-library-status', '4MB 이하의 문서를 선택하세요.');
+    return;
+  }
+  button.disabled = true;
+  text('knowledge-library-status', '문서를 색인하는 중입니다.');
+  try {
+    const url = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다.'));
+      reader.readAsDataURL(file);
+    });
+    const { document: row } = await fetchJson('/api/knowledge/documents', { method: 'POST', signal: AbortSignal.timeout(30000),
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: file.name, content: url.split(',')[1]}) });
+    input.value = '';
+    await refreshKnowledge();
+    text('knowledge-library-status', row.status === 'indexed' ? `${row.path} 색인을 완료했습니다.` : row.detail);
+  } catch (error) {
+    text('knowledge-library-status', error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
 const clearDialog = byId('clear-chat-dialog');
 byId('clear-chat').addEventListener('click', () => {
   clearDialog.returnValue = '';
@@ -679,8 +1016,28 @@ prompt.addEventListener('input', renderPlan);
 byId('estop').addEventListener('click', stop);
 byId('discard').addEventListener('click', () => {
   const card = state?.agent?.card;
-  if (card) command('agent_reject', {plan_id: card.id, revision: card.revision});
+  if (card) openDraftDialog(card, null, true);
   else command('discard_plan');
+});
+byId('add-block').addEventListener('click', () => openDraftDialog(state?.agent?.card));
+byId('request-review').addEventListener('click', () => changeDraft(state?.agent?.card, 'request_execution'));
+byId('draft-action').addEventListener('change', updateDraftAmount);
+byId('draft-dialog').addEventListener('close', () => {
+  if (byId('draft-dialog').returnValue !== 'apply') return;
+  const { plan, block, clear } = draftDialogContext;
+  if (clear) {
+    changeDraft(plan, 'clear');
+    return;
+  }
+  const type = byId('draft-action').value;
+  const amount = byId('draft-amount').valueAsNumber;
+  const action = type === 'stop' ? {type: 'stop'} : type.startsWith('rotate-') ?
+    {type: 'rotate', direction: type === 'rotate-unspecified' ? null : type.slice(7), angle_deg: amount} :
+    {type: 'move', direction: type, distance_cm: amount};
+  const before = byId('draft-position').value;
+  if (block) changeDraft(plan, 'replace', {actions: [action], target_block_id: block.block_id}, block.block_id);
+  else if (before) changeDraft(plan, 'insert', {actions: [action], before_block_id: before});
+  else changeDraft(plan, 'append', {actions: [action]});
 });
 byId('plan-form').addEventListener('submit', async (event) => {
   event.preventDefault();

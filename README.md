@@ -32,7 +32,7 @@ ESP32와 레이더 Pi 주소, 손동작 매핑, 추종 설정은 **설정**에�
 [1320×920 화면 모음](docs/blue_ui_verification/overview_1320x920.png).
 아래의 탭 구성과 테스트 수치는 이전 단계의 기록이다.
 
-ESP32 공식 개발 기준은 [단일 파일 control_simple_v2.ino](esp32_firmware/control_simple_v2/control_simple_v2/control_simple_v2.ino)다. 수동과 자연어 이동에서 공통 Feedforward+PI를 사용하는 사용자 실물 확인 버전이다. Arduino IDE에서는 같은 폴더의 `secrets.example.h`를 로컬 `secrets.h`로 복사해 Wi-Fi 설정을 입력한다. 기존 `control_v2`와 원본 펌웨어는 참고용이다. [기준선과 개선 계획](docs/CONTROL_SIMPLE_V2_PLAN.md)
+ESP32 공식 개발 기준은 [control_simple_v2.ino](esp32_firmware/control_simple_v2/control_simple_v2/control_simple_v2.ino)다. 수동과 자연어 이동에서 공통 Feedforward+PI를 사용한다. 빌드하기 전에 같은 폴더의 `secrets.example.h`를 로컬 `secrets.h`로 복사해 Wi-Fi 설정을 입력하고 보드 프로필을 명시한다. Qt 관제에도 같은 프로필을 지정한다. 기존 `control_v2`와 원본 펌웨어는 참고용이다. [보드 프로필 선택과 빌드](docs/hardware/HARDWARE_PROFILES.md) · [기준선과 개선 계획](docs/CONTROL_SIMPLE_V2_PLAN.md)
 
 ## 자연어 제어 Prototype A+B
 

@@ -128,6 +128,8 @@ MEANINGS={
  'ENCODER_SIGN_AGREES':'엔코더 부호 일치','ENCODER_SIGN_DISAGREES':'엔코더 반대 부호','NO_ENCODER_CHANGE_OBSERVED':'엔코더 변화 미관측',
  'NOT_EXPECTED_TO_ROTATE':'회전 목표가 없는 바퀴','IDLE_WHEEL_ENCODER_CHANGE':'정지 대상 바퀴에서 엔코더 변화','INSUFFICIENT_DATA':'근거 부족',
  'MODE_NOT_NETWORK':'네트워크 제어 모드 아님','SESSION_MISMATCH':'세션 불일치','SEQUENCE_NOT_SENT':'송신하지 않은 순서 번호',
+ 'HARDWARE_PROFILE_UNSELECTED':'보드 프로필 미선택','HARDWARE_PROFILE_UNKNOWN':'장치 프로필 미확인',
+ 'HARDWARE_PROFILE_MISMATCH':'장치 프로필 또는 펌웨어 정보 불일치',
  'SEQUENCE_TOO_OLD':'오래된 순서 번호','REPLAYED_OR_OUT_OF_ORDER':'중복 또는 역순 응답','MALFORMED_JSON':'JSON 형식 오류','SOURCE_MISMATCH':'송신자 주소·포트 불일치',
  'INVALID_TELEMETRY_FIELDS':'텔레메트리 필드 또는 단위 확인 필요','INVALID_STATE_OR_FAULT':'잘못된 상태·오류 필드',
  'MOTOR_STALL':'모터 회전 피드백 없음','CMD_TIMEOUT':'통신 워치독 정지','WIFI_LOSS':'무선 연결 끊김','BAD_PACKET':'잘못된 패킷',
@@ -200,4 +202,7 @@ def movement_block(transport):
         return fault
     if not transport.get('connected'):
         return transport.get('validation_detail') or transport.get('telemetry_reason') or 'NO_TELEMETRY'
+    profile = transport.get('hardware_profile_status')
+    if profile and profile.startswith('HARDWARE_PROFILE_'):
+        return profile
     return None

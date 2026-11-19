@@ -601,6 +601,9 @@ class Dashboard(QMainWindow):
             '구동 준비':'새 입력 가능' if ready else f'이동 차단 · {ko(blocked or tr.get("reason") or "UNKNOWN")}',
             '복구 상태 / 세대':recovery,
             '프로토콜 / 연결 생존':f'v{text(tr.get("protocol_version"))} / {text(tr.get("link_alive"))}',
+            '보드 프로필 (선택 / 장치 보고)':f'{text(tr.get("hardware_profile_expected"))} / {text(tr.get("hardware_profile"))}',
+            '펌웨어 / 핀맵':f'{text(tr.get("firmware_version"))} / {text(tr.get("pinmap_revision"))}',
+            '보드 프로필 확인':tr.get('hardware_profile_status'),
             'ESP32 적용 정책':td.get('encoder_policy',missing),
             '정책 변경 지원':'지원 확인' if support else '미지원 또는 미확인',
             'ESP32 적용 heartbeat 만료 (ms)':td.get('heartbeat_timeout_ms',td.get('applied_heartbeat_timeout_ms',missing)),
@@ -1273,7 +1276,10 @@ class Dashboard(QMainWindow):
             QApplication.instance().removeEventFilter(self)
             try:self.engine.close()
             except Exception as exc:self.shutdown_error=str(exc)
-            finally:self.stream.close()
+            finally:
+                self.stream.close()
+                if self.agent:
+                    self.agent.close()
         event.accept()
 
 

@@ -12,6 +12,7 @@ from python_controller.communication.esp32_udp import UdpClient, TelemetryGuard,
 from python_controller.communication.motor_test import MotorTestClient, body_test_command
 from python_controller.communication.session_sync import session_fields, SessionSync
 from python_controller.communication.timing import CONTROLLER_LEASE_S, HEARTBEAT_PERIOD_S, firmware_timing
+from python_controller.config import HARDWARE_PROFILES
 from python_controller.control.hand_drive import HandDriveClient
 from python_controller.diagnostics import safe_payload
 from python_controller.models import MotionCommand
@@ -52,11 +53,27 @@ class RobotSession(MotorTestClient, HandDriveClient):
         self.safety = None
         self.radar_generation = -1
         self.distance_radar_generation = None
+        self.hardware_profile = config['communication'].get('hardware_profile')
+        self.profile_required = self.hardware_profile is not None
 
     def start(self):
         if self.safety is None and self.socket_factory is socket.socket:
             raise ValueError('RADAR_DASHBOARD_REQUIRED')
+        self.profile_required = self.profile_required or self.socket_factory is socket.socket
         super().start()
+
+    def _profile_block(self, now):
+        if not self.profile_required:
+            return None
+        if self.hardware_profile not in HARDWARE_PROFILES:
+            return 'HARDWARE_PROFILE_UNSELECTED'
+        telemetry = self.guard.data or {}
+        identity = tuple(telemetry.get(key) for key in ('hardware_profile', 'firmware_version', 'pinmap_revision'))
+        if not self.guard.link_fresh(now) or not all(isinstance(value, str) and value for value in identity):
+            return 'HARDWARE_PROFILE_UNKNOWN'
+        if identity != (self.hardware_profile, 'SIMPLE_V2', f'{self.hardware_profile}_GPIO_V1'):
+            return 'HARDWARE_PROFILE_MISMATCH'
+        return None
 
     def radar_status(self):
         return self.safety.snapshot(self.clock()) if self.safety is not None else None
@@ -99,7 +116,7 @@ class RobotSession(MotorTestClient, HandDriveClient):
     def arm(self):
         with self.lock:
             status = self._apply_radar()
-            return not (status and status['blocked']) and UdpClient.arm(self)
+            return not (status and status['blocked']) and not self._profile_block(self.clock()) and UdpClient.arm(self)
 
     def submit(self, decision, frame_timestamp, recognized_at=None):
         with self.lock:
@@ -209,6 +226,8 @@ class RobotSession(MotorTestClient, HandDriveClient):
                 self.requests.put_nowait((dict(type='reset_fault'),Future(),self.recovery_generation))
 
     def _on_transport_packet(self, packet, source, now, accepted):
+        if accepted:
+            self._apply_profile(now)
         if self.distance_channel is not None:
             self.distance_channel.publish(packet,source)
         telemetry = self.guard.data or {}
@@ -279,6 +298,8 @@ class RobotSession(MotorTestClient, HandDriveClient):
             future.set_exception(OSError('CONTROL_CANCELLED'))
             return False
         try:
+            if kind in ('heartbeat', 'cmd_move') and (blocked := self._profile_block(now)):
+                raise OSError(blocked)
             if kind == 'heartbeat':
                 packet = self._heartbeat_packet(now)
             elif kind == 'cmd_move':
@@ -305,14 +326,21 @@ class RobotSession(MotorTestClient, HandDriveClient):
             else:
                 packet = self.protocol.packet(kind,protocol_version=2,**command)
             if self._send_packet(packet,kind == 'cmd_move') is False:
-                raise OSError('RADAR_BLOCKED')
+                raise OSError(self._profile_block(self.clock()) or 'RADAR_BLOCKED')
             future.set_result((json.loads(packet),self.last_tx_at))
         except (OSError,ValueError,KeyError) as exc:
             future.set_exception(exc)
         return True
 
+    def _apply_profile(self, now):
+        profile_block = self._profile_block(now)
+        if profile_block and (self.armed or self.active or (self.distance_leased and not self.distance_cancelled)):
+            self.stop(profile_block)
+        return profile_block
+
     def _select_packet(self, now):
         radar = self._apply_radar()
+        profile_block = self._apply_profile(now)
         if self.trial is not None:
             deadline = self.trial['deadline']
             if self.active and deadline is not None and now >= deadline:
@@ -333,6 +361,10 @@ class RobotSession(MotorTestClient, HandDriveClient):
             if not self.snapshot()['stop_verified'] and (
                 self.last_tx_at is None or now-self.last_tx_at >= HEARTBEAT_PERIOD_S
             ):
+                return self._stop_packet(),False
+            return None,False
+        if profile_block:
+            if not self.snapshot()['stop_verified'] and (self.last_tx_at is None or now-self.last_tx_at >= HEARTBEAT_PERIOD_S):
                 return self._stop_packet(),False
             return None,False
         if self.session_lost or self.distance_cancelled or self.guard.reason != 'OK':
@@ -375,10 +407,14 @@ class RobotSession(MotorTestClient, HandDriveClient):
         return None,False
 
     def _send_packet(self, packet, moving=False):
-        if self.safety is None:
-            return super()._send_packet(packet, moving)
         command = json.loads(packet)
         if command['type'] not in ('cmd_vel', 'cmd_move') and command.get('motion_permit') is not True:
+            return super()._send_packet(packet, moving)
+        if blocked := self._profile_block(self.clock()):
+            self._latch(blocked)
+            super()._send_packet(self._stop_packet())
+            return False
+        if self.safety is None:
             return super()._send_packet(packet, moving)
         with self.safety.lock:
             if self._apply_radar()['blocked']:
@@ -445,6 +481,14 @@ class RobotSession(MotorTestClient, HandDriveClient):
             data = super().snapshot()
             version,heartbeat,velocity = self._timing()
             telemetry = self.guard.data or {}
+            profile_block = self._profile_block(self.clock())
+            data.update(hardware_profile_expected=self.hardware_profile,
+                        hardware_profile=telemetry.get('hardware_profile'),
+                        firmware_version=telemetry.get('firmware_version'),
+                        pinmap_revision=telemetry.get('pinmap_revision'),
+                        hardware_profile_status=profile_block or ('MATCH' if self.profile_required else 'NOT_REQUIRED'))
+            if profile_block:
+                data['ready'] = False
             data.update(central_session=True,manual_test_only=False,controller_owner=self.owner,distance_leased=self.distance_leased,
                         body_command=asdict(self.command) if self.active else asdict(MotionCommand()))
             data.update(recovery_state=self.recovery_state,recovery_generation=self.recovery_generation,

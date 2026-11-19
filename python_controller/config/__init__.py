@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 RADAR_SETTINGS = Path(__file__).resolve().parents[2] / 'settings' / 'radar.json'
+HARDWARE_PROFILES = ('BREADBOARD', 'PCB_V19')
 
 
 def radar_source_ip(value):
@@ -48,7 +49,9 @@ def load_config(path=None, *, radar_path=None):
     for section, values in config.items():
         for key, value in values.items():
             expected = schema[section][key]
-            if isinstance(expected,bool):
+            if (section, key) == ('communication', 'hardware_profile'):
+                valid_type = value is None or (isinstance(value, str) and value in HARDWARE_PROFILES)
+            elif isinstance(expected,bool):
                 valid_type = type(value) is bool
             elif isinstance(expected,(int,float)):
                 valid_type = isinstance(value,(int,float)) and not isinstance(value,bool)

@@ -31,6 +31,7 @@ constexpr uint32_t SERIAL_BAUD = 115200;
 // ---- Wi-Fi ----
 // 반드시 실제 공유기 정보로 바꿔주세요.
 #include "secrets.h"
+#include "hardware_profiles.h"
 
 // DHCP is the default. Only use static IP after matching your network settings.
 constexpr bool USE_STATIC_IP = false;  // true only after setting matching local network values
@@ -139,25 +140,25 @@ constexpr float SPEED_FILTER_ALPHA = 0.20f;
 // 2) HARDWARE PIN MAP - test2.ino 그대로 유지
 // =====================================================
 
-constexpr uint8_t PIN_STBY = 27;
+constexpr uint8_t PIN_STBY = HARDWARE_PINS.stby;
 
-constexpr uint8_t M1_IN1 = 19;
-constexpr uint8_t M1_IN2 = 18;
-constexpr uint8_t M1_PWM = 25;
-constexpr uint8_t M1_ENC_A = 34;
-constexpr uint8_t M1_ENC_B = 35;
+constexpr uint8_t M1_IN1 = HARDWARE_PINS.m1.in1;
+constexpr uint8_t M1_IN2 = HARDWARE_PINS.m1.in2;
+constexpr uint8_t M1_PWM = HARDWARE_PINS.m1.pwm;
+constexpr uint8_t M1_ENC_A = HARDWARE_PINS.m1.encA;
+constexpr uint8_t M1_ENC_B = HARDWARE_PINS.m1.encB;
 
-constexpr uint8_t M2_IN1 = 21;
-constexpr uint8_t M2_IN2 = 22;
-constexpr uint8_t M2_PWM = 26;
-constexpr uint8_t M2_ENC_A = 16;
-constexpr uint8_t M2_ENC_B = 17;
+constexpr uint8_t M2_IN1 = HARDWARE_PINS.m2.in1;
+constexpr uint8_t M2_IN2 = HARDWARE_PINS.m2.in2;
+constexpr uint8_t M2_PWM = HARDWARE_PINS.m2.pwm;
+constexpr uint8_t M2_ENC_A = HARDWARE_PINS.m2.encA;
+constexpr uint8_t M2_ENC_B = HARDWARE_PINS.m2.encB;
 
-constexpr uint8_t M3_IN1 = 23;
-constexpr uint8_t M3_IN2 = 13;
-constexpr uint8_t M3_PWM = 14;
-constexpr uint8_t M3_ENC_A = 32;
-constexpr uint8_t M3_ENC_B = 33;
+constexpr uint8_t M3_IN1 = HARDWARE_PINS.m3.in1;
+constexpr uint8_t M3_IN2 = HARDWARE_PINS.m3.in2;
+constexpr uint8_t M3_PWM = HARDWARE_PINS.m3.pwm;
+constexpr uint8_t M3_ENC_A = HARDWARE_PINS.m3.encA;
+constexpr uint8_t M3_ENC_B = HARDWARE_PINS.m3.encB;
 
 // =====================================================
 // 3) TYPES / GLOBAL STATE
@@ -1037,6 +1038,9 @@ void sendUdpTelemetryIfDue() {
     JsonDocument doc;
     JsonObject root=doc.to<JsonObject>();
     root["type"]="telemetry";
+    root["hardware_profile"]=HARDWARE_PROFILE;
+    root["firmware_version"]=FIRMWARE_VERSION;
+    root["pinmap_revision"]=PINMAP_REVISION;
     root["boot_id"]=bootId;
     root["session_id"]=sessionId;
     root["last_seq"]=lastSeq;
@@ -1205,10 +1209,15 @@ void printStatus() {
 void printPinMap() {
     Serial.println();
     Serial.println("===== PIN MAP =====");
-    Serial.println("STBY=27");
-    Serial.println("M1 IN1=19 IN2=18 PWM=25 ENC_A=34 ENC_B=35");
-    Serial.println("M2 IN1=21 IN2=22 PWM=26 ENC_A=16 ENC_B=17");
-    Serial.println("M3 IN1=23 IN2=13 PWM=14 ENC_A=32 ENC_B=33");
+    Serial.printf("hardware_profile=%s firmware_version=%s pinmap_revision=%s\n",
+                  HARDWARE_PROFILE, FIRMWARE_VERSION, PINMAP_REVISION);
+    Serial.printf("STBY=%u\n", PIN_STBY);
+    const MotorPins motorPins[] = {HARDWARE_PINS.m1, HARDWARE_PINS.m2, HARDWARE_PINS.m3};
+    for (unsigned i = 0; i < MOTOR_COUNT; ++i) {
+        const MotorPins &pins = motorPins[i];
+        Serial.printf("M%u IN1=%u IN2=%u PWM=%u ENC_A=%u ENC_B=%u\n",
+                      i + 1, pins.in1, pins.in2, pins.pwm, pins.encA, pins.encB);
+    }
     Serial.println("===================");
 }
 
@@ -1366,14 +1375,11 @@ bool initializeMotor(Motor &motor) {
 }
 
 void initializeEncoders() {
-    // GPIO34/35: internal pull-up 없음
-    pinMode(M1_ENC_A, INPUT);
-    pinMode(M1_ENC_B, INPUT);
-
-    pinMode(M2_ENC_A, INPUT_PULLUP);
-    pinMode(M2_ENC_B, INPUT_PULLUP);
-    pinMode(M3_ENC_A, INPUT_PULLUP);
-    pinMode(M3_ENC_B, INPUT_PULLUP);
+    // GPIO34/35/36/39 are input-only without an internal pull-up.
+    const uint8_t encoderPins[] = {M1_ENC_A, M1_ENC_B, M2_ENC_A, M2_ENC_B, M3_ENC_A, M3_ENC_B};
+    for (uint8_t pin : encoderPins) {
+        pinMode(pin, inputOnly(pin) ? INPUT : INPUT_PULLUP);
+    }
 
     attachInterrupt(digitalPinToInterrupt(M1_ENC_A), encoder1ISR, RISING);
     attachInterrupt(digitalPinToInterrupt(M2_ENC_A), encoder2ISR, RISING);

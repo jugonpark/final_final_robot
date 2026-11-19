@@ -1,0 +1,526 @@
+{
+  "backend": "fixture responses through NvidiaIntentInterpreter and LangGraph",
+  "summary": {
+    "classification_cases": 78,
+    "classification_exact": 78,
+    "normalized_contract_cases": 17,
+    "unnecessary_clarify": 0,
+    "unexpected_edits": 0,
+    "nonclarify_cases": 38,
+    "stop_cases": 6,
+    "stop_passed": 6,
+    "adversarial_cases": 4,
+    "adversarial_effect_proposals": 0,
+    "adversarial_motion_proposals": 0
+  },
+  "mock_ms": {
+    "p50": 7.5,
+    "p95": 14.28
+  },
+  "cases": [
+    {
+      "id": "gold_001",
+      "expected": "navigate",
+      "observed": "navigate",
+      "pass": true
+    },
+    {
+      "id": "gold_002",
+      "expected": "navigate",
+      "observed": "navigate",
+      "pass": true
+    },
+    {
+      "id": "gold_003",
+      "expected": "navigate",
+      "observed": "navigate",
+      "pass": true
+    },
+    {
+      "id": "gold_004",
+      "expected": "navigate",
+      "observed": "navigate",
+      "pass": true
+    },
+    {
+      "id": "gold_005",
+      "expected": "navigate",
+      "observed": "navigate",
+      "pass": true
+    },
+    {
+      "id": "gold_006",
+      "expected": "navigate",
+      "observed": "navigate",
+      "pass": true
+    },
+    {
+      "id": "gold_007",
+      "expected": "navigate",
+      "observed": "navigate",
+      "pass": true
+    },
+    {
+      "id": "gold_008",
+      "expected": "navigate",
+      "observed": "navigate",
+      "pass": true
+    },
+    {
+      "id": "gold_009",
+      "expected": "switch_mode",
+      "observed": "switch_mode",
+      "pass": true
+    },
+    {
+      "id": "gold_010",
+      "expected": "switch_mode",
+      "observed": "switch_mode",
+      "pass": true
+    },
+    {
+      "id": "gold_011",
+      "expected": "switch_mode",
+      "observed": "switch_mode",
+      "pass": true
+    },
+    {
+      "id": "gold_012",
+      "expected": "switch_mode",
+      "observed": "switch_mode",
+      "pass": true
+    },
+    {
+      "id": "gold_013",
+      "expected": "switch_mode",
+      "observed": "switch_mode",
+      "pass": true
+    },
+    {
+      "id": "gold_014",
+      "expected": "switch_mode",
+      "observed": "switch_mode",
+      "pass": true
+    },
+    {
+      "id": "gold_015",
+      "expected": "switch_mode",
+      "observed": "switch_mode",
+      "pass": true
+    },
+    {
+      "id": "gold_016",
+      "expected": "switch_mode",
+      "observed": "switch_mode",
+      "pass": true
+    },
+    {
+      "id": "gold_017",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_018",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_019",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_020",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_021",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_022",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_023",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_024",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_025",
+      "expected": "query_status",
+      "observed": "query_status",
+      "pass": true
+    },
+    {
+      "id": "gold_026",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_027",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_028",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_029",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_030",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_031",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_032",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_033",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_034",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_035",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_036",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_037",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_038",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_039",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_040",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_041",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_042",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_043",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_044",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_045",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_046",
+      "expected": "modify_plan",
+      "observed": "modify_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_047",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_048",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_049",
+      "expected": "modify_plan",
+      "observed": "modify_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_050",
+      "expected": "modify_plan",
+      "observed": "modify_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_051",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_052",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_053",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_054",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_055",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_056",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_057",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_058",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_059",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_060",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_061",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_062",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_063",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_064",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_065",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_066",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_067",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_068",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_069",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_070",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_071",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_072",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_073",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_074",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_075",
+      "expected": "STOP_PRE_LLM",
+      "observed": "STOP_PRE_LLM",
+      "pass": true
+    },
+    {
+      "id": "gold_076",
+      "expected": "STOP_PRE_LLM",
+      "observed": "STOP_PRE_LLM",
+      "pass": true
+    },
+    {
+      "id": "gold_077",
+      "expected": "STOP_PRE_LLM",
+      "observed": "STOP_PRE_LLM",
+      "pass": true
+    },
+    {
+      "id": "gold_078",
+      "expected": "STOP_PRE_LLM",
+      "observed": "STOP_PRE_LLM",
+      "pass": true
+    },
+    {
+      "id": "gold_079",
+      "expected": "STOP_PRE_LLM",
+      "observed": "STOP_PRE_LLM",
+      "pass": true
+    },
+    {
+      "id": "gold_080",
+      "expected": "STOP_PRE_LLM",
+      "observed": "STOP_PRE_LLM",
+      "pass": true
+    },
+    {
+      "id": "gold_081",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    },
+    {
+      "id": "gold_082",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_083",
+      "expected": "clarify",
+      "observed": "clarify",
+      "pass": true
+    },
+    {
+      "id": "gold_084",
+      "expected": "create_plan",
+      "observed": "create_plan",
+      "pass": true
+    }
+  ]
+}
