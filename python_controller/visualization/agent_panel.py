@@ -1,6 +1,6 @@
 """Operator chat and explicit review for the blue Qt console."""
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QCheckBox, QGroupBox, QHBoxLayout, QLineEdit, QPlainTextEdit,
+from PySide6.QtWidgets import (QCheckBox, QGroupBox, QHBoxLayout, QLineEdit, QMessageBox, QPlainTextEdit,
                                QPushButton, QSplitter, QVBoxLayout, QWidget)
 
 from python_controller.llm.unified_agent import STEP_LABELS, progress_summary
@@ -30,7 +30,7 @@ class AgentPanel(QWidget):
         chat_layout = QVBoxLayout(chat)
         self.history = QPlainTextEdit()
         self.history.setReadOnly(True)
-        self.history.setPlaceholderText('예: 지금 레이더 상태 알려줘')
+        self.history.setPlaceholderText('예: 우리 프로그램을 좀 설명해 줄래?')
         self.history.setAccessibleName('Agent 대화 기록')
         self.history.setMinimumHeight(220)
         chat_layout.addWidget(self.history)
@@ -42,8 +42,11 @@ class AgentPanel(QWidget):
         self.command.returnPressed.connect(self.send)
         self.send_button = button_style(QPushButton('전송'), 'primary', 'send')
         self.send_button.clicked.connect(self.send)
+        self.clear_button = button_style(QPushButton('대화 삭제'), 'secondary')
+        self.clear_button.clicked.connect(self.clear_conversation)
         entry.addWidget(self.command, 1)
         entry.addWidget(self.send_button)
+        entry.addWidget(self.clear_button)
         chat_layout.addLayout(entry)
         self.feedback = label()
         chat_layout.addWidget(self.feedback)
@@ -101,6 +104,15 @@ class AgentPanel(QWidget):
         self.feedback.clear()
         self.refresh()
 
+    def clear_conversation(self):
+        choice = QMessageBox.question(self, '대화 기록 삭제', '현재 대화의 메시지와 승인 대기 계획을 삭제할까요?',
+                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if choice == QMessageBox.Yes:
+            self.agent.clear_conversation()
+            self.command.clear()
+            self.feedback.clear()
+            self.refresh()
+
     def review(self, approve):
         if not self.displayed_card or (approve and not self.approve.isEnabled()):
             return
@@ -134,6 +146,7 @@ class AgentPanel(QWidget):
             self.history.setPlainText('\n\n'.join(f'{"나" if row["role"] == "user" else "D.I.G."} · {row["content"]}' for row in state['messages']))
             self.history.verticalScrollBar().setValue(self.history.verticalScrollBar().maximum())
         card = state['card']
+        self.clear_button.setEnabled(bool(state['messages'] or card or state['busy']))
         shown = (card['id'], card['revision']) if card else None
         self.can_approve = state['can_approve']
         if self.displayed_card != shown or not self.can_approve:
@@ -141,6 +154,9 @@ class AgentPanel(QWidget):
         self.displayed_card = shown
         if card:
             lines = [f'계획 버전 {card["revision"]}', *(f'{i}. {step}' for i, step in enumerate(card['steps'], 1))]
+            if card.get('before'):
+                lines.extend(['', f'수정 전 v{card["revision"] - 1}',
+                              *(f'{i}. {step}' for i, step in enumerate(card['before'], 1))])
             if card['rotation']:
                 lines.append('각도 제어 미검증 · 전체 실행 차단')
             self.preview.setText('\n'.join(lines))
@@ -157,6 +173,8 @@ class AgentPanel(QWidget):
         execution = f'{phase} {DETAIL_TEXT.get(detail, ko(detail)) if detail else ""}'.strip()
         if state['stop_result']:
             execution += '\n' + ('장치 STOP 응답 확인' if state['stop_result']['stop_verified'] else '장치 STOP 응답 미확인')
+        if state['history_degraded']:
+            execution += '\n실행 이력 저장 오류 · 일부 기록이 빠졌을 수 있습니다.'
         self.ack_stop.setVisible(state['estop_latched'])
         self.status.setText(f'{state["status"]}\n\n{execution}')
         progress = state['progress']

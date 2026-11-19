@@ -10,10 +10,10 @@ from langsmith import tracing_context
 from pydantic import TypeAdapter
 
 from python_controller.llm.agent_intent import (
-    CreatePlan, CreateSequence, EditPlan, ModeThenPlan, ModifyPlan,
-    edit_plan, explicit_composite, new_plan, requested_plan, revise_plan,
+    CreatePlan, CreateSequence, EditPlan, EditPlanProposal, ModeThenPlan, ModifyPlan,
+    apply_proposal, edit_plan, explicit_composite, new_plan, requested_plan, revise_plan,
 )
-from python_controller.planning.schema import Action
+from python_controller.planning.schema import Action, describe_action
 from python_controller.planning.validator import ValidatedPlan
 
 ACTION_ADAPTER = TypeAdapter(Action)
@@ -39,9 +39,11 @@ class AgentState(TypedDict, total=False):
 
 class ConversationGraph:
     def __init__(self, interpreter):
+        self.interpreter = interpreter
         def classify(state):
             previous = state['previous']
             text = state['message']
+            before = None
             try:
                 if state['preview']:
                     plan = requested_plan(text)
@@ -51,11 +53,16 @@ class ConversationGraph:
                     if isinstance(intent, (CreatePlan, CreateSequence)):
                         plan = new_plan(text, intent)
                         plan_id, revision = uuid4().hex, 1
-                    elif isinstance(intent, (ModifyPlan, EditPlan)):
+                    elif isinstance(intent, (ModifyPlan, EditPlan, EditPlanProposal)):
                         old = load_plan(previous['actions']) if previous else None
-                        plan = (edit_plan(text, intent, previous, old) if isinstance(intent, EditPlan)
-                                else revise_plan(text, intent, old))
+                        if isinstance(intent, EditPlanProposal):
+                            plan = apply_proposal(text, intent.operation, old)
+                        elif isinstance(intent, EditPlan):
+                            plan = edit_plan(text, intent, previous, old)
+                        else:
+                            plan = revise_plan(text, intent, old)
                         plan_id, revision = previous['id'], previous['revision'] + 1
+                        before = [describe_action(action) for action in old.actions]
                     else:
                         value = intent.model_dump(mode='json')
                         if isinstance(intent, ModeThenPlan):
@@ -69,6 +76,7 @@ class ConversationGraph:
             return {'intent': None, 'decision': None, 'error': None, 'card': {
                 'id': plan_id, 'revision': revision, 'rotation': plan.requires_angle_control,
                 'actions': [action.model_dump(mode='json') for action in plan.actions],
+                'before': before,
             }}
 
         def review(state):

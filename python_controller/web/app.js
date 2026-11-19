@@ -12,8 +12,16 @@ const stepStatus = {
 };
 const runStatus = {
   EXECUTING: '실행 진행 중', STOPPING: '정지 요청 · 응답 대기',
-  COMPLETED: '모든 단계 STOP 확인 · 완료', ABORTED: '실행 중단',
+  COMPLETED: '모든 단계 STOP 확인 · 완료', ABORTED: '실행 중단', UNCONFIRMED: '종료 기록 미확인',
 };
+const archiveState = { COMPLETED: 'STOP 확인 후 완료', ABORTED: '중단', UNCONFIRMED: '종료 미확인' };
+const archiveEvent = {
+  RUN_STARTED: '실행 시작 기록', HANDSHAKE_STOP_CONFIRMED: '시작 전 STOP 확인', MOVE_ACCEPTED: '이동 수락',
+  GOAL_REACHED: '목표 도달 보고', STOP_CONFIRMED: '장치 STOP 확인', STOP_REQUESTED: '정지 요청',
+  ABORT_STOP_RESULT: '중단 후 STOP 응답', COMPLETED: '종료 · 모든 단계 STOP 확인', ABORTED: '실행 중단',
+};
+const moveDirection = { forward: '앞으로', backward: '뒤로', left: '왼쪽으로', right: '오른쪽으로' };
+const moveVector = { forward: [0, -1], backward: [0, 1], left: [-1, 0], right: [1, 0] };
 const fingers = [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[17,0]];
 const names = {
   Open_Palm: '손바닥 펼침', Closed_Fist: '주먹', Thumb_Up: '엄지 올림', Thumb_Down: '엄지 내림', Victory: '브이 손동작',
@@ -30,6 +38,7 @@ let frameToken = null;
 let online = false;
 let stateRequest = 0;
 let planBusy = false;
+let chatClearing = false;
 let lastPlan = '';
 let stopPending = false;
 let lastNavigation = 0;
@@ -39,6 +48,12 @@ let cameraWanted = false;
 let cameraVersion = 0;
 let cameraRegistered = false;
 let cameraPower = Promise.resolve();
+let routePoints = [];
+let routeFrame = 0;
+let archiveRequest = 0;
+let archiveSelection = null;
+let latestRun = null;
+let timelineUnavailable = false;
 
 function text(id, value) {
   const node = byId(id);
@@ -92,6 +107,7 @@ async function stop() {
 }
 
 function selectPage(pageId) {
+  if (pageId !== 'ai') resetRoute();
   page = pageId;
   for (const button of nav) {
     if (button.dataset.page === page) {
@@ -103,6 +119,7 @@ function selectPage(pageId) {
   syncCameraPower();
   window.scrollTo(0, 0);
   render();
+  if (page === 'history') refreshHistory();
 }
 
 function renderPlan() {
@@ -111,7 +128,8 @@ function renderPlan() {
   const waiting = Boolean(agent?.waiting_mode_plan);
   byId('plan-waiting').hidden = !waiting;
   byId('plan-empty').hidden = Boolean(plan) || waiting;
-  byId('plan-form').querySelector('button').disabled = planBusy || !online || !prompt.value.trim();
+  byId('plan-form').querySelector('button').disabled = planBusy || chatClearing || !online || !prompt.value.trim();
+  byId('clear-chat').disabled = !online || planBusy || chatClearing || !(agent && (agent.messages.length || agent.busy || agent.card));
   byId('discard').disabled = !online || planBusy || (agent ? agent.busy || !agent.card : !state?.plan);
   const key = JSON.stringify(plan);
   if (key === lastPlan) return;
@@ -124,28 +142,138 @@ function renderPlan() {
     thread.scrollTop = thread.scrollHeight;
   }
   byId('rotate').hidden = !plan?.rotation;
-  const steps = (plan?.steps ?? []).map((step) => {
-    const li = document.createElement('li');
-    li.textContent = step;
-    return li;
-  });
-  byId('plan-steps').replaceChildren(...steps);
+  const steps = plan?.steps ?? [];
+  renderSteps('plan-steps', steps);
+  const diff = byId('plan-diff');
+  diff.hidden = !plan?.before;
+  diff.open = false;
+  if (plan?.before) {
+    const before = plan.before;
+    const changed = steps.findIndex((step, index) => step !== before[index]);
+    const label = before.length === steps.length && changed !== -1 ?
+      `${changed + 1}단계 · ${before[changed]} → ${steps[changed]}` : `${before.length}단계 → ${steps.length}단계`;
+    text('plan-before-label', `v${plan.revision - 1} → v${plan.revision} · ${label}`);
+  }
+  renderSteps('plan-before', plan?.before ?? []);
+  renderMissionRoute(plan?.actions ?? []);
   text('plan-distance', plan ? (agent ? `계획 버전 ${plan.revision} · ${steps.length}단계` : `${steps.length}단계 · 총 이동 거리 ${Number(plan.distance_cm)} cm`) : '');
+}
+
+function renderSteps(id, labels) {
+  byId(id).replaceChildren(...labels.map((label) => {
+    const li = document.createElement('li');
+    li.textContent = label;
+    return li;
+  }));
+}
+
+function projectRoute(actions) {
+  let x = 0, y = 0, angle = 0;
+  const points = [{x, y, angle, step: 0}];
+  for (const [index, action] of actions.entries()) {
+    if (action.type === 'move' && moveVector[action.direction]) {
+      const [u, v] = moveVector[action.direction];
+      const radians = angle * Math.PI / 180;
+      const distance = Number(action.distance_cm);
+      x += distance * (u * Math.cos(radians) - v * Math.sin(radians));
+      y += distance * (u * Math.sin(radians) + v * Math.cos(radians));
+    } else if (action.type === 'rotate') {
+      if (!action.direction) return null;
+      angle += Number(action.angle_deg) * (action.direction === 'left' ? -1 : 1);
+    } else continue;
+    points.push({x, y, angle, step: index + 1});
+  }
+  const xs = points.map(point => point.x), ys = points.map(point => point.y);
+  const left = Math.min(...xs), right = Math.max(...xs), top = Math.min(...ys), bottom = Math.max(...ys);
+  const scale = Math.min(22, 340 / Math.max(1, right - left), 220 / Math.max(1, bottom - top));
+  return points.map(point => ({ ...point, x: 240 + (point.x - (left + right) / 2) * scale,
+    y: 175 + (point.y - (top + bottom) / 2) * scale }));
+}
+
+const svgPoint = point => `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
+
+function showRobot(point) {
+  byId('route-robot').setAttribute('transform', `translate(${point.x} ${point.y}) rotate(${point.angle})`);
+}
+
+function resetRoute() {
+  cancelAnimationFrame(routeFrame);
+  routeFrame = 0;
+  showRobot(routePoints[0] ?? { x: 240, y: 175, angle: 0 });
+  byId('route-trail').removeAttribute('points');
+  byId('play-route').disabled = routePoints.length < 2;
+  byId('reset-route').disabled = true;
+  if (routePoints.length > 1) text('route-status', '가상 재생 대기');
+}
+
+function renderMissionRoute(actions) {
+  const projected = projectRoute(actions);
+  routePoints = projected ?? [];
+  resetRoute();
+  byId('route-plan').setAttribute('points', routePoints.map(svgPoint).join(' '));
+  const markers = [];
+  for (const point of routePoints) {
+    if (point.step === 0) continue;
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    marker.setAttribute('x', point.x + 12);
+    marker.setAttribute('y', point.y - 12);
+    marker.textContent = point.step;
+    markers.push(marker);
+  }
+  byId('route-markers').replaceChildren(...markers);
+  if (routePoints.length < 2) text('route-status', projected ? '미리 볼 이동 경로가 없습니다.' : '회전 방향을 지정해야 경로를 그릴 수 있습니다.');
+}
+
+function playRoute() {
+  if (routePoints.length < 2) return;
+  resetRoute();
+  byId('play-route').disabled = true;
+  byId('reset-route').disabled = false;
+  text('route-status', '명령 기반 가상 움직임 재생 중');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const segments = routePoints.length - 1;
+  const start = performance.now();
+  const tick = (now) => {
+    const progress = reduced ? segments : Math.min(segments, (now - start) / 760);
+    const index = Math.min(Math.floor(progress), segments - 1);
+    const blend = progress - index;
+    const a = routePoints[index], b = routePoints[index + 1];
+    const point = { x: a.x + (b.x - a.x) * blend, y: a.y + (b.y - a.y) * blend,
+      angle: a.angle + (b.angle - a.angle) * blend };
+    showRobot(point);
+    byId('route-trail').setAttribute('points', [...routePoints.slice(0, index + 1), point].map(svgPoint).join(' '));
+    if (progress < segments) routeFrame = requestAnimationFrame(tick);
+    else {
+      routeFrame = 0;
+      byId('play-route').disabled = false;
+      text('route-status', '가상 재생 완료');
+    }
+  };
+  routeFrame = requestAnimationFrame(tick);
 }
 
 function renderProgress(progress) {
   const steps = byId('execution-steps');
-  const key = JSON.stringify(progress ?? null);
+  const key = JSON.stringify([progress ?? null, timelineUnavailable]);
   if (steps.dataset.content === key) return;
   steps.dataset.content = key;
+  const meter = byId('execution-meter');
+  byId('execution-source').hidden = !progress;
   if (!progress) {
-    text('execution-summary', '실행 기록이 없습니다.');
+    text('execution-summary', timelineUnavailable ? '실행 이력을 지금 읽을 수 없습니다.' : '실행 기록이 없습니다.');
     steps.replaceChildren();
+    meter.hidden = true;
     return;
   }
   const count = progress.steps.length;
+  meter.hidden = !count;
+  meter.max = count || 1;
+  meter.value = progress.verified_count;
+  const saved = Boolean(progress.provenance);
+  const simulated = saved && progress.provenance !== 'ESP32_EXECUTOR';
+  text('execution-source', saved ? `최근 저장 기록 · ${archiveProvenance(progress)}` : '현재 실행 · ESP32 실행기 이벤트');
   const summary = [`계획 v${progress.revision}`, runStatus[progress.state]];
-  if (count) summary.push(`단계 STOP 확인 ${progress.verified_count}/${count}`);
+  if (count) summary.push(`${simulated ? '시뮬레이션 STOP 기록' : '실제 STOP 확인'} ${progress.verified_count}/${count}`);
   if (progress.last_error) summary.push(progress.last_error);
   text('execution-summary', summary.join(' · '));
   steps.replaceChildren(...progress.steps.map((state, index) => {
@@ -156,6 +284,106 @@ function renderProgress(progress) {
     status.textContent = stepStatus[state];
     step.append(status);
     return step;
+  }));
+}
+
+const archiveTime = value => new Date(value).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'medium' });
+const archiveProvenance = run => run.provenance === 'ESP32_EXECUTOR' ? 'ESP32 실행기 이벤트' : '시뮬레이션 기록';
+const archivedActionLabel = action => action.type === 'move' ? `${moveDirection[action.direction]} ${action.distance_cm} cm` : '정지';
+
+function archivedProgress(run) {
+  if (!run) return null;
+  const labels = run.actions.filter(action => action.type === 'move').map(archivedActionLabel);
+  const steps = labels.map(() => 'WAITING');
+  const updates = { MOVE_ACCEPTED: 'MOVING', GOAL_REACHED: 'GOAL_REPORTED', STOP_CONFIRMED: 'STOP_VERIFIED' };
+  for (const event of run.events) {
+    if (updates[event.event_type] && event.step_index >= 1 && event.step_index <= steps.length) {
+      steps[event.step_index - 1] = updates[event.event_type];
+    }
+  }
+  const verified = steps.filter(step => step === 'STOP_VERIFIED').length;
+  if (run.state === 'ABORTED') steps.fill('BLOCKED', verified);
+  return { revision: run.revision, state: run.state, provenance: run.provenance, labels, steps, last_error: run.reason,
+    verified_count: verified };
+}
+
+async function pollTimeline() {
+  if (page === 'ai') {
+    try {
+      latestRun = archivedProgress((await fetchJson('/api/history/latest')).run);
+      timelineUnavailable = false;
+    } catch {
+      latestRun = null;
+      timelineUnavailable = true;
+    }
+    renderProgress((online && state?.agent?.progress) || latestRun);
+  }
+  setTimeout(pollTimeline, 1200);
+}
+
+async function refreshHistory() {
+  const request = ++archiveRequest;
+  text('history-status', '실행 이력을 읽는 중입니다.');
+  byId('history-runs').replaceChildren();
+  showHistoryDetail(null);
+  try {
+    const data = await fetchJson('/api/history');
+    if (page !== 'history' || request !== archiveRequest) return;
+    byId('archive-warning').hidden = !data.degraded;
+    text('history-status', data.runs.length ? '' : '저장된 실행 기록이 없습니다.');
+    byId('history-runs').replaceChildren(...data.runs.map(run => {
+      const row = document.createElement('li');
+      const button = document.createElement('button');
+      const label = document.createElement('strong');
+      const time = document.createElement('small');
+      button.className = 'history-run';
+      button.type = 'button';
+      button.dataset.run = run.run_id;
+      button.setAttribute('aria-pressed', 'false');
+      label.textContent = `계획 v${run.revision} · ${archiveState[run.state]}`;
+      time.textContent = `${archiveTime(run.started_at)} · ${archiveProvenance(run)}`;
+      button.addEventListener('click', () => loadHistoryRun(run.run_id));
+      button.append(label, time);
+      row.append(button);
+      return row;
+    }));
+    if (data.runs.length) loadHistoryRun(data.runs.find(run => run.run_id === archiveSelection)?.run_id ?? data.runs[0].run_id);
+  } catch (error) {
+    if (page === 'history' && request === archiveRequest) text('history-status', error.message);
+  }
+}
+
+async function loadHistoryRun(runId) {
+  const request = ++archiveRequest;
+  archiveSelection = runId;
+  for (const button of byId('history-runs').querySelectorAll('button')) {
+    button.setAttribute('aria-pressed', String(button.dataset.run === runId));
+  }
+  showHistoryDetail(null);
+  text('history-detail-status', '실행 상세를 읽는 중입니다.');
+  try {
+    const run = await fetchJson(`/api/history/${runId}`);
+    if (page === 'history' && request === archiveRequest) showHistoryDetail(run);
+  } catch (error) {
+    if (page === 'history' && request === archiveRequest) text('history-detail-status', error.message);
+  }
+}
+
+function showHistoryDetail(run) {
+  text('history-detail-status', run ? '' : '목록에서 실행을 선택하세요.');
+  readout('history-meta', run ? [['실행', run.run_id], ['계획 버전', `v${run.revision}`], ['출처', archiveProvenance(run)],
+    ['결과', archiveState[run.state]], ['중단 사유', run.reason ?? '—']] : []);
+  renderSteps('history-plan', (run?.actions ?? []).map(archivedActionLabel));
+  byId('history-events').replaceChildren(...(run?.events ?? []).map(event => {
+    const row = document.createElement('li');
+    const title = document.createElement('strong');
+    const time = document.createElement('time');
+    const check = event.event_type === 'ABORT_STOP_RESULT' ? (event.evidence.stop_verified ? ' · 확인' : ' · 미확인') : '';
+    title.textContent = `${event.step_index ? `${event.step_index}단계 · ` : ''}${archiveEvent[event.event_type]}${check}${event.reason ? ` · ${event.reason}` : ''}`;
+    time.dateTime = event.received_at;
+    time.textContent = archiveTime(event.received_at);
+    row.append(title, time);
+    return row;
   }));
 }
 
@@ -188,9 +416,9 @@ function chatMessage(row) {
 function renderAgent(agent) {
   const history = byId('agent-history');
   history.hidden = !agent;
-  byId('execution-progress').hidden = !agent;
+  byId('clear-chat').hidden = !agent;
+  byId('program-example').hidden = !agent;
   if (!agent) return;
-  renderProgress(agent.progress);
   const thread = byId('chat-thread');
   const followLatest = thread.scrollHeight - thread.clientHeight - thread.scrollTop < 32;
   text('chat-mode', 'Agent 대화');
@@ -232,6 +460,8 @@ function render() {
   text('stop-proof', stopProof);
   byId('safety').dataset.tone = (connected && state.estop_latched) || radar?.state === 'EVADE' ? 'danger' : radar?.blocked === false ? 'ok' : 'warn';
   if (connected) renderAgent(state.agent);
+  renderProgress((connected && state.agent?.progress) || latestRun);
+  byId('history-warning').hidden = !state?.history_degraded;
   renderPlan();
   if (!connected) {
     byId('follow-start').disabled = true;
@@ -407,6 +637,27 @@ byId('camera-power').addEventListener('click', () => {
   syncCameraPower();
   render();
 });
+byId('play-route').addEventListener('click', playRoute);
+byId('reset-route').addEventListener('click', resetRoute);
+byId('open-history').addEventListener('click', () => selectPage('history'));
+byId('refresh-history').addEventListener('click', refreshHistory);
+const clearDialog = byId('clear-chat-dialog');
+byId('clear-chat').addEventListener('click', () => {
+  clearDialog.returnValue = '';
+  clearDialog.showModal();
+});
+clearDialog.addEventListener('close', async () => {
+  if (clearDialog.returnValue !== 'clear') return;
+  chatClearing = true;
+  render();
+  try {
+    if (await command('agent_clear_conversation')) prompt.value = '';
+  } finally {
+    chatClearing = false;
+    render();
+    prompt.focus();
+  }
+});
 document.addEventListener('visibilitychange', () => syncCameraPower());
 window.addEventListener('pagehide', () => syncCameraPower(false, true));
 window.addEventListener('pageshow', () => syncCameraPower());
@@ -433,7 +684,7 @@ byId('discard').addEventListener('click', () => {
 });
 byId('plan-form').addEventListener('submit', async (event) => {
   event.preventDefault();
-  if (planBusy || !online || !prompt.value.trim()) return;
+  if (planBusy || chatClearing || !online || !prompt.value.trim()) return;
   planBusy = true;
   renderPlan();
   try {
@@ -452,3 +703,4 @@ window.addEventListener('keydown', (event) => {
 });
 pollState();
 pollCamera();
+pollTimeline();

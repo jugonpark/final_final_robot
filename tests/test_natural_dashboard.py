@@ -177,3 +177,4 @@ class NaturalDashboardTests(unittest.TestCase):
                 panel.plan_button.click()
                 self.wait_phase(window, "READY")
                 self.assertFalse(panel.execute_button.isEnabled())
+            window.close()

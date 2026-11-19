@@ -9,6 +9,7 @@ from urllib.parse import parse_qs
 
 from python_controller.communication.motor_test import load_connection
 from python_controller.dashboard_runtime import DashboardEngine, PreviewStream, VisionStream
+from python_controller.execution.history_store import HistoryUnavailable
 from python_controller.planning.dashboard_command import normalize_dashboard_command
 from python_controller.planning.schema import describe_action
 from python_controller.planning.validator import ValidatedPlan, parse_operator_command
@@ -98,6 +99,7 @@ class WebDashboard:
                 'validation': tr.get('validation_detail'), 'recovery': tr.get('recovery_state'),
                 'fault': tr.get('fault'), 'notice': self.engine.control_error or data.get('notice'),
                 'tests': self.engine.book.rows, 'plan': self.plan,
+                'history_degraded': self.engine.language.history.degraded,
                 'agent': self.agent.view() if self.agent else None,
                 'settings': {'esp32': cfg['communication']['host'], 'radar': cfg['radar']['source_ip'],
                              'hand': self.engine.hand.mapping, 'follow': cfg['gesture']['mapping'],
@@ -163,6 +165,9 @@ class WebDashboard:
                     engine.request('ESTOP')
                 self.plan = None
                 return {'message': '비상 정지를 요청했습니다.'}
+            if action == 'agent_clear_conversation' and self.agent:
+                self.agent.clear_conversation()
+                return {'message': '대화 기록을 삭제했습니다.'}
             unavailable = engine.client or engine.language.executing or engine.control_error
             if action == 'camera_power':
                 viewer, enabled = body.get('viewer'), body.get('enabled')
@@ -197,6 +202,7 @@ class WebDashboard:
                 except ValueError as exc:
                     raise ValueError('명령을 확인해 주세요. (' + str(exc) + ')') from exc
                 self.plan = {'text': command, 'steps': [describe_action(a) for a in plan.actions],
+                             'actions': [action.model_dump(mode='json') for action in plan.actions],
                              'distance_cm': format(sum(a.distance_cm for a in plan.actions if a.type == 'move'), 'f'),
                              'rotation': plan.requires_angle_control}
                 return {'message': '이동 방향과 거리를 확인하세요.'}
@@ -266,6 +272,20 @@ def handler(web, port):
                 self.send_json({'error': '로컬 관제 주소를 사용하세요.'}, 403)
             elif self.path == '/api/state':
                 self.send_json(web.state())
+            elif self.path in ('/api/history', '/api/history/latest') or re.fullmatch(r'/api/history/[0-9a-f]{32}', self.path):
+                history = web.engine.language.history
+                try:
+                    if self.path == '/api/history':
+                        self.send_json({'runs': history.recent(), 'degraded': history.degraded})
+                    elif self.path == '/api/history/latest':
+                        latest = history.recent(limit=1)
+                        self.send_json({'run': history.detail(latest[0]['run_id']) if latest else None})
+                    elif (run := history.detail(self.path.rsplit('/', 1)[1])) is not None:
+                        self.send_json(run)
+                    else:
+                        self.send_json({'error': '실행 기록을 찾을 수 없습니다.'}, 404)
+                except HistoryUnavailable:
+                    self.send_json({'error': '실행 이력 저장소를 읽을 수 없습니다.'}, 503)
             elif self.path.partition('?')[0] == '/api/camera':
                 try:
                     query = parse_qs(self.path.partition('?')[2])

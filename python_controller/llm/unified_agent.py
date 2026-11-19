@@ -7,8 +7,9 @@ from secrets import token_hex
 from threading import Thread
 from time import monotonic
 
+from python_controller.execution.history_store import HistoryUnavailable
 from python_controller.llm.agent_graph import ConversationGraph, load_plan
-from python_controller.llm.agent_intent import NvidiaIntentInterpreter, corrected_mode, emergency_stop, explicit_mode
+from python_controller.llm.agent_intent import NvidiaIntentInterpreter, corrected_mode, emergency_stop, explicit_mode, program_question
 from python_controller.planning.schema import describe_action
 from python_controller.planning.validator import ValidatedPlan
 from python_controller.visualization.korean import ko, movement_block
@@ -233,6 +234,14 @@ class UnifiedAgent:
         self.mode_plan = None
         self.navigation = None
 
+    def clear_conversation(self):
+        with self.engine.control_lock:
+            self._invalidate()
+            self.graph = ConversationGraph(self.graph.interpreter)
+            self.events = SimpleQueue()
+            self.messages = []
+            self.busy = False
+
     def _sync(self):
         if self._seen_control_generation != self.engine.control_generation:
             self._seen_control_generation = self.engine.control_generation
@@ -273,6 +282,7 @@ class UnifiedAgent:
 
     def _run(self, kind, value, operation):
         token, binding = self.generation, self.bridge.binding()
+        events = self.events
         self.busy = True
 
         def work():
@@ -281,7 +291,7 @@ class UnifiedAgent:
             except Exception as exc:
                 code = str(exc)
                 result = {'error': code if re.fullmatch(r'[A-Z][A-Z0-9_]{2,79}', code) else 'INVALID_AGENT_RESPONSE'}
-            self.events.put((token, binding, kind, value, result))
+            events.put((token, binding, kind, value, result))
 
         Thread(target=work, name=f'dig-agent-{kind}', daemon=True).start()
 
@@ -300,6 +310,10 @@ class UnifiedAgent:
                 self._append('user', text)
                 self._invalidate()
                 self._append('assistant', '대기 계획을 취소했습니다.')
+                return
+            if program_question(text):
+                self._append('user', text)
+                self._append('assistant', self._describe_program())
                 return
             if self.busy or self.mode_plan or self.engine.language.executing:
                 reply = self._read_during_operation(text)
@@ -323,7 +337,38 @@ class UnifiedAgent:
             previous = self.card
             self.ticket = None
             self._append('user', text)
-            self._run('message', text, lambda: self.graph.turn(text, history, previous))
+            graph = self.graph
+            self._run('message', text, lambda: self._interpret(graph, text, history, previous))
+
+    def _interpret(self, graph, text, history, previous):
+        result = graph.turn(text, history, previous)
+        intent = result.get('intent') or {}
+        if intent.get('intent') != 'query_history':
+            return result
+        failures = intent['target'] == 'last_failure'
+        store = self.engine.language.history
+        try:
+            rows = store.recent(failures=failures)
+            if not rows:
+                reply = '확인할 수 있는 중단 이력이 없습니다.' if failures else '저장된 실행 이력이 없습니다.'
+            elif failures:
+                run = store.detail(rows[0]['run_id'])
+                terminal = run['events'][-1]
+                step = f'{terminal["step_index"]}단계 · ' if terminal['step_index'] is not None else ''
+                stop = next((event['evidence'].get('stop_verified') for event in reversed(run['events'])
+                             if event['event_type'] == 'ABORT_STOP_RESULT'), None)
+                proof = '장치 STOP 응답 확인' if stop else '장치 STOP 응답 미확인'
+                provenance = '' if run['provenance'] == 'ESP32_EXECUTOR' else '시뮬레이션 기록 · '
+                reply = f'{provenance}최근 중단 · 계획 v{run["revision"]} · {step}{ko(run["reason"])} · {proof}'
+            else:
+                states = {'COMPLETED': 'STOP 확인 후 완료', 'ABORTED': '중단', 'UNCONFIRMED': '종료 미확인'}
+                reply = '\n'.join(f'{"시뮬레이션 · " if row["provenance"] != "ESP32_EXECUTOR" else ""}'
+                                  f'계획 v{row["revision"]} · {states[row["state"]]} · {row["started_at"]}' for row in rows[:5])
+        except HistoryUnavailable:
+            reply = '실행 이력 저장소를 지금 읽을 수 없습니다.'
+        if store.degraded:
+            reply += '\n저장 오류로 일부 이력이 누락됐을 수 있습니다.'
+        return {**result, 'intent': {'intent': 'chat', 'reply': reply}}
 
     def _read_during_operation(self, text):
         text = text.rstrip('.!?。！？').strip()
@@ -360,7 +405,8 @@ class UnifiedAgent:
                 self.ticket = ApprovalTicket(token_hex(16), plan_id, revision, plan, self.card_binding, monotonic()+5)
             ticket = self.ticket
             decision = 'approve' if approve else 'reject'
-            self._run('review', ticket, lambda: {'decision': self.graph.review(card, decision)})
+            graph = self.graph
+            self._run('review', ticket, lambda: {'decision': graph.review(card, decision)})
 
     def _start_motion(self, ticket):
         current = self.ticket
@@ -416,11 +462,23 @@ class UnifiedAgent:
         self.mode_plan = None
 
     def _announce_card(self):
-        self._append('assistant', '각도 제어 미검증으로 이 계획 전체는 미리보기만 가능합니다.' if self.card['rotation'] else
-                     '검증된 이동 계획을 확인해 주세요. 실물 실행은 Qt에서 승인합니다.')
+        edit = f'계획을 v{self.card["revision"]}로 수정했습니다. 수정 전후를 확인해 주세요. ' if self.card.get('before') else ''
+        self._append('assistant', edit + ('각도 제어 미검증으로 전체 계획은 미리보기만 가능합니다.' if self.card['rotation'] else
+                     '실물 실행은 Qt에서 현재 버전을 승인해야 합니다.'))
+
+    @staticmethod
+    def _describe_program():
+        return ('D.I.G.는 3WD 로봇의 상태를 확인하고 이동 계획을 대화로 만드는 미션 관제 프로그램이에요.\n\n'
+                '• 미션 컨트롤: 레이더·연결 상태를 묻고, 이동 계획을 만들거나 수정할 수 있어요. 2D 화면에서는 예상 경로를 재생해요.\n'
+                '• 카메라 · 손동작: 영상을 켜서 손동작 인식과 사람 추종 상태를 확인해요.\n'
+                '• 작업 이력: 이동 단계별 결과와 STOP 응답, 중단 이유를 살펴볼 수 있어요.\n\n'
+                '웹에서는 계획을 미리 보고, 실물 이동은 안전 조건이 확인된 뒤 Qt 관제에서 승인해요. '
+                '“앞으로 10cm 가고 오른쪽으로 5cm 가”처럼 요청해 보세요.')
 
     def _dispatch(self, intent, text):
         kind = intent['intent']
+        if kind == 'explain_program':
+            return self._describe_program()
         if kind == 'navigate':
             self.navigation = intent['page']
             self.navigation_id += 1
@@ -462,7 +520,9 @@ class UnifiedAgent:
                 if result.get('error'):
                     if kind != 'message' or not result.get('card'):
                         self._invalidate()
-                    reply = f'요청을 확인하지 못했습니다. ({result["error"]})'
+                    reply = ('어느 단계에서 무엇을 바꿀지 다시 알려 주세요. 예를 들어 “마지막 거리를 10cm로”라고 말할 수 있습니다.'
+                             if result['error'] in ('EDIT_NOT_EXPLICIT', 'ACTION_INDEX_MISMATCH')
+                             else f'요청을 확인하지 못했습니다. ({result["error"]})')
                 elif kind == 'review':
                     if result['decision'] == 'approve':
                         reply = self._start_motion(value)
@@ -472,7 +532,11 @@ class UnifiedAgent:
                 elif result.get('intent'):
                     reply = self._dispatch(result['intent'], value)
                 elif result.get('card'):
-                    self.card, self.card_binding = result['card'], binding
+                    card = result['card']
+                    if card.get('before') and (not self.card or self.card['id'] != card['id'] or
+                                               self.card['revision'] != card['revision'] - 1):
+                        raise ValueError('현재 계획 버전에서 다시 요청해 주세요.')
+                    self.card, self.card_binding = card, binding
                     self._announce_card()
                     reply = None
                 else:
@@ -500,6 +564,7 @@ class UnifiedAgent:
                     'status': self.bridge.get_status(), 'execution': self.engine.language.phase,
                     'execution_detail': self.engine.language.detail,
                     'stop_result': self.engine.language.stop_result,
+                    'history_degraded': self.engine.language.history.degraded,
                     'progress': self.engine.language.progress_snapshot(), 'vision_facts': self.bridge.vision_facts(),
                     'waiting_mode_plan': self.mode_plan is not None,
                     'estop_latched': self.engine.c.estop_latched,

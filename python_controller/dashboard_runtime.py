@@ -301,7 +301,7 @@ class DashboardEngine:
         radar = self.radar.snapshot(now)
         if radar['blocked'] and radar['generation'] != self.seen_radar_generation:
             self.seen_radar_generation = radar['generation']
-            self.language.cancel()
+            self.language.cancel(radar['reason'])
             self.pending = None
             self.follow_auto_arm = False
             self.hand_armed_once = True
@@ -409,7 +409,7 @@ class DashboardEngine:
         if mode == self.client_owner and self.pending_mode is None:
             return
         if self.language.executing:
-            self.language.cancel()
+            self.language.cancel('MODE_CHANGE')
         client.stop('MODE_CHANGE')
         self.control_generation += 1
         self.pending_mode = mode
@@ -748,7 +748,7 @@ class DashboardEngine:
         if action=='PAUSE' and self.shared_session:
             self.shared_session.stop('USER_PAUSE')
         if action == 'ESTOP' or (action == 'PAUSE' and self.language.executing):
-            self.language.cancel()
+            self.language.cancel('EMERGENCY_STOP' if action == 'ESTOP' else 'USER_PAUSE')
         if action=='ESTOP':
             self.pending_mode = None
             self.language_authorized_host = None

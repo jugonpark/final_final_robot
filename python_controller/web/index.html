@@ -12,10 +12,11 @@
   <aside class="sidebar">
     <div class="brand">
       <img class="mascot" src="/dig-avatar-smile.png" width="54" height="54" alt="">
-      <div><strong>D.I.G.</strong><span>로봇 중앙관제</span></div>
+      <div><strong>D.I.G.</strong><span>로봇 미션 컨트롤</span></div>
     </div>
     <nav aria-label="중앙관제 메뉴">
-      <button type="button" data-page="ai" aria-current="page"><img src="/icons/chat.svg" alt="">AI 대화 제어</button>
+      <button type="button" data-page="ai" aria-current="page"><img src="/icons/chat.svg" alt="">미션 컨트롤</button>
+      <button type="button" data-page="history"><img src="/icons/clock.svg" alt="">작업 이력</button>
       <button type="button" data-page="camera"><img src="/icons/hand.svg" alt="">카메라 · 손동작</button>
       <button type="button" data-page="manual"><img src="/icons/gamepad.svg" alt="">수동 제어</button>
       <button type="button" data-page="diagnostics"><img src="/icons/activity.svg" alt="">상태 · 진단</button>
@@ -25,20 +26,21 @@
   </aside>
   <main>
     <header class="topbar">
-      <div class="topline"><strong id="page-title">AI 대화 제어</strong><span class="badge" id="esp32">ESP32 · 미확인</span><span class="badge camera-badge" id="camera-badge">카메라 · 대기</span><button class="danger" id="estop" type="button"><img src="/icons/stop.svg" alt="">긴급 정지 <kbd>Space</kbd></button></div>
+      <div class="topline"><strong id="page-title">미션 컨트롤</strong><span class="badge" id="esp32">ESP32 · 미확인</span><span class="badge camera-badge" id="camera-badge">카메라 · 대기</span><button class="danger" id="estop" type="button"><img src="/icons/stop.svg" alt="">긴급 정지 <kbd>Space</kbd></button></div>
       <div class="safety" id="safety" data-tone="warn"><img src="/icons/shield.svg" alt=""><strong id="radar">레이더 UNKNOWN · 이동 차단</strong><span id="stop-proof">ESP32 정지 미확인</span></div>
       <p class="announcement muted" id="announcement" role="status"></p>
     </header>
     <div class="content">
       <section data-panel="ai">
-        <h1>D.I.G.와 대화하기</h1>
-        <p class="intro">관제 상태를 확인하고 대화로 이동 계획을 검토하세요.</p>
-        <div class="columns ai-columns">
+        <h1>미션 컨트롤</h1>
+        <p class="intro">대화로 이동 계획을 만들고, 예상 경로와 장치가 보고한 실행 결과를 확인하세요.</p>
+        <div class="mission-layout">
           <article class="card conversation">
             <header class="chat-header">
               <img class="mascot" src="/dig-avatar-smile.png" width="40" height="40" alt="">
               <h2>D.I.G. 에이전트</h2>
               <span class="chat-mode" id="chat-mode">로컬 계획 미리보기</span>
+              <button type="button" class="ghost" id="clear-chat" hidden disabled>대화 삭제</button>
             </header>
             <div class="chat-thread" id="chat-thread" role="region" aria-label="대화 기록" tabindex="0">
               <div class="dm-message">
@@ -56,21 +58,60 @@
               </div>
             </div>
             <div class="compose">
-              <div class="examples" aria-label="예시 명령"><button class="outline" type="button" data-example="앞으로 5cm 가고 뒤로 5cm 가">전진 5cm → 후진 5cm</button><button class="outline" type="button" data-example="왼쪽으로 10cm 가">왼쪽 10cm</button><button class="outline" type="button" data-example="좌로 한바퀴 회전해">좌회전 360°</button></div>
+              <div class="examples" aria-label="예시 명령"><button class="outline" id="program-example" type="button" data-example="우리 프로그램을 좀 설명해 줄래?" hidden>프로그램 소개</button><button class="outline" type="button" data-example="앞으로 5cm 가고 뒤로 5cm 가">전진 5cm → 후진 5cm</button><button class="outline" type="button" data-example="왼쪽으로 10cm 가">왼쪽 10cm</button><button class="outline" type="button" data-example="좌로 한바퀴 회전해">좌회전 360°</button></div>
               <form id="plan-form"><label class="sr-only" for="prompt">D.I.G.에게 보내는 메시지</label><input id="prompt" maxlength="350" placeholder="예: 앞으로 5cm 이동해" required><button class="primary" type="submit"><img src="/icons/send.svg" alt=""><span id="chat-submit">계획 생성</span></button></form>
             </div>
           </article>
-          <div class="stack">
-            <article class="card"><h2><img src="/icons/file-text.svg" alt="">실행 계획 미리보기</h2><div class="card-body"><p class="empty muted" id="plan-empty">대화에서 이동을 요청하면 여기에서 계획을 검토할 수 있습니다.</p><p class="warning" id="plan-waiting" role="status" hidden>제어 모드 전환 · 새 STOP 응답 대기</p><ol class="steps" id="plan-steps"></ol><p class="muted" id="plan-distance"></p><p class="warning" id="rotate" hidden>각도 제어 미검증 · 회전 계획 실행 차단</p><div class="plan-actions"><p class="muted" id="approval-note"><img src="/icons/lock.svg" alt="">실물 실행 승인 · 데스크톱 관제</p><div class="actions"><button type="button" class="secondary" id="discard" disabled>계획 지우기</button><button type="button" class="primary" aria-describedby="approval-note" disabled>계획 실행</button></div></div></div></article>
-            <article class="card" id="execution-progress" hidden>
-              <h2><img src="/icons/activity.svg" alt="">실행 진행</h2>
+          <article class="card spatial">
+            <header class="spatial-header"><h2><img src="/icons/robot.svg" alt="">로봇 동작 시각화</h2><span>3WD · 위에서 본 모습</span></header>
+            <div class="spatial-body">
+              <div class="route-world">
+                <svg id="route-map" viewBox="0 0 480 350" role="img" aria-label="3WD 로봇의 상대 좌표와 계획 경로" aria-describedby="route-note">
+                  <defs><pattern id="route-grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24"/></pattern></defs>
+                  <rect width="480" height="350" fill="url(#route-grid)"/>
+                  <polyline id="route-plan"/>
+                  <polyline id="route-trail"/>
+                  <g id="route-markers" aria-hidden="true"></g>
+                  <g id="route-robot" transform="translate(240 175)">
+                    <g class="route-wheels"><rect x="-7" y="-25" width="14" height="10" rx="3"/><rect x="-7" y="-25" width="14" height="10" rx="3" transform="rotate(120)"/><rect x="-7" y="-25" width="14" height="10" rx="3" transform="rotate(240)"/></g>
+                    <circle r="17" class="route-chassis"/><circle r="12" class="route-deck"/>
+                    <path d="M0-13-5-5 0-7 5-5Z" class="route-heading"/><circle r="3" class="route-hub"/>
+                  </g>
+                </svg>
+                <div class="route-axis" aria-hidden="true">↑ 전방<br>우측 →</div>
+              </div>
+              <ul class="route-legend"><li class="planned">계획 경로</li><li class="projected">명령 기반 시뮬레이션</li></ul>
+              <p id="route-note" class="muted">상대 좌표 미리보기입니다. 실제 위치·방향은 미측정입니다.</p>
+              <div class="spatial-controls">
+                <button class="primary" type="button" id="play-route" disabled><img src="/icons/play.svg" alt="">가상 경로 재생</button>
+                <button class="outline" type="button" id="reset-route" disabled>초기화</button>
+              </div>
+              <p id="route-status" class="muted" role="status">대화에서 이동 계획을 만들면 경로가 표시됩니다.</p>
+            </div>
+          </article>
+          <div class="stack mission-timeline">
+            <article class="card"><h2><img src="/icons/file-text.svg" alt="">실행 계획</h2><div class="card-body"><p class="empty muted" id="plan-empty">대화에서 이동을 요청하면 여기에서 계획을 검토할 수 있습니다.</p><p class="warning" id="plan-waiting" role="status" hidden>제어 모드 전환 · 새 STOP 응답 대기</p><ol class="steps" id="plan-steps"></ol><p class="muted" id="plan-distance"></p><details class="plan-diff" id="plan-diff" hidden><summary id="plan-before-label">수정 전</summary><ol class="steps" id="plan-before"></ol></details><p class="warning" id="rotate" hidden>각도 제어 미검증 · 회전 계획 실행 차단</p><div class="plan-actions"><p class="muted" id="approval-note"><img src="/icons/lock.svg" alt="">실물 실행 승인 · 데스크톱 관제</p><div class="actions"><button type="button" class="secondary" id="discard" disabled>계획 지우기</button><button type="button" class="primary" aria-describedby="approval-note" disabled>계획 실행</button></div></div></div></article>
+            <article class="card" id="execution-progress">
+              <h2><img src="/icons/activity.svg" alt="">실행 타임라인</h2>
               <div class="card-body execution-body">
                 <p class="muted" id="execution-summary" role="status">실행 기록이 없습니다.</p>
+                <p class="muted" id="execution-source" hidden></p>
+                <progress id="execution-meter" aria-label="STOP 확인 단계" max="1" value="0" hidden></progress>
                 <ol class="steps execution-steps" id="execution-steps"></ol>
+                <p id="history-warning" class="warning" hidden>실행 이력 저장 오류 · 일부 기록이 빠졌을 수 있습니다.</p>
+                <button class="outline" type="button" id="open-history">작업 이력 열기</button>
               </div>
             </article>
-            <article class="card"><h2><img src="/icons/shield.svg" alt="">안전 상태</h2><div class="card-body"><dl id="ai-safety" class="data"></dl><p class="warning">시뮬레이션 · 실물 이동 차단</p></div></article>
+            <details class="card mission-safety"><summary>안전 상세</summary><div class="card-body"><dl id="ai-safety" class="data"></dl><p class="warning">웹 시뮬레이션 · 실물 이동 차단</p></div></details>
           </div>
+        </div>
+      </section>
+      <section data-panel="history" hidden>
+        <div class="intro-row"><div><h1>작업 이력</h1><p class="intro">저장된 계획 버전과 장치 응답, 중단 사유를 확인하세요.</p></div><button type="button" class="outline" id="refresh-history"><img src="/icons/refresh.svg" alt="">새로고침</button></div>
+        <p class="warning" id="archive-warning" hidden>실행 이력 저장 오류 · 일부 기록이 빠졌을 수 있습니다.</p>
+        <div class="columns history-columns">
+          <article class="card"><h2><img src="/icons/clock.svg" alt="">최근 실행</h2><div class="card-body"><p id="history-status" class="muted" role="status">실행 기록이 없습니다.</p><ul id="history-runs"></ul></div></article>
+          <article class="card"><h2><img src="/icons/activity.svg" alt="">실행 상세</h2><div class="card-body archive-detail"><p id="history-detail-status" class="muted" role="status">목록에서 실행을 선택하세요.</p><dl class="data" id="history-meta"></dl><ol class="steps" id="history-plan"></ol><ol id="history-events"></ol></div></article>
         </div>
       </section>
       <section data-panel="camera" hidden>
@@ -100,5 +141,12 @@
       </section>
     </div>
   </main>
+  <dialog id="clear-chat-dialog" aria-labelledby="clear-chat-title">
+    <form method="dialog" class="clear-chat-form">
+      <h2 id="clear-chat-title">대화 기록을 삭제할까요?</h2>
+      <p class="muted">현재 대화의 메시지와 승인 대기 계획이 삭제됩니다.</p>
+      <div class="actions"><button value="cancel" autofocus>취소</button><button class="danger" value="clear">삭제</button></div>
+    </form>
+  </dialog>
 </body>
 </html>

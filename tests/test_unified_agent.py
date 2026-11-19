@@ -3,7 +3,7 @@ import json
 import os
 import unittest
 from decimal import Decimal
-from threading import Event
+from threading import Event, Thread
 from tempfile import TemporaryDirectory
 from time import monotonic, sleep
 from unittest.mock import patch
@@ -37,6 +37,67 @@ class Interpreter:
 
 
 class AgentIntentTests(unittest.TestCase):
+    def test_program_question_has_a_typed_read_only_intent(self):
+        from python_controller.llm.agent_intent import ExplainProgram, parse_intent, program_question
+
+        for text in ('아니 지금 우리 프로그램을 좀 설명해줄래?', '이 앱이 뭐야?', 'D.I.G.는 무슨 기능이 있어?',
+                     '우리 시스템에 대해서 간단히 소개해 주세요'):
+            with self.subTest(text=text):
+                self.assertTrue(program_question(text))
+        self.assertFalse(program_question('프로그램을 설명하고 앞으로 10cm 가'))
+        self.assertIsInstance(parse_intent('{"intent":"explain_program"}'), ExplainProgram)
+        with self.assertRaises(ValueError):
+            parse_intent('{"intent":"explain_program","approved":true}')
+
+    def test_semantic_edit_paraphrases_are_grounded_in_operator_text(self):
+        from python_controller.llm.agent_intent import apply_proposal, parse_intent, requested_plan
+
+        previous = requested_plan('앞으로 5cm 가고 오른쪽으로 10cm 가')
+        ordinal = {'kind': 'ordinal', 'value': 2}
+        last = {'kind': 'last'}
+        action = move('backward', 5)
+        cases = [
+            ({'kind': 'delete', 'selector': ordinal},
+             ['2번째 빼줘', '둘 번째 삭제해', '두 번째 단계 삭제', '제2단계를 제거해 주세요', '2번 동작을 지워', '2단계는 없애'], 1),
+            ({'kind': 'replace_distance', 'selector': last, 'distance_cm': 15},
+             ['마지막 거리를 15cm로 바꿔', '마지막 150mm로', '맨 끝을 15cm', '끝 단계 거리는 15센티미터로 수정',
+              '마지막 이동 거리만 15cm로 맞춰 줘', '아니, 마지막 단계만 15cm로 변경해'], 2),
+            ({'kind': 'replace_direction', 'selector': last, 'direction': 'backward'},
+             ['마지막 방향을 뒤쪽으로', '마지막 동작은 뒤로 바꿔', '맨 끝 방향을 후방으로', '끝 동작은 뒤쪽으로 변경',
+              '마지막 이동 방향만 후진으로', '아니요 마지막을 뒤로 고쳐줘'], 2),
+            ({'kind': 'append', 'replacement': action},
+             ['맨 뒤에 뒤로 5cm 추가해', '끝에 뒤로 5cm 붙여', '그 다음 뒤로 5cm 넣어', '맨끝에 뒤로 5cm 삽입',
+              '마지막에 후방 5cm 추가해 주세요', '그다음에 뒤로 50mm 이동 넣어'], 3),
+            ({'kind': 'insert_before', 'selector': ordinal, 'replacement': action},
+             ['2번째 앞에 뒤로 5cm 넣어', '두 번째 단계 전에 후진 5cm 추가', '제2단계 바로 앞에 뒤로 5cm 삽입',
+              '2번 동작 앞에 뒤로 50mm 추가해 줘', '두 번째 전에 후방 5cm 붙여', '2단계 앞에 뒤로 5cm 이동 넣어'], 3),
+            ({'kind': 'insert_after', 'selector': ordinal, 'replacement': action},
+             ['두 번째 뒤에 뒤로 5cm 넣어', '둘 번째 동작 다음에 후진 5cm 추가', '2번 단계 후에 뒤로 5cm 넣어',
+              '제2단계 바로 뒤에 뒤로 50mm 삽입해', '2단계 뒤에 후방 5cm 붙여', '두 번째 이동 다음에 뒤로 5cm 이동 추가'], 3),
+            ({'kind': 'replace_action', 'selector': ordinal, 'replacement': action},
+             ['두 번째 동작 뒤로 5cm로 바꿔', '2번은 뒤로 5cm 고쳐', '제2단계를 후방 5cm로 수정해',
+              '둘 번째 뒤로 50mm로 바꿔줘', '두 번째 이동을 후진 5cm 변경', '2단계 뒤로 5cm로 해 주세요'], 2),
+        ]
+        for operation, phrases, count in cases:
+            proposal = parse_intent(json.dumps({'intent': 'edit_plan', 'operation': operation})).operation
+            for text in phrases:
+                with self.subTest(text=text):
+                    plan = apply_proposal(text, proposal, previous)
+                    self.assertEqual(len(plan.actions), count)
+                    if operation['kind'] == 'replace_distance':
+                        self.assertEqual((plan.actions[-1].direction, plan.actions[-1].distance_cm), ('right', 15))
+                    elif operation['kind'] == 'replace_direction':
+                        self.assertEqual((plan.actions[-1].direction, plan.actions[-1].distance_cm), ('backward', 10))
+                    elif operation['kind'] != 'delete':
+                        index = 1 if operation['kind'] in ('insert_before', 'replace_action') else 2
+                        self.assertEqual((plan.actions[index].direction, plan.actions[index].distance_cm), ('backward', 5))
+        proposal = parse_intent('{"intent":"edit_plan","operation":{"kind":"replace_distance","selector":{"kind":"last"},"distance_cm":15}}').operation
+        for text in ('두 번째 조금 더 가', '마지막 거리를 20cm로', '마지막 15cm로 그리고 첫 번째 10cm로'):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                apply_proposal(text, proposal, previous)
+        with self.assertRaisesRegex(ValueError, 'EDIT_REQUIRES_MOVE'):
+            apply_proposal('마지막 거리를 15cm로', proposal, requested_plan('앞으로 5cm 가고 정지'))
+
     def test_explicit_composite_and_sequence_do_not_invent_movement(self):
         from python_controller.llm.agent_intent import explicit_composite, new_plan, parse_intent, requested_plan
 
@@ -142,6 +203,77 @@ class AgentIntegrationTests(unittest.TestCase):
             self.assertEqual(agent.graph.review(card, 'approve'), 'approve')
             start.assert_not_called()
         self.assertFalse(agent.view()['can_approve'])
+
+    def test_program_explanation_works_locally_and_through_model_classification(self):
+        agent = self.agent('{"intent":"explain_program"}')
+        agent.submit('아니 지금 우리 프로그램을 좀 설명해줄래?')
+        direct = agent.view()['messages'][-1]['content']
+        self.assertIn('3WD', direct)
+        self.assertIn('Qt', direct)
+        self.assertEqual(self.interpreter.contexts, [])
+        agent.submit('여기서 어떤 일들을 처리할 수 있는지 궁금해')
+        self.drain(agent)
+        self.assertEqual(agent.view()['messages'][-1]['content'], direct)
+        self.assertIsNone(agent.view()['card'])
+
+    def test_clear_discards_draft_and_late_worker_without_changing_execution(self):
+        entered, release = Event(), Event()
+        self.addCleanup(release.set)
+
+        def delayed_plan():
+            entered.set()
+            release.wait(4)
+            return PLAN
+
+        agent = self.agent(PLAN, delayed_plan, '{"intent":"chat","reply":"새 대화"}')
+        agent.submit('앞으로 10cm 가')
+        self.drain(agent)
+        card = agent.view()['card']
+        old_graph = agent.graph
+        workers = []
+
+        def track_thread(**kwargs):
+            thread = Thread(**kwargs)
+            workers.append(thread)
+            return thread
+
+        with patch('python_controller.llm.unified_agent.Thread', side_effect=track_thread):
+            agent.submit('앞으로 10cm 가')
+            self.assertTrue(entered.wait(2))
+            with patch.object(self.engine, 'request') as request, patch.object(self.engine.language, 'cancel') as cancel:
+                agent.clear_conversation()
+                request.assert_not_called()
+                cancel.assert_not_called()
+            state = agent.view()
+            self.assertEqual(state['messages'], [])
+            self.assertIsNone(state['card'])
+            self.assertFalse(state['busy'])
+            self.assertIsNot(old_graph, agent.graph)
+            self.assertEqual(agent.graph.graph.get_state(agent.graph.config).values, {})
+            with self.assertRaises(ValueError):
+                agent.review(card['id'], card['revision'], approve=True, operator_confirmed=True)
+            agent.submit('안녕')
+            self.drain(agent)
+            self.assertEqual(self.interpreter.contexts[-1][1:], ([], None))
+            release.set()
+            workers[0].join(timeout=2)
+            self.assertFalse(workers[0].is_alive())
+        self.assertEqual([row['content'] for row in agent.view()['messages']], ['안녕', '새 대화'])
+
+    def test_last_step_edit_without_model_identity_rechecks_revision_and_shows_diff(self):
+        agent = self.agent(PLAN, '{"intent":"edit_plan","operation":{"kind":"replace_direction",'
+                                 '"selector":{"kind":"last"},"direction":"backward"}}')
+        agent.submit('앞으로 10cm 가')
+        self.drain(agent)
+        old = agent.view()['card']
+        agent.submit('마지막 방향을 뒤쪽으로')
+        self.drain(agent)
+        new = agent.view()['card']
+        self.assertEqual((new['id'], new['revision']), (old['id'], 2))
+        self.assertEqual((new['before'], new['steps']), (['앞으로 10 cm'], ['뒤로 10 cm']))
+        with self.assertRaises(ValueError):
+            agent.review(old['id'], old['revision'], approve=True, operator_confirmed=True)
+        self.assertFalse(self.engine.language.busy)
 
     def test_edits_reuse_card_validate_all_steps_and_preserve_previous_on_stale_edit(self):
         from python_controller.llm.agent_intent import parse_intent
@@ -356,11 +488,12 @@ class AgentIntegrationTests(unittest.TestCase):
         with patch.object(LLMMotionExecutor, 'run', autospec=True, side_effect=LLMMotionExecutor.run) as run:
             agent.review(card['id'], 1, approve=True, operator_confirmed=True)
             self.drain(agent)
-            deadline = monotonic()+5
+            deadline = monotonic()+15
             while self.engine.language.busy and monotonic()<deadline:
                 self.engine.language.poll()
                 sleep(.005)
             self.engine.language.poll()
+            self.assertFalse(self.engine.language.busy, self.engine.language.progress_snapshot())
             run.assert_called_once()
         progress = agent.view()['progress']
         self.assertEqual(robot.moves, 4)
@@ -368,6 +501,19 @@ class AgentIntegrationTests(unittest.TestCase):
         self.assertEqual(progress['verified_count'], 4)
         self.assertEqual(progress['steps'], ['STOP_VERIFIED'] * 4)
         self.assertEqual(progress['state'], 'COMPLETED')
+        self.engine.language.history.close()
+        from python_controller.execution.history_store import MissionHistory
+
+        archive = MissionHistory(self.engine.language.history.path)
+        saved = archive.detail(progress['run_id'])
+        labels = [(event['event_type'], event['step_index']) for event in saved['events']]
+        self.assertEqual(saved['state'], 'COMPLETED')
+        self.assertEqual(labels[:2], [('RUN_STARTED', None), ('HANDSHAKE_STOP_CONFIRMED', None)])
+        self.assertEqual(labels[2:-1], [(event, step) for step in range(1, 5)
+                                      for event in ('MOVE_ACCEPTED', 'GOAL_REACHED', 'STOP_CONFIRMED')])
+        self.assertEqual(labels[-1], ('COMPLETED', None))
+        self.assertTrue(all(event['evidence'].get('stop_barrier') for event in saved['events']
+                            if event['event_type'] == 'STOP_CONFIRMED'))
         if importlib.util.find_spec('PySide6'):
             from PySide6.QtWidgets import QApplication
             from python_controller.visualization.agent_panel import AgentPanel
@@ -429,6 +575,11 @@ class AgentIntegrationTests(unittest.TestCase):
         self.assertEqual(robot.moves, 1)
         self.assertEqual((progress['state'], progress['verified_count']), ('ABORTED', 0))
         self.assertEqual(progress['steps'], ['BLOCKED', 'BLOCKED'])
+        self.engine.language.history.close()
+        saved = self.engine.language.history.detail(progress['run_id'])
+        self.assertEqual(saved['state'], 'ABORTED')
+        self.assertEqual(saved['events'][-1]['step_index'], 1)
+        self.assertNotIn('STOP_CONFIRMED', [event['event_type'] for event in saved['events']])
 
     def test_radar_trip_during_sequence_blocks_remaining_steps_and_no_resume(self):
         from python_controller.execution.motion_executor import LLMMotionExecutor
