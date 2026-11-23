@@ -60,6 +60,7 @@ let archiveSelection = null;
 let latestRun = null;
 let timelineUnavailable = false;
 let sourceRequest = 0;
+let jog = null;
 
 function text(id, value) {
   const node = byId(id);
@@ -113,6 +114,10 @@ async function stop() {
 }
 
 function selectPage(pageId) {
+  if (pageId !== 'manual') {
+    releaseJog();
+    byId('web-wheels-lifted').checked = false;
+  }
   if (pageId !== 'ai') resetRoute();
   page = pageId;
   for (const button of nav) {
@@ -144,7 +149,11 @@ function renderPlan() {
   byId('request-review').hidden = !agent;
   byId('request-review').disabled = !online || draftBusy || agent?.busy || !plan || plan.rotation || plan.review_requested ||
     ['EXECUTING', 'STOPPING'].includes(agent?.execution);
-  text('draft-review-state', plan?.review_requested ? `v${plan.revision} 검토 요청 · Qt 현장 승인 필요` : '실물 실행 승인 · Qt 관제');
+  const shared = online && state?.shared_control;
+  text('draft-review-state', plan?.review_requested ? `v${plan.revision} 검토 요청 · 운영자 승인 필요` :
+    shared ? '실물 실행 전 안전 확인 및 승인' : '실물 실행 승인 · Qt 관제');
+  byId('web-approve').hidden = !(shared && plan?.review_requested);
+  byId('web-approve').disabled = !state?.agent?.can_approve;
   const key = JSON.stringify(plan);
   if (key === lastPlan) return;
   lastPlan = key;
@@ -733,7 +742,8 @@ function render() {
   const radar = connected ? state.radar : null;
   const stopProof = connected && state.stop_verified ? 'ESP32 정지 확인' : 'ESP32 정지 미확인';
   const linked = connected ? (state.connected ? '연결됨' : '미연결') : unknown;
-  const source = !connected ? '서버 연결 끊김' : state.source === 'SYNTHETIC_PREVIEW' ? '시뮬레이션 · 합성 영상' : '시뮬레이션 · 실제 카메라';
+  const source = !connected ? '서버 연결 끊김' : state.shared_control ? 'Qt 공유 관제' :
+    state.source === 'SYNTHETIC_PREVIEW' ? '시뮬레이션 · 합성 영상' : '시뮬레이션 · 실제 카메라';
   text('source', source);
   text('owner', connected ? `제어권 · ${state.owner}` : '제어권 미확인');
   text('esp32', `ESP32 · ${linked}`);
@@ -741,9 +751,25 @@ function render() {
   const cameraStatus = { CAMERA_OFF: '꺼짐', CLOSING_CAMERA: '해제 중', CAMERA_ERROR: '오류',
     CAPTURING: state?.source === 'SYNTHETIC_PREVIEW' ? '합성' : '수신 중' };
   text('camera-badge', `카메라 · ${!connected ? unknown : (cameraStatus[state.camera_status] ?? '대기')}`);
-  text('radar', `레이더 ${radar?.state ?? 'UNKNOWN'} · ${radar?.blocked === false ? '차단 해제' : '이동 차단'}${connected && state.estop_latched ? ' · 긴급 정지' : ''}`);
+  const moveReady = connected && state.movement_ready;
+  const blocker = connected && (state.estop_latched ? '긴급 정지' : state.movement_reason);
+  text('radar', `레이더 ${radar?.state ?? 'UNKNOWN'} · ${moveReady ? '새 입력 허용' : '이동 차단'}${blocker ? ` · ${blocker}` : ''}`);
   text('stop-proof', stopProof);
-  byId('safety').dataset.tone = (connected && state.estop_latched) || radar?.state === 'EVADE' ? 'danger' : radar?.blocked === false ? 'ok' : 'warn';
+  byId('web-radar-rearm').hidden = !connected || !state.shared_control;
+  byId('web-radar-rearm').disabled = !connected || !state.radar_can_rearm;
+  byId('web-estop-reset').hidden = !connected || !state.shared_control || !state.estop_latched || !state.agent;
+  byId('safety').dataset.tone = (connected && state.estop_latched) || radar?.state === 'EVADE' ? 'danger' : moveReady ? 'ok' : 'warn';
+  const wheelMode = connected && state.shared_control && state.owner === 'MOTOR_TEST';
+  const lifted = byId('web-wheels-lifted');
+  if (!wheelMode || state.estop_latched) lifted.checked = false;
+  byId('web-wheel-test').hidden = !wheelMode;
+  byId('web-turn-test').disabled = !wheelMode || !moveReady || !lifted.checked;
+  document.querySelectorAll('[data-jog]').forEach(button => {
+    const wheel = /^M[123]$/.test(button.dataset.jog);
+    const ownsMode = connected && state.shared_control && (wheel ? wheelMode && lifted.checked : state.owner === 'DIRECT_CONTROL');
+    button.disabled = !ownsMode || !(moveReady || (jog?.button === button && !blocker));
+  });
+  if (jog && jog.button.disabled) releaseJog();
   if (connected) renderAgent(state.agent);
   const knowledgeNav = nav.find(button => button.dataset.page === 'knowledge');
   knowledgeNav.hidden = connected && !state.agent;
@@ -761,23 +787,30 @@ function render() {
     byId('follow-controls').hidden = !follow;
     byId('direct-controls').hidden = follow;
     const fresh = cameraWanted && state.perception_fresh;
-    byId('follow-start').disabled = !fresh || state.target == null;
+    const live = state.shared_control && state.connected;
+    byId('follow-start').disabled = !fresh || state.target == null || (live && (!moveReady || state.owner !== 'GESTURE_FOLLOW'));
+    byId('web-hand-start').hidden = !live;
+    byId('web-hand-start').disabled = !fresh || !moveReady || state.owner !== 'GESTURE_DIRECT';
+    byId('web-hand-pause').hidden = !live;
+    text('direct-status', live ? (state.owner === 'GESTURE_DIRECT' ? state.stop_reason : '설정에서 손동작 직접 제어권을 선택하세요.') : '인식 모니터링 · 장치 명령 전송 없음');
     const hands = fresh ? (state.vision.raw ?? []) : [];
     text('gesture', hands.length ? hands.map((hand) => `${name(hand.name)} · ${measured(hand.confidence)}`).join(' / ') : cameraWanted ? '인식 미확인' : '카메라 꺼짐');
     readout('camera-details', [['검출 인원', fresh ? state.people : unknown],
       ['대상', !fresh || state.target == null ? '미선택' : `ID ${state.target}`],
-      ['추종', fresh && state.following ? '시뮬레이션 추종 중' : '대기'], ['확정 동작', follow ? name(fresh ? state.gesture.confirmed : null) : '미리보기'],
+      ['추종', fresh && state.following ? (live ? '추종 중' : '시뮬레이션 추종 중') : '대기'], ['확정 동작', follow ? name(fresh ? state.gesture.confirmed : null) : '미리보기'],
       ['적용 동작', follow ? name(state.gesture.applied_action) : '전송 없음']]);
     readout('guide', Object.entries(follow ? state.settings.follow : state.settings.hand).map(([key, value]) => [name(key), name(value)]));
     text('frame-detail', `FPS ${measured(state.fps)} · 처리 ${measured(state.processing_ms, ' ms')}`);
   }
   if (page === 'manual') {
-    readout('manual-safety', [...rows, ['실물 구동 준비', state.ready ? '준비' : '차단']]);
+    readout('manual-safety', [...rows, ['실물 구동 준비', moveReady ? '준비' : (blocker || '차단')]]);
+    text('web-manual-help', state.shared_control ? '수동 제어 모드에서 방향 버튼을 누르는 동안 구동합니다.' : 'Qt 공유 관제에서 수동 조작을 사용할 수 있습니다.');
     const values = [0, 1, 2].map((i) => `M${i+1} · ${measured(state.motors.measured_rpm?.[i], ' RPM')}`);
     renderCells('motor-summary', values, 'span');
   }
   if (page === 'diagnostics') {
-    readout('diagnostic-link', [...rows, ['레이더 상세', radar.detail], ['수신 검증', state.validation], ['복구 상태', state.recovery], ['장치 Fault', state.fault]]);
+    byId('web-recover').hidden = !state.shared_control || !state.session_open;
+    readout('diagnostic-link', [...rows, ['레이더 상세', radar.detail], ['이동 차단 사유', blocker || '—'], ['수신 검증', state.validation], ['복구 상태', state.recovery], ['장치 Fault', state.fault]]);
     readout('diagnostic-vision', [['영상 출처', source], ['파이프라인', state.vision_status], ['인식 유효', state.perception_fresh ? '유효' : '미확인'],
       ['처리 FPS', measured(state.fps)], ['처리 지연', measured(state.processing_ms, ' ms')]]);
     readout('test-log', state.tests.map((test) => [name(test.test), name(test.result)]));
@@ -785,10 +818,20 @@ function render() {
   }
   if (page === 'settings') {
     const cfg = state.settings;
-    readout('esp-settings', [['ESP32 IPv4', cfg.esp32 || '미설정']]);
+    readout('esp-settings', [['저장 주소', cfg.esp32 || '미설정'], ['보드 프로필', cfg.hardware_profile || '미선택'],
+      ['프로필 확인', state.hardware_profile_status || '응답 대기']]);
     readout('radar-settings', [['Raspberry Pi IPv4', cfg.radar || '미설정']]);
     readout('hand-settings', Object.entries(cfg.hand).map(([key, value]) => [name(key), name(value)]));
     readout('vision-settings', [['카메라 번호', cfg.camera_index], ['영상 유효시간', `${cfg.timeout_ms} ms`], ['유지시간', `${cfg.hold_s} 초`], ['추론 해상도', `${cfg.image_size} px`]]);
+    for (const [id, value] of [['esp-ip', cfg.esp32], ['radar-ip', cfg.radar]]) {
+      const input = byId(id);
+      if (!input.dataset.dirty && input !== document.activeElement) input.value = value || '';
+      input.form.querySelector('button').disabled = state.session_open;
+    }
+    byId('web-connection').hidden = !state.shared_control;
+    byId('web-connect').disabled = state.session_open || !cfg.esp32;
+    byId('web-disconnect').disabled = !state.session_open;
+    byId('web-mode-form').hidden = !state.shared_control || !state.session_open;
   }
 }
 
@@ -919,6 +962,85 @@ async function pollCamera() {
   setTimeout(pollCamera, 150);
 }
 
+function jogRequest(action, extra) {
+  return fetchJson('/api/control', {method: 'POST', keepalive: action === 'manual_release',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action, ...extra})});
+}
+
+function releaseJog() {
+  const previous = jog;
+  jog = null;
+  if (previous?.token) void jogRequest('manual_release', {token: previous.token}).catch(() => {});
+}
+
+async function startJog(button) {
+  if (jog || button.disabled) return;
+  const current = jog = {button, token: null};
+  try {
+    const {token} = await jogRequest('manual_prepare', {direction: button.dataset.jog, confirmed: byId('web-wheels-lifted').checked});
+    current.token = token;
+    if (jog !== current) {
+      await jogRequest('manual_release', {token});
+      return;
+    }
+    while (jog === current) {
+      await jogRequest('manual_hold', {token});
+      await new Promise(resolve => setTimeout(resolve, 75));
+    }
+  } catch (error) {
+    if (jog === current) {
+      text('announcement', error.message);
+      releaseJog();
+    }
+  }
+}
+
+for (const button of document.querySelectorAll('[data-jog]')) {
+  button.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || jog) return;
+    event.preventDefault();
+    button.setPointerCapture(event.pointerId);
+    void startJog(button);
+  });
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(event, releaseJog);
+  button.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.repeat) void startJog(button);
+  });
+}
+window.addEventListener('keyup', event => { if (event.key === 'Enter') releaseJog(); });
+window.addEventListener('blur', releaseJog);
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseJog(); });
+window.addEventListener('pagehide', releaseJog);
+
+for (const [id, action] of [['esp-ip', 'save_esp32_ip'], ['radar-ip', 'save_radar_ip']]) {
+  const input = byId(id);
+  input.addEventListener('input', () => { input.dataset.dirty = 'true'; });
+  input.form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const address = input.value.trim();
+    if (await command(action, {address}) && input.value.trim() === address) delete input.dataset.dirty;
+  });
+}
+byId('web-connect').addEventListener('click', () => {
+  if (window.confirm('ESP32 통신 연결을 시작할까요?')) void command('connect_robot', {confirmed: true});
+});
+byId('web-mode-form').addEventListener('submit', event => {
+  event.preventDefault();
+  void command('select_mode', {mode: byId('web-mode').value});
+});
+byId('web-wheels-lifted').addEventListener('change', render);
+byId('web-turn-test').addEventListener('click', () => {
+  if (byId('web-wheels-lifted').checked && window.confirm('고정한 바퀴로 저속 좌회전 시험을 실행할까요?')) {
+    void command('test_turn', {confirmed: true});
+  }
+});
+byId('web-approve').addEventListener('click', () => {
+  const card = state?.agent?.card;
+  if (card && state.agent.can_approve && window.confirm(`주변이 안전하고 정지 수단을 확보했습니다. 계획 v${card.revision}을 실행할까요?`)) {
+    void command('agent_approve', {plan_id: card.id, revision: card.revision, confirmed: true});
+  }
+});
+
 byId('camera-power').addEventListener('click', () => {
   cameraAllowed = !cameraAllowed;
   syncCameraPower();
@@ -1005,7 +1127,15 @@ for (const button of cameraButtons) button.addEventListener('click', () => {
   render();
 });
 for (const button of document.querySelectorAll('[data-command]')) {
-  button.addEventListener('click', () => button.dataset.command === 'estop' ? stop() : command(button.dataset.command));
+  button.addEventListener('click', () => {
+    const action = button.dataset.command;
+    if (action === 'estop') return stop();
+    if (state?.shared_control && state.connected && ['resume_follow', 'activate_hand'].includes(action)) {
+      if (!window.confirm('주변 확인 후 카메라 제어를 활성화할까요?')) return;
+      return command(action, {viewer: cameraViewer, confirmed: true});
+    }
+    return command(action);
+  });
 }
 for (const button of document.querySelectorAll('[data-example]')) button.addEventListener('click', () => {
   prompt.value = button.dataset.example;

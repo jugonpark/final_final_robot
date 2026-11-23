@@ -10,6 +10,7 @@ from unittest.mock import Mock, call, patch
 
 from pi_radar.publisher import MAGIC, FrameStream, HazardDetector, configure_sensor, read_uart
 from python_controller.control.safety_supervisor import SafetySupervisor
+from python_controller.dashboard_runtime import DashboardEngine
 from python_controller.execution.motion_executor import MotionError
 from python_controller.models import ControlDecision, MotionCommand
 from python_controller.planning.validator import ValidatedPlan, parse_operator_command
@@ -145,6 +146,12 @@ class RadarStateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             gate.rearm(1.36)
 
+    def test_radar_snapshot_with_earlier_thread_timestamp_does_not_expire_new_packet(self):
+        gate = SafetySupervisor(PI)
+        gate.receive(radar(1), PI, 1.02)
+        self.assertEqual(gate.snapshot(1.01)['state'], 'CLEAR')
+        self.assertEqual(gate.snapshot(1.01)['age_s'], 0.)
+
 
 class RadarMotionTests(unittest.TestCase):
     def ready_wire(self):
@@ -193,7 +200,7 @@ class RadarMotionTests(unittest.TestCase):
         self.addCleanup(channel.close)
         reply = Future()
         session.requests.put((dict(type='cmd_move', motion_id=5, vx=5, vy=0, w=0,
-                                   target_distance_cm=5, status='SLOW'), reply, session.recovery_generation))
+                                   target_distance_cm=5, status='SLOW'), reply, session.recovery_generation, channel))
         gate.receive(radar(2,'EVADE',epoch=1), PI, fixture.now)
         gate.receive(radar(3,epoch=1), PI, fixture.now)
         session.tick()
@@ -202,6 +209,57 @@ class RadarMotionTests(unittest.TestCase):
         self.assertIsInstance(reply.exception(timeout=1), OSError)
         self.assertTrue(session.distance_cancelled)
         self.assertFalse(any(p['type']=='cmd_move' for p in session.tx.sent))
+
+    def test_old_distance_request_is_rejected_even_after_new_channel_opens(self):
+        _, session, _ = self.ready_wire()
+        session.select_mode('LLM_COMMAND')
+        session.controller_alive()
+        previous = session.distance_socket()
+        reply = Future()
+        session.requests.put((dict(type='cmd_move', motion_id=5, vx=5, vy=0, w=0,
+                                   target_distance_cm=5, status='SLOW'), reply, session.recovery_generation, previous))
+        previous.close()
+        current = session.distance_socket()
+        self.addCleanup(current.close)
+        session.tick()
+        self.assertIsInstance(reply.exception(timeout=1), OSError)
+        self.assertFalse(any(p['type']=='cmd_move' for p in session.tx.sent))
+
+    def test_auto_releases_evade_only_after_fresh_stop_and_requires_new_input(self):
+        fixture, session, gate = self.ready_wire()
+        engine = DashboardEngine(session.cfg, '.tmp', radar=gate, logger=False)
+        engine.client, engine.client_owner = session, 'DIRECT_CONTROL'
+        engine.seen_recovery_generation = session.recovery_generation
+        session.operator_alive()
+        session.begin_hold('FORWARD')
+        session.tick()
+        old_generation = engine.control_generation
+        gate.receive(radar(2, 'EVADE', epoch=1), PI, fixture.now)
+        gate.receive(radar(3, 'CLEAR', epoch=1), PI, fixture.now)
+        engine.tick(None, fixture.now)
+        session.tick()
+        self.assertEqual(session.tx.sent[-1]['type'], 'stop')
+        self.assertTrue(gate.snapshot(fixture.now)['blocked'])
+        self.assertGreater(engine.control_generation, old_generation)
+
+        fixture.receive(**dict(wire_fixture.V2, motion_permit=False))
+        engine.tick(None, fixture.now)
+        self.assertFalse(gate.snapshot(fixture.now)['blocked'])
+        self.assertFalse(session.armed)
+        session.tick()
+        self.assertNotEqual(session.tx.sent[-1]['type'], 'cmd_vel')
+        session.operator_alive()
+        session.begin_hold('FORWARD')
+        session.tick()
+        self.assertEqual(session.tx.sent[-1]['type'], 'cmd_vel')
+
+        fixture.now += gate.timeout + .01
+        session.tick()
+        gate.receive(radar(4, 'CLEAR', epoch=1), PI, fixture.now)
+        fixture.receive(**dict(wire_fixture.V2, motion_permit=False))
+        engine.tick(None, fixture.now)
+        self.assertEqual(gate.snapshot(fixture.now)['reason'], 'RADAR_TIMEOUT')
+        self.assertTrue(gate.snapshot(fixture.now)['blocked'])
 
     def test_silent_link_and_pi_reboot_send_stop_without_operator_poll(self):
         for trigger in ('RADAR_TIMEOUT','RADAR_REBOOT'):

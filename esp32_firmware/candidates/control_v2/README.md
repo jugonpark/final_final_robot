@@ -88,5 +88,5 @@ and `compile.log` when reviewing the build. No hardware validation was performed
 
 The subsequent telemetry change reads wheel speed and RPM from the encoder sample
 even during a fault. The compile-only image in `.tmp/bench-turn-v2/output` uses
-956,759 bytes flash and 50,044 bytes static RAM. See the [bench trial record](../../../docs/BENCH_TURN_20261118.md)
+956,759 bytes flash and 50,044 bytes static RAM. See the [bench trial record](../../../docs/verification/BENCH_TURN_20261118.md)
 for hardware observations with the previously installed firmware.

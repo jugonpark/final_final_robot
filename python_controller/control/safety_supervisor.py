@@ -40,7 +40,7 @@ class SafetySupervisor:
             self._trip(reason)
 
     def _expire(self, now):
-        if self.received_at is not None and not 0 <= now - self.received_at < self.timeout:
+        if self.received_at is not None and now - self.received_at >= self.timeout:
             self.receiver_error('RADAR_TIMEOUT')
 
     def receive(self, raw, source_ip, now):
@@ -90,7 +90,7 @@ class SafetySupervisor:
             self._expire(now)
             return dict(state=self.state, blocked=self.latched, reason=self.reason,
                         generation=self.generation, boot_id=self.boot_id, seq=self.seq,
-                        age_s=None if self.received_at is None else now-self.received_at,
+                        age_s=None if self.received_at is None else max(0., now-self.received_at),
                         min_distance_m=self.minimum, danger_points=self.points)
 
     def rearm(self, now):

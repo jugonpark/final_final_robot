@@ -2,11 +2,19 @@
 
 기본 실행은 **SIMULATION**이다. 웹캠에서 사람을 선택·추적하고 목표 인물의 손 제스처에 따라 추종 명령을 계산해 화면에 표시한다. **SIMULATION은 UDP 소켓을 열지 않으며 ESP32에 명령을 보내지 않는다.**
 
-## D.I.G. 웹 관제 1차
+[운영 문서와 실행 경로](docs/README.md) · [시험 및 구현 기록](docs/verification/README.md) · [레이더 복귀 설계와 PI 실험 도구](docs/operations/RADAR_RECOVERY_AND_CALIBRATION.md)
+
+## D.I.G. 웹 관제
+
+실물 제어 화면은 `run_web_control.bat`를 실행한다. 기존 Qt 관제와 공유 웹 서버가 한 프로세스에서 시작되고 기본 브라우저에 [공유 웹 관제](http://127.0.0.1:8766)가 열린다. **설정 → ESP32 연결**에서 통신을 시작한다. Qt와 웹은 같은 카메라, ESP32 세션, 제어 모드, Agent와 레이더 상태를 사용한다. 기본 보드는 `BREADBOARD`이고 PCB V19에는 `--hardware-profile PCB_V19`를 지정한다. 웹 포트는 `run_web_control.bat --web-port 8770`처럼 바꿀 수 있다. 관제를 끝낼 때는 Qt 창을 닫는다.
+
+주소를 바꾸려면 ESP32를 정지 후 연결 해제한다. 웹 수동 입력의 갱신이 끊기면 STOP 경로로 전환한다. 웹 실물 계획 승인에는 현재 계획 버전과 운영자 확인이 필요하다. 레이더 미연결 벤치 시험은 Qt에서 실행한다.
+
+### 웹 시뮬레이션
 
 `run_web.bat`를 실행하고 [로컬 웹 관제](http://127.0.0.1:8765)를 연다. 기본은 합성 영상이며, 웹캠과 모델을 쓰려면 `run_web.bat --web-camera`로 실행한다. **카메라 · 손동작** 화면에서 영상이 시작되며, **카메라 끄기**를 누르거나 화면을 벗어나면 연결을 해제한다. 같은 카메라를 사용할 경우 데스크톱 관제를 먼저 닫는다. 포트가 사용 중이면 `--web-port`로 다른 포트를 지정하고 콘솔에 표시된 주소를 연다.
 
-웹은 기존 Python 관제 상태, 카메라 영상과 인식 결과, 정지 사유, 모터 텔레메트리, 설정값을 읽는다. 합성 장면에서 사람 선택·추종·긴급 정지를 확인할 수 있다. 이동 계획 미리보기는 기존 로컬 검증기를 사용한다. 실물 구동·연결·설정 변경은 기존 `run_simulation.bat`의 데스크톱 화면에서 사용한다. 웹과 데스크톱 실행은 각자의 Python 관제 세션을 사용한다.
+독립 `run_web.bat`는 시뮬레이션으로 실행한다. 웹 설정에서 ESP32와 레이더 Pi 주소를 로컬에 저장할 수 있다.
 
 ## 통합 AI Agent
 
@@ -16,7 +24,7 @@
 - 데스크톱 합성 영상은 `run_simulation.bat --dashboard-preview --agent-enabled`로 실행한다.
 - 데스크톱 실카메라는 `run_simulation.bat --agent-enabled`로 실행한다. Agent의 실물 이동 승인에는 기존 중앙 ESP32 연결과 LLM 제어권, 레이더 CLEAR 및 차단 해제, 새 STOP 응답이 필요하다.
 
-“카메라 화면 보여줘”, “지금 레이더 상태 알려줘”, “앞으로 10cm 가고 뒤로 5cm 가”, “아니 첫 번째 5cm로 수정”을 입력해 볼 수 있다. 실행 승인과 긴급 정지 확인은 Qt의 명시적 운영자 조작으로 처리한다. “멈춰”와 긴급 정지 버튼은 모델 응답과 별개로 처리한다. [Agent 통합 및 검증 기록](docs/UNIFIED_AGENT_VALIDATION.md)
+“카메라 화면 보여줘”, “지금 레이더 상태 알려줘”, “앞으로 10cm 가고 뒤로 5cm 가”, “아니 첫 번째 5cm로 수정”을 입력해 볼 수 있다. 실행 승인과 긴급 정지 확인은 Qt의 명시적 운영자 조작으로 처리한다. “멈춰”와 긴급 정지 버튼은 모델 응답과 별개로 처리한다. [Agent 통합 및 검증 기록](docs/verification/UNIFIED_AGENT_VALIDATION.md)
 
 ## D.I.G. Blue UI (2026-11-19)
 
@@ -28,15 +36,15 @@ ESP32와 레이더 Pi 주소, 손동작 매핑, 추종 설정은 **설정**에�
 
 이번 변경은 PySide6 UI와 시각 리소스에 한정하며 기존 연결·승인·정지 조건을 유지한다.
 화면 선택은 실제 제어권과 구분되며 기본 화면을 여는 것으로 장치가 연결되지 않는다.
-[UI 변경 및 검증 보고서](docs/blue_ui_verification/REPORT.md),
-[1320×920 화면 모음](docs/blue_ui_verification/overview_1320x920.png).
+[UI 변경 및 검증 보고서](docs/verification/blue_ui_verification/REPORT.md),
+[1320×920 화면 모음](docs/verification/blue_ui_verification/overview_1320x920.png).
 아래의 탭 구성과 테스트 수치는 이전 단계의 기록이다.
 
-ESP32 공식 개발 기준은 [control_simple_v2.ino](esp32_firmware/control_simple_v2/control_simple_v2/control_simple_v2.ino)다. 수동과 자연어 이동에서 공통 Feedforward+PI를 사용한다. 빌드하기 전에 같은 폴더의 `secrets.example.h`를 로컬 `secrets.h`로 복사해 Wi-Fi 설정을 입력하고 보드 프로필을 명시한다. Qt 관제에도 같은 프로필을 지정한다. 기존 `control_v2`와 원본 펌웨어는 참고용이다. [보드 프로필 선택과 빌드](docs/hardware/HARDWARE_PROFILES.md) · [기준선과 개선 계획](docs/CONTROL_SIMPLE_V2_PLAN.md)
+ESP32 공식 개발 기준은 [control_simple_v2.ino](esp32_firmware/control_simple_v2/control_simple_v2/control_simple_v2.ino)다. 수동과 자연어 이동에서 공통 Feedforward+PI를 사용한다. 빌드하기 전에 같은 폴더의 `secrets.example.h`를 로컬 `secrets.h`로 복사해 Wi-Fi 설정을 입력한다. 브레드보드 GPIO가 기본이며 PCB V19는 펌웨어와 Qt에 각각 지정한다. 기존 `control_v2`와 원본 펌웨어는 참고용이다. [보드 프로필 선택과 빌드](docs/hardware/HARDWARE_PROFILES.md) · [기준선과 개선 계획](docs/CONTROL_SIMPLE_V2_PLAN.md)
 
 ## 자연어 제어 Prototype A+B
 
-별도 `python -m python_controller.llm_cli`에서 NVIDIA API의 한국어 거리 이동 계획을 검증하고 기본 dry-run으로 표시한다. 사용법, 실물 승인 절차, 단계별 결과는 [Prototype A+B 검증 기록](docs/PROTOTYPE_AB_VALIDATION.md)에 있다. [Mode Guard 후보](esp32_firmware/PATCH_NOTES_LLM_AB.md)는 별도 패치로 관리한다.
+별도 `python -m python_controller.llm_cli`에서 NVIDIA API의 한국어 거리 이동 계획을 검증하고 기본 dry-run으로 표시한다. 사용법, 실물 승인 절차, 단계별 결과는 [Prototype A+B 검증 기록](docs/verification/PROTOTYPE_AB_VALIDATION.md)에 있다. [Mode Guard 후보](esp32_firmware/PATCH_NOTES_LLM_AB.md)는 별도 패치로 관리한다.
 
 `run_simulation.bat`의 기본 **AI 대화 제어** 화면에서도 같은 검증기를 사용할 수 있다. `앞으로 5cm 이동해`를 입력하고 **계획 생성**을 누르면 이동 순서가 표시된다. 프로젝트의 로컬 `.env`에서 NVIDIA 키와 모델을 읽는다.
 
@@ -52,7 +60,7 @@ ESP32 공식 개발 기준은 [control_simple_v2.ino](esp32_firmware/control_sim
 
 기존 64개를 유지한 **81개 자동 검사 통과**이며 실제 ESP32·모터는 **미검증 (NOT TESTED)**이다. 현재 보드 IP·전원·배선이 확인되지 않아 모터 미동작의 하드웨어 원인은 확정하지 않았다. 펌웨어·PID·핀·CPR·모터 방향은 이번 변경에서 수정하지 않았다.
 
-최신 사용 안내: [한국어 대시보드와 연결 진단](docs/KOREAN_DIAGNOSTICS_GUIDE.md). 수정 파일·현재 네트워크 재확인·검증 증거: [구현 및 검증 보고서](docs/KOREAN_DIAGNOSTICS_VALIDATION.md). 아래 64개·47개·30개 수치는 이전 단계의 기록이다.
+최신 사용 안내: [한국어 대시보드와 연결 진단](docs/KOREAN_DIAGNOSTICS_GUIDE.md). 수정 파일·현재 네트워크 재확인·검증 증거: [구현 및 검증 보고서](docs/verification/KOREAN_DIAGNOSTICS_VALIDATION.md). 아래 64개·47개·30개 수치는 이전 단계의 기록이다.
 
 ## 이전 단계: ESP32 통신·수동 모터 시험
 
@@ -60,7 +68,7 @@ ESP32 공식 개발 기준은 [control_simple_v2.ino](esp32_firmware/control_sim
 
 기존 47개를 유지한 **64개 자동 테스트가 통과**했다. 이번 단계의 통신·모터 검사는 fake socket/Mock 텔레메트리로 수행했으며 **실제 ESP32·실제 모터는 NOT TESTED**다. 자동으로 실제 모터를 구동하는 시험은 실행하지 않았다. 아래 47개 결과는 이전 UI 단계의 기록이다.
 
-실행·통신·바퀴를 띄운 시험 절차: [MOTOR_TEST_GUIDE.md](docs/MOTOR_TEST_GUIDE.md). 이전 단계 증거: [MOTOR_TEST_VALIDATION.md](docs/MOTOR_TEST_VALIDATION.md).
+실행·통신·바퀴를 띄운 시험 절차: [MOTOR_TEST_GUIDE.md](docs/MOTOR_TEST_GUIDE.md). 이전 단계 증거: [MOTOR_TEST_VALIDATION.md](docs/verification/MOTOR_TEST_VALIDATION.md).
 
 ## 현재 UI: PySide6 검증 대시보드
 
@@ -75,7 +83,7 @@ ESP32 공식 개발 기준은 [control_simple_v2.ino](esp32_firmware/control_sim
 
 현재 자동 테스트는 **47개 통과**했다. 실제 웹캠 30초 검사에서는 최신 추론 프레임 169개가 로그에 기록되었고 송신·텔레메트리 값은 모두 null이었다. 손은 검출되지 않았으며 실제 제스처 반복 성능과 실제 모터는 검증하지 않았다.
 
-상세 실행·로그·파일 목록: [DASHBOARD_GUIDE.md](docs/DASHBOARD_GUIDE.md). 이전 단계 검증 증거: [DASHBOARD_VALIDATION.md](docs/DASHBOARD_VALIDATION.md). [VALIDATION.md](docs/VALIDATION.md)는 1차의 과거 30개 테스트 결과다.
+상세 실행·로그·파일 목록: [DASHBOARD_GUIDE.md](docs/DASHBOARD_GUIDE.md). 이전 단계 검증 증거: [DASHBOARD_VALIDATION.md](docs/verification/DASHBOARD_VALIDATION.md). [VALIDATION.md](docs/verification/VALIDATION.md)는 1차의 과거 30개 테스트 결과다.
 
 ## 바로 실행
 
@@ -167,7 +175,7 @@ OpenCV는 플랫폼별 캡처와 간단한 디버그 화면, YOLO11n은 작은 C
 
 [Ultralytics 공식 tracking 문서](https://docs.ultralytics.com/modes/track/)에 맞춰 `persist=True`, `classes=[0]`, `bytetrack.yaml`을 명시한다. [MediaPipe 공식 Python 안내](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer/python)의 VIDEO Tasks API와 버전이 지정된 `.task` 모델을 사용한다. 코드의 실제 옵션은 현재 설치 API로 확인했다. Ultralytics의 배포·상용 라이선스 조건은 외부 배포 전에 확인한다.
 
-설계 상세: [ARCHITECTURE.md](docs/ARCHITECTURE.md). 펌웨어 계약과 분석: [FIRMWARE_AUDIT.md](docs/FIRMWARE_AUDIT.md). 실행 증거와 미검증 범위: [VALIDATION.md](docs/VALIDATION.md).
+설계 상세: [ARCHITECTURE.md](docs/ARCHITECTURE.md). 펌웨어 계약과 분석: [FIRMWARE_AUDIT.md](docs/verification/FIRMWARE_AUDIT.md). 실행 증거와 미검증 범위: [VALIDATION.md](docs/verification/VALIDATION.md).
 
 ## 실제 ESP32 연결 전
 

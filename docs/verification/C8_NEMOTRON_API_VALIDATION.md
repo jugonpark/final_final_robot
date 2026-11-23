@@ -83,7 +83,7 @@ CLI에서 `앞으로 150mm 이동하고 오른쪽으로 0.1m 가`는 전진 15cm
 | `tests/korean_command_cases.py`, `tests/test_llm_planning.py` | 기존 평가 문장과 기대 조건 공유 |
 | `tests/test_nemotron_client.py` | OpenAI SDK와 모의 HTTP로 ON/OFF 옵션, 숫자 usage, 추론과 최종 텍스트 분리, 잘린/빈 응답 거절 확인 |
 | `scripts/evaluate_nemotron.py` | 모델별 채점 및 JSONL 증거·집계 |
-| `README.md`, `docs/C8_NEMOTRON_API_VALIDATION.md`, `docs/PROTOTYPE_AB_VALIDATION.md` | CLI 안내, 검증 보고서와 현재 설정 링크 |
+| `README.md`, `docs/verification/C8_NEMOTRON_API_VALIDATION.md`, `docs/verification/PROTOTYPE_AB_VALIDATION.md` | CLI 안내, 검증 보고서와 현재 설정 링크 |
 
 기준선 106개를 재실행해 모두 통과했고, 마무리 실행에서는 **기존 106개와 신규 4개, 총 110개 통과, 건너뜀 0개**였다. `compileall`도 통과했다. 프롬프트·Pydantic과 구동 정책, 통신, 텔레메트리, 펌웨어, 제어 기능은 이번 변경 범위에서 그대로 유지했다. 실제 CLI에서는 네 건의 dry-run 로그에 `HANDSHAKE`, `APPROVED`, `UDP_TX` 이벤트가 없는 것을 확인했다.
 
@@ -96,4 +96,4 @@ CLI에서 `앞으로 150mm 이동하고 오른쪽으로 0.1m 가`는 전진 15cm
 
 ## 하드웨어 진입 판단
 
-NVIDIA 인증, 예시 계획, 단위 환산과 로컬 거절을 소프트웨어에서 확인했다. 보드 연결, 펌웨어 업로드, 모터 동작은 미실시다. C6의 전원 분리·정지 연결 절차와 실제 주행의 별도 승인은 여전히 필요하다. C6에서 발견한 모순된 완료 텔레메트리의 수락 사례는 이번 API 범위에서 수정하지 않았다. 바닥 실측과 해당 완료 판정 확인 전에는 실물 주행을 합격 처리할 수 없다. [C6 준비 및 안전성 검토](C6_HARDWARE_PREFLIGHT.md)
+NVIDIA 인증, 예시 계획, 단위 환산과 로컬 거절을 소프트웨어에서 확인했다. 보드 연결, 펌웨어 업로드, 모터 동작은 미실시다. C6의 전원 분리·정지 연결 절차와 실제 주행의 별도 승인은 여전히 필요하다. C6에서 발견한 모순된 완료 텔레메트리의 수락 사례는 이번 API 범위에서 수정하지 않았다. 바닥 실측과 해당 완료 판정 확인 전에는 실물 주행을 합격 처리할 수 없다. [C6 준비 및 안전성 검토](../C6_HARDWARE_PREFLIGHT.md)

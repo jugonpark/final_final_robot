@@ -122,11 +122,14 @@ def main(argv=None):
     parser.add_argument('--ui',choices=('opencv','dashboard','web'),default='opencv',help='Select the OpenCV, Qt or local web console')
     parser.add_argument('--web-camera',action='store_true',help='Use the local camera in the web simulation instead of the synthetic preview')
     parser.add_argument('--web-port',type=int,default=8765,help='Local web console port')
+    parser.add_argument('--share-web', action='store_true', help='Serve the live Qt control session on localhost')
+    parser.add_argument('--open-web', action='store_true', help='Open the shared console in the default browser')
     parser.add_argument('--agent-enabled',action='store_true',help='Enable the opt-in unified conversation agent')
     parser.add_argument('--dashboard-preview',action='store_true',help='Clearly labeled synthetic dashboard; no hardware allowed')
     parser.add_argument('--smoke-seconds',type=float,help='Close dashboard after this many seconds (0.1 to 60)')
     parser.add_argument('--esp32-host',help='Numeric ESP32 IPv4 address; never the laptop IP')
     parser.add_argument('--hardware-profile', choices=HARDWARE_PROFILES, help='Expected ESP32 hardware profile')
+    parser.add_argument('--radarless-bench', action='store_true', help='Enable the lifted-wheel, hold-to-run Qt bench option')
     parser.add_argument('--acknowledge-hardware-risk',action='store_true',help='Explicit hardware opt-in; physical sign verification also required')
     args = parser.parse_args(argv)
     if args.dashboard_preview and (args.mode=='HARDWARE' or args.ui!='dashboard'):
@@ -141,10 +144,18 @@ def main(argv=None):
         parser.error('--web-camera requires --ui web')
     if args.agent_enabled and (args.demo or args.ui not in ('dashboard','web')):
         parser.error('--agent-enabled requires --ui dashboard or --ui web')
+    if args.radarless_bench and (args.ui != 'dashboard' or args.demo or args.dashboard_preview):
+        parser.error('--radarless-bench requires the live Qt dashboard')
+    if args.share_web and (args.ui != 'dashboard' or args.demo or args.dashboard_preview or args.radarless_bench):
+        parser.error('--share-web requires the regular live Qt dashboard')
+    if args.open_web and not args.share_web:
+        parser.error('--open-web requires --share-web')
     try:
         config = load_config(args.config, radar_path=RADAR_SETTINGS if args.ui in ('dashboard','web') else None)
         if args.esp32_host: config['communication']['host'] = args.esp32_host
         if args.hardware_profile: config['communication']['hardware_profile'] = args.hardware_profile
+        if args.radarless_bench:
+            config['communication']['radarless_bench'] = True
         for key in ('model_path','gesture_model_path'):
             p = Path(config['vision'][key])
             if not p.is_absolute(): config['vision'][key] = str(ROOT/p)
@@ -154,7 +165,8 @@ def main(argv=None):
             return run_web_dashboard(config,camera=args.web_camera,port=args.web_port,agent_enabled=args.agent_enabled)
         if args.ui=='dashboard':
             from python_controller.visualization.dashboard import run_dashboard
-            return run_dashboard(config,args.mode=='HARDWARE',args.dashboard_preview,args.smoke_seconds,args.agent_enabled)
+            return run_dashboard(config,args.mode=='HARDWARE',args.dashboard_preview,args.smoke_seconds,args.agent_enabled,
+                                 web_port=args.web_port if args.share_web else None, open_web=args.open_web)
         return run(config,args.mode=='HARDWARE')
     except (ValueError,OSError,ImportError) as exc:
         print(f'STOP: {exc}')

@@ -127,6 +127,42 @@ class RecoveryTests(unittest.TestCase):
         self.receive()
         self.assertTrue(self.session.snapshot()['ready'])
 
+    def test_closed_sender_stop_backlog_waits_for_current_stop_past_deadline(self):
+        prior = dict(tx_session_id=123, tx_seq=170, boot_id=99, socket_closed=True, stop_verified=False)
+        self.session.configure_owner('DIRECT_CONTROL', prior)
+        self.session.sync_deadline = self.now + 2
+        self.session.tick()
+        self.now += 3
+        for seq in (153, 155, 170):
+            self.session.rx.incoming.put((telemetry(seq=seq, uptime=seq * 10), SOURCE))
+            self.session.tick()
+            self.assertEqual(self.session.snapshot()['validation_detail'], 'SESSION_SYNC_WAITING_STOP')
+            self.assertFalse(self.session.session_lost)
+            self.assertFalse(self.session.arm())
+        self.assertTrue(all(packet['type'] == 'stop' for packet in self.session.tx.sent))
+        self.receive()
+        self.assertTrue(self.session.snapshot()['stop_verified'])
+        self.assertTrue(self.session.snapshot()['ready'])
+        self.assertIsNone(self.session.session_diagnostic)
+
+        self.session.rx.incoming.put((telemetry(seq=170, uptime=1700), SOURCE))
+        self.session.tick()
+        self.assertTrue(self.session.snapshot()['ready'])
+        self.assertEqual(self.session.rx_rejections['DELAYED_PREVIOUS_STOP'], 1)
+
+        self.session.rx.incoming.put((telemetry(seq=170, uptime=4500), SOURCE))
+        self.session.tick()
+        self.assertEqual(self.session.snapshot()['recovery_state'], 'SESSION_CONFLICT')
+        self.assertFalse(self.session.arm())
+
+    def test_new_activity_in_unknown_foreign_session_still_blocks(self):
+        self.session.tick()
+        for seq in (50, 51):
+            self.session.rx.incoming.put((telemetry(seq=seq, uptime=seq + 1000), SOURCE))
+            self.session.tick()
+        self.assertEqual(self.session.snapshot()['recovery_state'], 'SESSION_CONFLICT')
+        self.assertFalse(self.session.arm())
+
     def test_encoder_fault_stop_proof_does_not_grant_movement(self):
         self.ready()
         self.session.stop('USER_STOP')
@@ -206,7 +242,7 @@ class RecoveryTests(unittest.TestCase):
         pending = Future()
         self.session.requests.put_nowait((dict(type='cmd_move', motion_id=2, vx=5, vy=0, w=0,
                                               status='SLOW', target_distance_cm=5), pending,
-                                         self.session.recovery_generation))
+                                         self.session.recovery_generation, channel))
         self.receive(boot_id=100)
         status = self.session.snapshot()
         self.assertEqual(status['recovery_state'], 'SYNC_STOP')

@@ -1,4 +1,4 @@
-"""A bounded STOP-only session acquisition, shared by the real dashboard modes."""
+"""STOP-only session acquisition for the real dashboard modes."""
 def stopped_report(data):
     pwm, speed = data.get("wheel_pwm"), data.get("wheel_speed")
     return (data.get("state") == "STOPPED" and
@@ -37,6 +37,20 @@ class SessionSync:
             self.observed[1] if self.observed is not None else None
         )
         return expected is None or data.get("boot_id") == expected
+
+    def delayed_previous_stop(self, data, current):
+        """An older stationary report is never evidence for the current session."""
+        prior = self.previous
+        previous = (prior['tx_session_id'], prior['boot_id'], prior['tx_seq']) if prior else self.observed
+        if not self.proven or previous is None or not current:
+            return False
+        session, boot, last_seq = previous
+        age = data.get('uptime_ms')
+        seq = data.get('last_seq')
+        return (data.get('type') == 'telemetry' and data.get('session_id') == session and
+                data.get('boot_id') == boot == current['boot_id'] and data.get('mode') == 'NETWORK' and
+                data.get('fault') == 'NONE' and type(seq) is int and 0 <= seq <= last_seq and
+                type(age) is int and 0 <= age < current['uptime_ms'] and stopped_report(data))
 
 
 def session_fields(owner, session_id, seq, telemetry=None, reason=None, *, stop_sent=False, stop_verified=False):

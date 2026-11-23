@@ -126,7 +126,7 @@ class SessionIntegrationTests(unittest.TestCase):
         motor = Mock()
         engine.client_factory = Mock(return_value=motor)
         engine.connect_motor_test(HOST, True)
-        motor.configure_owner.assert_called_once_with("MANUAL_MOTOR_TEST", None)
+        motor.configure_owner.assert_called_once_with("MANUAL_MOTOR_TEST", dict(OLD, stop_verified=False))
         self.assertFalse(engine.c.armed)
 
     def test_gesture_frame_gap_uses_capture_intervals_and_preserves_freshness(self):

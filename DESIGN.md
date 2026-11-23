@@ -15,4 +15,4 @@
   공통 레이더와 비상 정지는 스크롤 밖에 고정한다.
 
 리소스: `python_controller/visualization/dig_blue.qss`, `dig_theme.py`, `assets/icons/`.
-실행 캡처와 검증 근거: `docs/blue_ui_verification/`.
+실행 캡처와 검증 근거: `docs/verification/blue_ui_verification/`.

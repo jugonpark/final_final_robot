@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 
-#if defined(DIG_BOARD_BREADBOARD) == defined(DIG_BOARD_PCB_V19)
-#error Select exactly one hardware profile: DIG_BOARD_BREADBOARD or DIG_BOARD_PCB_V19
+#if defined(DIG_BOARD_BREADBOARD) && defined(DIG_BOARD_PCB_V19)
+#error Select only one hardware profile: DIG_BOARD_BREADBOARD or DIG_BOARD_PCB_V19
 #endif
 
 struct MotorPins {
@@ -17,7 +17,7 @@ struct HardwarePins {
 
 constexpr char FIRMWARE_VERSION[] = "SIMPLE_V2";
 
-#if defined(DIG_BOARD_BREADBOARD)
+#if !defined(DIG_BOARD_PCB_V19)
 constexpr char HARDWARE_PROFILE[] = "BREADBOARD";
 constexpr char PINMAP_REVISION[] = "BREADBOARD_GPIO_V1";
 constexpr HardwarePins HARDWARE_PINS = {

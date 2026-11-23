@@ -28,7 +28,7 @@
   <main>
     <header class="topbar">
       <div class="topline"><strong id="page-title">미션 컨트롤</strong><span class="badge" id="esp32">ESP32 · 미확인</span><span class="badge camera-badge" id="camera-badge">카메라 · 대기</span><button class="danger" id="estop" type="button"><img src="/icons/stop.svg" alt="">긴급 정지 <kbd>Space</kbd></button></div>
-      <div class="safety" id="safety" data-tone="warn"><img src="/icons/shield.svg" alt=""><strong id="radar">레이더 UNKNOWN · 이동 차단</strong><span id="stop-proof">ESP32 정지 미확인</span></div>
+      <div class="safety" id="safety" data-tone="warn"><img src="/icons/shield.svg" alt=""><strong id="radar">레이더 UNKNOWN · 이동 차단</strong><span id="stop-proof">ESP32 정지 미확인</span><button class="outline" type="button" data-command="radar_rearm" id="web-radar-rearm" hidden>레이더 해제 확인</button><button class="outline" type="button" data-command="acknowledge_estop" id="web-estop-reset" hidden>긴급 정지 확인</button></div>
       <p class="announcement muted" id="announcement" role="status"></p>
     </header>
     <div class="content">
@@ -79,7 +79,7 @@
               <p id="draft-feedback" class="muted" role="status"></p>
               <div class="plan-actions">
                 <p class="muted" id="approval-note"><img src="/icons/lock.svg" alt=""><span id="draft-review-state">실물 실행 승인 · Qt 관제</span></p>
-                <div class="actions"><button type="button" class="outline" id="discard" disabled>초안 비우기</button><button type="button" class="primary" id="request-review" aria-describedby="approval-note" hidden disabled>실행 요청</button></div>
+                <div class="actions"><button type="button" class="outline" id="discard" disabled>초안 비우기</button><button type="button" class="primary" id="request-review" aria-describedby="approval-note" hidden disabled>실행 요청</button><button type="button" class="primary" id="web-approve" hidden disabled>실물 실행 승인</button></div>
               </div>
             </div>
           </article>
@@ -141,7 +141,7 @@
           <div class="stack">
             <article class="card"><h2><img src="/icons/hand.svg" alt="">인식 결과</h2><div class="card-body"><p class="recognition" id="gesture">인식 대기</p><dl id="camera-details" class="data"></dl><h3>현재 모드 가이드</h3><dl class="data" id="guide"></dl></div></article>
             <article class="card" id="follow-controls" hidden><h2><img src="/icons/eye.svg" alt="">사람 추종</h2><div class="card-body"><p class="muted">영상에서 사람을 선택한 후 추종을 시작하세요.</p><div class="actions"><button type="button" class="primary" data-command="resume_follow" id="follow-start" disabled>추종 시작 / 재개</button><button type="button" data-command="pause">일시정지</button><button type="button" data-command="clear_target">목표 해제</button></div></div></article>
-            <article class="card" id="direct-controls"><h2><img src="/icons/shield.svg" alt="">적용 상태</h2><div class="card-body"><p class="warning">인식 모니터링 · 장치 명령 전송 없음</p></div></article>
+            <article class="card" id="direct-controls"><h2><img src="/icons/shield.svg" alt="">손동작 직접 제어</h2><div class="card-body"><p class="warning" id="direct-status">인식 모니터링 · 장치 명령 전송 없음</p><div class="actions"><button type="button" class="primary" data-command="activate_hand" id="web-hand-start" hidden disabled>손동작 제어 활성화</button><button type="button" class="outline" data-command="pause" id="web-hand-pause" hidden>일시정지</button></div></div></article>
           </div>
         </div>
       </section>
@@ -170,17 +170,25 @@
       </section>
       <section data-panel="manual" hidden>
         <h1>수동 제어</h1><p class="intro">로봇 이동 방향과 바퀴 피드백을 확인합니다.</p>
-        <div class="columns"><article class="card"><h2><img src="/icons/gamepad.svg" alt="">본체 방향 제어</h2><div class="card-body"><div class="pad"><button disabled><img src="/icons/rotate-left.svg" alt="">좌회전</button><button disabled><img src="/icons/arrow-up.svg" alt="">전진</button><button disabled><img src="/icons/rotate-right.svg" alt="">우회전</button><button disabled><img src="/icons/arrow-left.svg" alt="">좌측</button><button type="button" class="danger" data-command="estop"><img src="/icons/stop.svg" alt="">정지</button><button disabled><img src="/icons/arrow-right.svg" alt="">우측</button><button class="back" disabled><img src="/icons/arrow-down.svg" alt="">후진</button></div><p class="warning">실물 수동 구동은 기존 데스크톱 관제에서 사용할 수 있습니다.</p></div></article><div class="stack"><article class="card"><h2><img src="/icons/shield.svg" alt="">구동 준비</h2><dl class="card-body data" id="manual-safety"></dl></article><article class="card"><h2><img src="/icons/activity.svg" alt="">바퀴 상태</h2><div class="card-body"><div id="motor-summary" class="wheel-summary"></div></div></article></div></div>
+        <div class="columns"><article class="card"><h2><img src="/icons/gamepad.svg" alt="">본체 방향 제어</h2><div class="card-body"><div class="pad"><button type="button" data-jog="TURN_LEFT" disabled><img src="/icons/rotate-left.svg" alt="">좌회전</button><button type="button" data-jog="FORWARD" disabled><img src="/icons/arrow-up.svg" alt="">전진</button><button type="button" data-jog="TURN_RIGHT" disabled><img src="/icons/rotate-right.svg" alt="">우회전</button><button type="button" data-jog="LEFT" disabled><img src="/icons/arrow-left.svg" alt="">좌측</button><button type="button" class="danger" data-command="estop"><img src="/icons/stop.svg" alt="">정지</button><button type="button" data-jog="RIGHT" disabled><img src="/icons/arrow-right.svg" alt="">우측</button><button type="button" class="back" data-jog="BACKWARD" disabled><img src="/icons/arrow-down.svg" alt="">후진</button></div><p class="warning" id="web-manual-help">Qt 공유 관제에서 수동 조작을 사용할 수 있습니다.</p></div></article><div class="stack"><article class="card"><h2><img src="/icons/shield.svg" alt="">구동 준비</h2><dl class="card-body data" id="manual-safety"></dl></article><article class="card"><h2><img src="/icons/activity.svg" alt="">바퀴 상태</h2><div class="card-body"><div id="motor-summary" class="wheel-summary"></div></div></article></div></div>
+        <article class="card gap" id="web-wheel-test" hidden><h2><img src="/icons/activity.svg" alt="">바퀴별 시험</h2><div class="card-body">
+          <label><input id="web-wheels-lifted" type="checkbox">세 바퀴를 띄워 고정했습니다</label>
+          <div class="actions"><button type="button" class="outline" data-jog="M1" disabled>M1 누름 시험</button><button type="button" class="outline" data-jog="M2" disabled>M2 누름 시험</button><button type="button" class="outline" data-jog="M3" disabled>M3 누름 시험</button><button type="button" class="outline" id="web-turn-test" disabled>저속 좌회전 0.5초</button></div>
+        </div></article>
       </section>
       <section data-panel="diagnostics" hidden>
         <h1>상태 · 진단</h1><p class="intro">텔레메트리 수신 상태와 제어기 정지 사유를 확인합니다.</p>
-        <div class="columns equal"><article class="card"><h2><img src="/icons/plug.svg" alt="">연결 · 안전</h2><dl class="card-body data" id="diagnostic-link"></dl></article><article class="card"><h2><img src="/icons/camera.svg" alt="">카메라 · 추론</h2><dl class="card-body data" id="diagnostic-vision"></dl></article></div>
+        <div class="columns equal"><article class="card"><h2><img src="/icons/plug.svg" alt="">연결 · 안전</h2><div class="card-body"><dl class="data" id="diagnostic-link"></dl><button type="button" class="outline" data-command="recover_robot" id="web-recover" hidden>STOP 전용 재동기화</button></div></article><article class="card"><h2><img src="/icons/camera.svg" alt="">카메라 · 추론</h2><dl class="card-body data" id="diagnostic-vision"></dl></article></div>
         <article class="card gap"><h2><img src="/icons/activity.svg" alt="">바퀴 텔레메트리</h2><div class="card-body table-scroll"><table><thead><tr><th scope="col">바퀴</th><th scope="col">목표 RPM</th><th scope="col">실측 RPM</th><th scope="col">PWM</th><th scope="col">엔코더</th></tr></thead><tbody id="motor-table"></tbody></table></div></article>
         <article class="card gap"><h2><img src="/icons/file-text.svg" alt="">시험 상태</h2><dl class="card-body data" id="test-log"></dl></article>
       </section>
       <section data-panel="settings" hidden>
-        <h1>설정</h1><p class="intro">Python 관제에서 읽은 현재 설정값입니다. 설정 변경은 기존 데스크톱 관제에서 할 수 있습니다.</p>
-        <div class="columns equal"><div class="stack"><article class="card"><h2><img src="/icons/plug.svg" alt="">ESP32 연결</h2><dl class="card-body data" id="esp-settings"></dl></article><article class="card"><h2><img src="/icons/hand.svg" alt="">제스처와 방향</h2><dl class="card-body data" id="hand-settings"></dl></article></div><div class="stack"><article class="card"><h2><img src="/icons/radar.svg" alt="">레이더 Raspberry Pi</h2><dl class="card-body data" id="radar-settings"></dl></article><article class="card"><h2><img src="/icons/camera.svg" alt="">카메라 · 추종</h2><dl class="card-body data" id="vision-settings"></dl></article></div></div>
+        <h1>설정</h1>
+        <div class="columns equal"><div class="stack"><article class="card"><h2><img src="/icons/plug.svg" alt="">ESP32 연결</h2><div class="card-body">
+          <form id="esp-ip-form" class="actions"><label for="esp-ip">ESP32 IPv4</label><input id="esp-ip" type="text" inputmode="decimal" maxlength="15" required><button class="outline">저장</button></form>
+          <dl class="data" id="esp-settings"></dl><div id="web-connection" class="actions" hidden><button type="button" class="primary" id="web-connect">ESP32 연결</button><button type="button" class="outline" id="web-disconnect" data-command="disconnect_robot">정지 후 해제</button></div>
+          <form id="web-mode-form" class="actions" hidden><label for="web-mode">제어 모드</label><select id="web-mode"><option value="DIRECT_CONTROL">수동 제어</option><option value="GESTURE_DIRECT">손동작 직접 제어</option><option value="GESTURE_FOLLOW">사람 추종</option><option value="LLM_COMMAND">AI 이동 계획</option><option value="MOTOR_TEST">바퀴 시험</option></select><button class="outline">모드 전환</button></form>
+        </div></article><article class="card"><h2><img src="/icons/hand.svg" alt="">제스처와 방향</h2><dl class="card-body data" id="hand-settings"></dl></article></div><div class="stack"><article class="card"><h2><img src="/icons/radar.svg" alt="">레이더 Raspberry Pi</h2><div class="card-body"><form id="radar-ip-form" class="actions"><label for="radar-ip">Raspberry Pi IPv4</label><input id="radar-ip" type="text" inputmode="decimal" maxlength="15"><button class="outline">저장</button></form><dl class="data" id="radar-settings"></dl></div></article><article class="card"><h2><img src="/icons/camera.svg" alt="">카메라 · 추종</h2><dl class="card-body data" id="vision-settings"></dl></article></div></div>
       </section>
     </div>
   </main>

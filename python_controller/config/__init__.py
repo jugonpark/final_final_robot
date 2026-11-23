@@ -66,6 +66,8 @@ def load_config(path=None, *, radar_path=None):
     if not .15 <= radar['timeout_s'] <= .60:
         raise ValueError('Radar timeout must be between 0.15 and 0.60 seconds')
     f, s, g, c = (config[k] for k in ('follow', 'safety', 'gesture', 'communication'))
+    if c['hardware_profile'] is None:
+        c['hardware_profile'] = schema['communication']['hardware_profile']
     for key, ceiling in [('max_linear_cm_s', 5), ('max_angular_rad_s', .5), ('linear_accel_cm_s2',25), ('angular_accel_rad_s2',2)]:
         if not 0 < f[key] <= ceiling:
             raise ValueError(f'Unsafe follow setting: {key}')

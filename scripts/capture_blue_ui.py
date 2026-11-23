@@ -80,7 +80,7 @@ def capture_overviews(output):
 
 def main():
     app = QApplication.instance() or QApplication([])
-    output = Path('docs/blue_ui_verification')
+    output = Path('docs/verification/blue_ui_verification')
     output.mkdir(parents=True, exist_ok=True)
     captures = []
     with tempfile.TemporaryDirectory() as folder, patch('socket.socket', side_effect=AssertionError('Preview opened a socket')):

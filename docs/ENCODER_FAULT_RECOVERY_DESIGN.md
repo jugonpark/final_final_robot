@@ -2,7 +2,7 @@
 
 2026-11-18에 제공된 화면, `logs/20261118_121343_793779/events.jsonl`, 현재 Python 및 ESP32 소스를 대조했습니다. 이 문서는 원인 분석과 수정 설계입니다. 실행 코드 변경, Fault 해제 패킷 전송, 펌웨어 업로드, 실물 구동은 이번 조사에 포함하지 않았습니다.
 
-이후 별도 요청에 따라 PC와 펌웨어 후보를 수정했습니다. [구현 결과와 검증](C:/Users/jugon/Desktop/NEW_ROBOT_START/docs/WATCHDOG_ENCODER_FIX_IMPLEMENTATION.md)을 참고하세요. 아래 내용은 당시의 원인 분석과 설계 근거를 보존한 기록입니다.
+이후 별도 요청에 따라 PC와 펌웨어 후보를 수정했습니다. [구현 결과와 검증](verification/WATCHDOG_ENCODER_FIX_IMPLEMENTATION.md)을 참고하세요. 아래 내용은 당시의 원인 분석과 설계 근거를 보존한 기록입니다.
 
 Heartbeat 100 ms·통신 watchdog 600 ms의 시험 후보와 명령 수명 분리는 [Heartbeat·명령 유효시간 설계](C:/Users/jugon/Desktop/NEW_ROBOT_START/docs/HEARTBEAT_AND_COMMAND_LIFETIME_DESIGN.md)에 별도로 정리했습니다. ENCODER_JUMP의 원인·복구 변경과 나누어 검증합니다.
 

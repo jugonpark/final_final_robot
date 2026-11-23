@@ -1,10 +1,12 @@
 """Qt dashboard. AI/capture and UDP run outside the GUI event loop."""
 from collections import deque
+from contextlib import ExitStack
 import json
 import math
 from pathlib import Path
 import time
 import signal
+import webbrowser
 
 from PySide6.QtCore import Qt,QTimer,QRectF,QPointF,Signal,QEvent,QTranslator,QLibraryInfo,QSignalBlocker
 from PySide6.QtGui import QImage,QPainter,QColor,QPen,QFontDatabase
@@ -367,6 +369,11 @@ class Dashboard(QMainWindow):
         self.communication_text=QPlainTextEdit();self.communication_text.setReadOnly(True);self.communication_text.setMaximumHeight(160);dl.addWidget(self.communication_text)
         warning=QLabel('방향 버튼을 누르는 동안 이동합니다. 손을 떼면 정지합니다.')
         warning.setWordWrap(True);bl.addWidget(warning)
+        self.bench_authorize = QPushButton('바퀴를 띄워 고정했습니다 · 벤치 시험 허용')
+        self.bench_authorize.setVisible(self.engine.cfg['communication'].get('radarless_bench') is True)
+        self.bench_authorize.setEnabled(False)
+        self.bench_authorize.clicked.connect(self.authorize_bench)
+        bl.addWidget(self.bench_authorize)
         self.bench_state=Fields('구동 및 정지 상태',
             ['Source','Status / reason','Command processing evidence','Stop feedback','최근 장치 오류','Current / last trial'])
         settings=QHBoxLayout()
@@ -618,12 +625,11 @@ class Dashboard(QMainWindow):
             values[key]=td.get(key,td.get('encoder_bad_samples',missing) if key=='bad_samples' else missing)
         self.recovery_fields.update_values(values)
         shared=self.engine.shared_session
-        idle=bool(shared and not shared.active and not self.engine.language.busy and
-                  self.engine.release_future is None and not self.engine.pending_mode)
-        can_apply=bool(idle and support and tr.get('stop_verified') and not tr.get('session_lost') and
+        idle=bool(shared and not shared.active and not self.engine.language.busy and self.engine.release_future is None)
+        can_apply=bool(idle and not self.engine.pending_mode and support and tr.get('stop_verified') and not tr.get('session_lost') and
                        tr.get('recovery_state') not in ('SYNC_STOP','SESSION_CONFLICT'))
         self.encoder_policy.setEnabled(can_apply);self.encoder_policy_apply.setEnabled(can_apply)
-        self.recover_button.setEnabled(bool(idle and tr.get('recovery_state') not in ('SYNC_STOP','SESSION_CONFLICT')))
+        self.recover_button.setEnabled(bool(idle and tr.get('recovery_state') != 'SYNC_STOP'))
 
     def hand_settings(self):
         return dict(confidence=self.hand_confidence.value(),frames=self.hand_frames.value(),
@@ -793,9 +799,7 @@ class Dashboard(QMainWindow):
 
     def save_ip(self):
         try:
-            from python_controller.communication.motor_test import save_connection
-            save_connection(self.connection_file,self.host.text().strip())
-            self.engine.notice='ESP32 IP saved locally; no network connection started'
+            self.engine.save_esp32_host(self.connection_file,self.host.text().strip())
         except Exception as exc:self.warning('IP not saved',str(exc))
 
     def save_radar_ip(self):
@@ -819,6 +823,12 @@ class Dashboard(QMainWindow):
                 raise ValueError('먼저 상단에서 ESP32를 연결하세요.')
             self.engine.shared_session.stop('STATIONARY_PROBE')
         except Exception as exc:self.warning('Heartbeat not started',str(exc))
+
+    def authorize_bench(self):
+        try:
+            self.engine.authorize_bench()
+        except ValueError as exc:
+            self.warning('벤치 시험 허용 실패', str(exc))
 
     def start_motor_test(self,direction):
         try:
@@ -963,6 +973,11 @@ class Dashboard(QMainWindow):
         self.camera_badge.setText(badge)
 
     def update_display(self,d,result,capture=None):
+        if getattr(self, 'shared_web', False):
+            for field, address in ((self.host, self.engine.cfg['communication']['host']),
+                                   (self.radar_host, self.engine.cfg['radar']['source_ip'])):
+                if not field.hasFocus() and not field.isModified() and field.text() != address:
+                    field.setText(address)
         self.last_data=d;now=time.monotonic();tr=d['transport'];g=d['gesture'];v=d['vision']
         self.sync_navigation()
         self.connection_badge.setText('ESP32 · '+('연결됨' if tr.get('connected') else '미연결'))
@@ -970,12 +985,16 @@ class Dashboard(QMainWindow):
         if radar:
             if radar['blocked']:
                 self.held_direction = self.pending_jog = None
-            reason = ko(radar['reason'])
-            action = '새 입력 허용' if (not radar['blocked'] and tr.get('ready') and tr.get('stop_verified') and not movement_block(tr)) else '이동 차단'
+            blocker = radar['reason'] if radar['blocked'] else movement_block(tr)
+            reason = ko(blocker or radar['reason'])
+            if radar['blocked'] and tr.get('recovery_state') == 'SESSION_CONFLICT':
+                reason += ' · ' + ko('SESSION_CONFLICT')
+            action = '새 입력 허용' if (not blocker and tr.get('ready') and tr.get('stop_verified')) else '이동 차단'
             proof = ('ESP32 정지 확인' if tr.get('stop_verified') else 'ESP32 정지 미확인')
             age_ms = None if radar['age_s'] is None else radar['age_s']*1000
+            bench = '벤치 시험 · ' if tr.get('radarless_bench') else ''
             self.radar_status.setText(
-                f"레이더 {radar['state']} · {action} · {reason} · 수신 경과 {text(age_ms, 0)} ms · {proof}")
+                f"{bench}레이더 {radar['state']} · {action} · {reason} · 수신 경과 {text(age_ms, 0)} ms · {proof}")
             self.radar_rearm.setEnabled(bool(self.engine.shared_session and radar['blocked'] and
                 radar['state']=='CLEAR' and tr.get('stop_verified') and not self.engine.language.executing))
         else:
@@ -999,9 +1018,9 @@ class Dashboard(QMainWindow):
         self.language_panel.refresh()
         if self.agent:
             self.control_mode_button.setEnabled(bool(self.engine.shared_session and not self.engine.release_future))
-            if self.engine.control_generation != self.input_control_generation:
-                self.input_control_generation = self.engine.control_generation
-                self.held_direction = self.pending_jog = self.pending_direct = None
+        if self.engine.control_generation != self.input_control_generation:
+            self.input_control_generation = self.engine.control_generation
+            self.held_direction = self.pending_jog = self.pending_direct = None
         self.follow_panel.refresh(tr)
         mode_label={'LLM_COMMAND':'실제 장치 · 자연어 시험',
                     'MANUAL_MOTOR_TEST':'실제 장치 · 수동 시험',
@@ -1180,7 +1199,9 @@ class Dashboard(QMainWindow):
                 self.engine.enable_direct()
         activating=self.pending_direct is not None
         self.manual_arm.setText('바퀴 시험 선택')
-        self.manual_arm.setEnabled(bool(shared and not self.engine.language.executing))
+        self.manual_arm.setEnabled(bool(shared and not tr.get('radarless_bench') and not self.engine.language.executing))
+        self.bench_authorize.setEnabled(bool(shared and tr.get('bench_available') and not self.engine.c.estop_latched
+                                            and not self.engine.release_future and not self.engine.pending_mode))
         self.heartbeat_button.setEnabled(bool(shared and tr.get('stop_verified') and not self.engine.language.executing))
         ready=proof and bool(tr.get('direct_enabled') and tr.get('manual_enabled'))
         if manual:
@@ -1283,15 +1304,29 @@ class Dashboard(QMainWindow):
         event.accept()
 
 
-def run_dashboard(config,hardware=False,preview=False,smoke_seconds=None,agent_enabled=False):
-    app=QApplication.instance() or QApplication([])
-    window=Dashboard(config,hardware,preview,agent_enabled=agent_enabled)
-    window.show()
-    if smoke_seconds is not None:QTimer.singleShot(int(smoke_seconds*1000),window.close)
-    previous=signal.getsignal(signal.SIGINT)
-    signal.signal(signal.SIGINT,lambda signum,frame:window.close())
-    try:result=app.exec()
-    finally:
-        window.close()
-        signal.signal(signal.SIGINT,previous)
+def run_dashboard(config,hardware=False,preview=False,smoke_seconds=None,agent_enabled=False,*,web_port=None,open_web=False):
+    with ExitStack() as resources:
+        web = None
+        if web_port is not None:
+            from python_controller.web_dashboard import bind_shared_web, start_shared_web
+            web = resources.enter_context(bind_shared_web(web_port))
+        app=QApplication.instance() or QApplication([])
+        window=Dashboard(config,hardware,preview,agent_enabled=agent_enabled)
+        resources.callback(window.close)
+        window.show()
+        if smoke_seconds is not None:QTimer.singleShot(int(smoke_seconds*1000),window.close)
+        previous=signal.signal(signal.SIGINT,lambda signum,frame:window.close())
+        resources.callback(signal.signal, signal.SIGINT, previous)
+        if web is not None:
+            url = start_shared_web(window.engine, window.stream, window.agent, web)
+            resources.callback(web.shutdown)
+            window.shared_web = True
+            if open_web:
+                try:
+                    opened = webbrowser.open(url)
+                except (OSError, webbrowser.Error):
+                    opened = False
+                if not opened:
+                    print('기본 브라우저를 열 수 없습니다. 위 공유 관제 주소를 직접 여세요.', flush=True)
+        result=app.exec()
     return 1 if getattr(window,'shutdown_error',None) else result

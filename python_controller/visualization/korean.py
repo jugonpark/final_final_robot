@@ -78,6 +78,8 @@ MEANINGS={
  'SYNC_STOP':'재부팅 후 STOP 전용 동기화 중',
  'RECOVERED_WAITING_NEW_INPUT':'동기화 완료 · 새 입력 대기',
  'SESSION_CONFLICT':'다른 제어 세션 감지 · 이동 차단',
+ 'PREVIOUS_SESSION_DURING_STOP':'이전 세션 정지 응답 수신 · 새 STOP 대기',
+ 'SESSION_SYNC_WAITING_STOP':'이전 세션 정지 응답이 지연됨 · 새 STOP 대기',
  'SESSION_LOST':'세션 동기화 필요',
  'STRICT':'엄격 오류 정지', 'FILTERED_TEST':'저속 엔코더 필터 시험',
  'CAPTURE_STALE_BEFORE_INFERENCE':'캡처 지연으로 프레임 폐기',
@@ -130,6 +132,12 @@ MEANINGS={
  'MODE_NOT_NETWORK':'네트워크 제어 모드 아님','SESSION_MISMATCH':'세션 불일치','SEQUENCE_NOT_SENT':'송신하지 않은 순서 번호',
  'HARDWARE_PROFILE_UNSELECTED':'보드 프로필 미선택','HARDWARE_PROFILE_UNKNOWN':'장치 프로필 미확인',
  'HARDWARE_PROFILE_MISMATCH':'장치 프로필 또는 펌웨어 정보 불일치',
+ 'LEGACY_BREADBOARD':'브레드보드 기본 설정 · 구형 펌웨어 호환',
+ 'RADARLESS_BENCH':'레이더 미수신 · 저속 누름 입력 전용',
+ 'RADARLESS_BENCH_NOT_AUTHORIZED':'벤치 시험 허용 대기 또는 레이더 수신 이력 있음',
+ 'RADARLESS_BENCH_HOLD_EXPIRED':'벤치 입력 시간 만료 · STOP',
+ 'RADARLESS_BENCH_RADAR_CHANGED':'레이더 상태 변경 · 벤치 입력 해제',
+ 'WEB_HOLD_EXPIRED':'웹 수동 입력 갱신 중단 · STOP',
  'SEQUENCE_TOO_OLD':'오래된 순서 번호','REPLAYED_OR_OUT_OF_ORDER':'중복 또는 역순 응답','MALFORMED_JSON':'JSON 형식 오류','SOURCE_MISMATCH':'송신자 주소·포트 불일치',
  'INVALID_TELEMETRY_FIELDS':'텔레메트리 필드 또는 단위 확인 필요','INVALID_STATE_OR_FAULT':'잘못된 상태·오류 필드',
  'MOTOR_STALL':'모터 회전 피드백 없음','CMD_TIMEOUT':'통신 워치독 정지','WIFI_LOSS':'무선 연결 끊김','BAD_PACKET':'잘못된 패킷',
@@ -205,4 +213,6 @@ def movement_block(transport):
     profile = transport.get('hardware_profile_status')
     if profile and profile.startswith('HARDWARE_PROFILE_'):
         return profile
+    if transport.get('radarless_bench') and not transport.get('bench_authorized'):
+        return 'RADARLESS_BENCH_NOT_AUTHORIZED'
     return None

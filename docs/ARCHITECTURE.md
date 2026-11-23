@@ -6,7 +6,7 @@
 
 무구동 연결은 STOP → 해당 STOP 이후의 새 정지 텔레메트리 증명 → stationary heartbeat 순서다. 모터 시험은 바퀴 띄움 확인과 별도 승인, 완전한 휠·엔코더 정보, fresh STOPPED가 필요하다. 기본 2.5cm/s·0.2rad/s, 0.8초, 10Hz이며 최대 시간은 2초다. 독립 스레드가 deadline, 250ms GUI 생존 lease, 500ms telemetry 나이, fault를 감시하고 STOP 후 비활성화한다. 카메라가 없는 벤치 시험도 가능하며 카메라 timestamp로 GUI 생존을 위장하지 않는다.
 
-Heartbeat는 이동 중·정지 확인 대기·안전 latch 중에는 사용하지 않는다. 실제 회전은 명령 처리 증명(session/seq/state/echo), 엔코더 변화·부호, 수동 육안 관찰로 구분한다. 별도 ACK 패킷은 없으며 `acknowledged_command`는 이전 코드와 테스트를 보존하기 위한 seq 매칭 별칭일 뿐이다. 현재 UI는 ACK 성공이라고 표시하지 않는다. 자세한 계약과 기록은 [MOTOR_TEST_GUIDE.md](MOTOR_TEST_GUIDE.md), 현재 검증은 [MOTOR_TEST_VALIDATION.md](MOTOR_TEST_VALIDATION.md)를 참조한다. 아래 내용은 이전 단계 기반과 함께 읽어야 한다.
+Heartbeat는 이동 중·정지 확인 대기·안전 latch 중에는 사용하지 않는다. 실제 회전은 명령 처리 증명(session/seq/state/echo), 엔코더 변화·부호, 수동 육안 관찰로 구분한다. 별도 ACK 패킷은 없으며 `acknowledged_command`는 이전 코드와 테스트를 보존하기 위한 seq 매칭 별칭일 뿐이다. 현재 UI는 ACK 성공이라고 표시하지 않는다. 자세한 계약과 기록은 [MOTOR_TEST_GUIDE.md](MOTOR_TEST_GUIDE.md), 현재 검증은 [MOTOR_TEST_VALIDATION.md](verification/MOTOR_TEST_VALIDATION.md)를 참조한다. 아래 내용은 이전 단계 기반과 함께 읽어야 한다.
 
 ## 현재 대시보드 확장
 
@@ -18,7 +18,7 @@ Raw 관측은 차단 여부와 무관하게 보존하지만, 제어 입력은 �
 
 UDP snapshot은 성공한 sendto 패킷, 수신 나이·유효성, ACK seq에 매칭된 송신 패킷, STOP 이후 확인 여부를 구분한다. `cmd_vx/cmd_vy/cmd_w`는 펌웨어가 보고한 희망 명령이며 제한 이후 본체 속도는 현재 펌웨어에 없다. `wheel_target/wheel_speed`가 실제 바퀴 목표/측정 피드백이다. cm/s를 설정 반지름 2.9cm로 환산한 RPM에는 환산 표시를 붙인다.
 
-로그는 10Hz 상태와 사용자 입력·상태 전이·적용 제스처 사건을 기록한다. queue가 가득 차거나 writer 오류가 보고되면 긴급 정지를 latch한다. 송신 성공이나 정지 텔레메트리 확인을 물리 주행 성공으로 승격하지 않는다. 테스트 결과는 기본 NOT TESTED, 사용자 수행 확인과 관찰 메모가 있어야 PASS/FAIL을 저장한다. 자세한 스키마·제한은 [대시보드 안내](DASHBOARD_GUIDE.md), 실제 증거는 [최신 검증](DASHBOARD_VALIDATION.md)에 있다.
+로그는 10Hz 상태와 사용자 입력·상태 전이·적용 제스처 사건을 기록한다. queue가 가득 차거나 writer 오류가 보고되면 긴급 정지를 latch한다. 송신 성공이나 정지 텔레메트리 확인을 물리 주행 성공으로 승격하지 않는다. 테스트 결과는 기본 NOT TESTED, 사용자 수행 확인과 관찰 메모가 있어야 PASS/FAIL을 저장한다. 자세한 스키마·제한은 [대시보드 안내](DASHBOARD_GUIDE.md), 실제 증거는 [최신 검증](verification/DASHBOARD_VALIDATION.md)에 있다.
 
 아래는 재사용한 1차 제어 기반이다.
 

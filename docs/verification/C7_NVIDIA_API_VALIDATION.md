@@ -71,10 +71,10 @@ NVIDIA Build는 두 모델의 Free Endpoint에 Deprecated를 표시한다. 후�
 | `python_controller/llm_cli.py`, `.env.example` | 검증된 모델의 명시적 설정과 모델 미설정 오류 |
 | `tests/test_nvidia_diagnostics.py` | 실제 SDK + 모의 HTTP로 200, HTTP 오류, 네트워크 오류, 타임아웃, 자격 증명 가림, 무재시도 검증 |
 | `tests/test_llm_cli.py`, `tests/test_llm_planning.py` | 기존 모의 설정에 모델 ID 명시. 환경변수 우선순위, 단위 환산, 미설정 모델에서 fallback 차단 시험 |
-| `docs/C7_NVIDIA_API_VALIDATION.md`, `docs/PROTOTYPE_AB_VALIDATION.md` | 검증 결과와 현재 설정 방법 |
+| `docs/verification/C7_NVIDIA_API_VALIDATION.md`, `docs/verification/PROTOTYPE_AB_VALIDATION.md` | 검증 결과와 현재 설정 방법 |
 
 `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`에서 **기존 100개와 신규 6개, 총 106개 통과**. 건너뜀 0개. 사람 추종, 제스처, 대시보드, MOTOR TEST, ESP32 소프트웨어 통신 회귀검증을 포함한다. `compileall`도 통과했다. 프롬프트, Pydantic 정책, 구동 승인 및 실행 경로와 펌웨어는 그대로다. 원본 증거는 `.tmp/c7/live_probe.jsonl`, `.tmp/c7/auth_control.jsonl`, `.tmp/c7/control_dry_run.jsonl`, `.tmp/c7/unittest.log`에 있다.
 
 ## 남은 확인과 C6 진입
 
-NVIDIA 호스팅 Qwen 호출과 Qwen 자연어 dry-run은 현재 미확인이다. Qwen 사용이 확인된 호스트에서 예시 문장과 단위 변환을 다시 검증해야 자연어 `cmd_move` 시험의 전제 조건을 충족한다. [C6 준비 절차](C6_HARDWARE_PREFLIGHT.md)의 정지 연결·전원 분리 시험은 별도 승인 절차를 따른다. 이번 작업에서는 ESP32 실물 연결·이동 UDP 송신·펌웨어 업로드·모터 구동을 수행하지 않았다.
+NVIDIA 호스팅 Qwen 호출과 Qwen 자연어 dry-run은 현재 미확인이다. Qwen 사용이 확인된 호스트에서 예시 문장과 단위 변환을 다시 검증해야 자연어 `cmd_move` 시험의 전제 조건을 충족한다. [C6 준비 절차](../C6_HARDWARE_PREFLIGHT.md)의 정지 연결·전원 분리 시험은 별도 승인 절차를 따른다. 이번 작업에서는 ESP32 실물 연결·이동 UDP 송신·펌웨어 업로드·모터 구동을 수행하지 않았다.

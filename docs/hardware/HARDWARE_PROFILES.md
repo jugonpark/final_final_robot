@@ -16,17 +16,17 @@ V19에서 MD1 A/B는 M1/M2, MD2 A는 M3에 연결한다. MD2 B 제어 입력은 
 
 ## 빌드 및 Python 선택
 
-아래 명령은 ESP32용 스케치 빌드 예시다. PCB V19용은 마지막 인자의 매크로를 `DIG_BOARD_PCB_V19`로 설정한다. 미선택과 두 매크로 동시 선택은 컴파일 오류다.
+옵션을 지정하지 않으면 브레드보드 GPIO로 빌드된다. PCB V19용은 `DIG_BOARD_PCB_V19`를 명시한다. 두 보드 매크로를 동시에 지정하면 컴파일 오류다.
 
 ```powershell
-arduino-cli compile --fqbn esp32:esp32:esp32 `
-  --build-property 'compiler.cpp.extra_flags=-DDIG_BOARD_BREADBOARD' `
-  esp32_firmware/control_simple_v2/control_simple_v2
+arduino-cli compile --fqbn esp32:esp32:esp32 esp32_firmware/control_simple_v2/control_simple_v2
 ```
 
-Qt는 `--hardware-profile BREADBOARD` 또는 `--hardware-profile PCB_V19`로 시작한다. JSON 설정을 사용하는 경우 `communication.hardware_profile`에 같은 값을 넣는다. 기본값은 `null`이다. Qt 진단 페이지는 운영자 선택, 펌웨어 보고, 핀맵 리비전, 일치 상태를 표시한다.
+PCB V19를 빌드할 때는 위 명령에 `--build-property 'compiler.cpp.extra_flags=-DDIG_BOARD_PCB_V19'`를 추가한다.
 
-RobotSession은 선택과 새 텔레메트리의 `hardware_profile`, `firmware_version`, `pinmap_revision`이 일치할 때 구동 준비를 판단한다. 미선택, 미확인, 불일치 시 이동을 차단하고 STOP 송신과 응답 확인을 계속한다. 재연결이나 재부팅 후에는 다시 일치 확인과 새 입력이 필요하다. `MATCH`는 펌웨어가 선언한 값의 일치를 뜻한다. 실제 배선 검증과 제작 승인 상태는 [검증 보고서](HARDWARE_PROFILE_VALIDATION_REPORT.md)를 참고한다.
+Qt와 공유 웹의 기본값은 `BREADBOARD`다. PCB V19는 `--hardware-profile PCB_V19` 또는 JSON `communication.hardware_profile`로 지정한다. 과거 JSON의 `null`은 기본값을 따른다.
+
+브레드보드의 구형 펌웨어가 세 프로필 항목을 모두 생략하면 `LEGACY_BREADBOARD`로 표시하고 기존 STOP·레이더·승인 조건을 적용한다. 같은 연결에서 선언을 한 번이라도 받은 뒤에는 선언 누락을 차단한다. 일부 선언이 누락됐거나 선택한 값과 다르면 이동을 차단한다. PCB V19와 레이더 미연결 벤치 시험은 `MATCH`가 필요하다. `MATCH`는 펌웨어가 선언한 값의 일치다. 실제 배선 검증과 제작 승인 상태는 [검증 보고서](HARDWARE_PROFILE_VALIDATION_REPORT.md)를 참고한다.
 
 ## RAG
 

@@ -2,7 +2,7 @@
 
 2026-11-18 초기 설계 검토입니다. 사용자가 제시한 heartbeat 100 ms와 통신 watchdog 600 ms를 실물 검증 전 시험값으로 검토했습니다.
 
-이후 PC 수정과 별도 control_v2 펌웨어 후보를 구현·빌드했습니다. [구현 결과](C:/Users/jugon/Desktop/NEW_ROBOT_START/docs/WATCHDOG_ENCODER_FIX_IMPLEMENTATION.md)에 적용 범위와 검증 기록을 남겼습니다. 실제 보드 업로드는 수행하지 않았습니다. 아래는 구현의 기준이 된 설계 기록입니다.
+이후 PC 수정과 별도 control_v2 펌웨어 후보를 구현·빌드했습니다. [구현 결과](verification/WATCHDOG_ENCODER_FIX_IMPLEMENTATION.md)에 적용 범위와 검증 기록을 남겼습니다. 실제 보드 업로드는 수행하지 않았습니다. 아래는 구현의 기준이 된 설계 기록입니다.
 
 ## 1. 현재 구현과 수정 범위
 

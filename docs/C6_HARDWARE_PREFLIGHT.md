@@ -2,7 +2,7 @@
 
 2026-11-17 소프트웨어 기준선에서 전체 unittest **100개 통과, 건너뜀 0개**를 다시 확인했다. 사람 추종, 제스처, 대시보드, MOTOR TEST, 펌웨어 원본 해시 검사가 포함된다. 이번 작업의 변경 사항은 이 문서와 기록 양식이다. 보드 연결, 펌웨어 업로드, 모터 전원 인가, 실물 주행은 미실시다.
 
-아래의 빌드와 타이밍은 원본 및 첫 Mode Guard 후보의 기록이다. 이후 추가한 `control_v2` 후보의 타이밍과 판정 기준은 [Watchdog 분리·엔코더 복구 구현 결과](C:/Users/jugon/Desktop/NEW_ROBOT_START/docs/WATCHDOG_ENCODER_FIX_IMPLEMENTATION.md)를 따른다.
+아래의 빌드와 타이밍은 원본 및 첫 Mode Guard 후보의 기록이다. 이후 추가한 `control_v2` 후보의 타이밍과 판정 기준은 [Watchdog 분리·엔코더 복구 구현 결과](verification/WATCHDOG_ENCODER_FIX_IMPLEMENTATION.md)를 따른다.
 
 ## 펌웨어 비교
 

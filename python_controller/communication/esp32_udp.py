@@ -301,7 +301,7 @@ class UdpClient:
                         reason = self.session_sync.foreign(report, stopped_report(report))
                         if (reason == "PREVIOUS_SESSION_DURING_STOP" and
                                 self.sync_deadline is not None and now >= self.sync_deadline):
-                            reason = "SESSION_MISMATCH"
+                            reason = "SESSION_SYNC_WAITING_STOP"
                     elif self.guard.detail == "ESP32_REBOOT" or (
                             accepted and not self.session_sync.boot_matches(report)):
                         reason = "ESP32_REBOOT"
@@ -309,11 +309,14 @@ class UdpClient:
                         fields = self._audit(report, reason)
                         self.session_diagnostic = fields
                         self.transport_events.append(dict(event="SESSION_DIAGNOSTIC", **fields))
-                        if reason == "PREVIOUS_SESSION_DURING_STOP":
+                        if reason in ("PREVIOUS_SESSION_DURING_STOP", "SESSION_SYNC_WAITING_STOP"):
+                            self.guard.detail = reason
                             continue
                         self.session_lost = True
                         self._latch(reason)
                     elif accepted:
+                        if not self.session_sync.proven and not self.session_lost:
+                            self.session_diagnostic = None
                         self.session_sync.proven = True
                 if not accepted:self.rx_rejections[self.guard.detail]=self.rx_rejections.get(self.guard.detail,0)+1
                 stop_verified = bool(self.stop_seq is not None and self.guard.output_stopped(now)

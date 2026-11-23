@@ -80,7 +80,7 @@ JSONL에는 로컬 timezone 포함 timestamp, monotonic_s, mode/source, 상태/�
 - `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.
 - `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.
 - `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.
-- 이 안내, `DASHBOARD_VALIDATION.md`, `dashboard_preview/`의 5개 합성 화면.
+- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).
 
 수정:
 

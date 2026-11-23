@@ -1,4 +1,4 @@
-"""Local web console backed by the D.I.G. simulation supervisor."""
+"""Local web console for simulation or an explicitly shared Qt session."""
 import base64
 import binascii
 import json
@@ -7,6 +7,8 @@ import sqlite3
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from secrets import token_hex
+from threading import Thread
 from time import monotonic
 from urllib.parse import parse_qs
 
@@ -18,19 +20,24 @@ from python_controller.mission.draft_store import DraftConflict, DraftOperation
 from python_controller.planning.dashboard_command import normalize_dashboard_command
 from python_controller.planning.schema import describe_action
 from python_controller.planning.validator import ValidatedPlan, parse_operator_command, strict_json_object
-from python_controller.visualization.korean import ko
+from python_controller.visualization.korean import ko, movement_block
 
 ROOT = Path(__file__).resolve().parent
 STATIC = ROOT / 'web'
 ICONS = ROOT / 'visualization' / 'assets' / 'icons'
 CAMERA_VIEW_TIMEOUT_S = 3.0
+WEB_VISION_LEASE_S = 1.0
 
 
 class WebDashboard:
-    def __init__(self, engine, stream_factory, agent=None):
+    def __init__(self, engine, stream_factory, agent=None, *, shared_stream=None, settings_dir=ROOT.parent / 'settings'):
         self.engine = engine
         self.stream_factory = stream_factory
-        self.stream = self.closing_stream = None
+        self.stream = shared_stream
+        self.closing_stream = None
+        self.shared = shared_stream is not None
+        self.settings_dir = settings_dir
+        self.manual_hold = None
         self.camera_views = {}
         self.camera_started_at = 0
         self.plan = None
@@ -62,6 +69,8 @@ class WebDashboard:
 
     def close_camera(self):
         self.stop_camera_views()
+        if self.shared:
+            return
         for stream in (self.stream, self.closing_stream):
             if stream is not None:
                 stream.close()
@@ -69,7 +78,7 @@ class WebDashboard:
     def stop_camera_views(self):
         with self.engine.control_lock:
             self.camera_views.clear()
-            if self.stream is not None:
+            if not self.shared and self.stream is not None:
                 self._stop_camera()
 
     def state(self):
@@ -87,8 +96,18 @@ class WebDashboard:
             camera_status = (getattr(stream, 'camera_status', 'CAPTURING') if stream else
                              'CLOSING_CAMERA' if self.closing_stream else 'CAMERA_OFF')
             cfg = self.engine.cfg
+            blocker = movement_block(tr)
+            movement_reason = ko(blocker) if blocker else None
+            if radar['blocked'] and tr.get('recovery_state') == 'SESSION_CONFLICT':
+                movement_reason += ' · ' + ko('SESSION_CONFLICT')
+            prepared = bool(tr.get('connected') and tr.get('ready') and tr.get('stop_verified') and
+                            not blocker and not estop and not self.engine.control_error)
             return {
                 'source': self.engine.source, 'owner': self.engine.active_control_mode,
+                'shared_control': self.shared, 'session_open': bool(self.engine.client or self.engine.release_future),
+                'movement_reason': movement_reason, 'movement_ready': prepared,
+                'radar_can_rearm': bool(self.shared and self.engine.shared_session and radar['blocked'] and
+                                        radar['state'] == 'CLEAR' and tr.get('stop_verified') and not self.engine.language.executing),
                 'state': ko(data.get('state', 'STARTING')), 'stop_code': code, 'stop_reason': ko(code),
                 'connected': bool(tr.get('connected')), 'ready': bool(tr.get('ready')),
                 'stop_verified': bool(tr.get('stop_verified')), 'estop_latched': estop,
@@ -102,11 +121,13 @@ class WebDashboard:
                 'vision': data.get('vision', {}) if has_result else {},
                 'gesture': data.get('gesture', {}) if has_result else {}, 'safe': data.get('safe'), 'motors': data.get('motors', {}),
                 'validation': tr.get('validation_detail'), 'recovery': tr.get('recovery_state'),
+                'hardware_profile_status': ko(tr.get('hardware_profile_status')),
                 'fault': tr.get('fault'), 'notice': self.engine.control_error or data.get('notice'),
                 'tests': self.engine.book.rows, 'plan': self.plan,
                 'history_degraded': self.engine.language.history.degraded,
                 'agent': self.agent.view() if self.agent else None,
                 'settings': {'esp32': cfg['communication']['host'], 'radar': cfg['radar']['source_ip'],
+                             'hardware_profile': cfg['communication']['hardware_profile'],
                              'hand': self.engine.hand.mapping, 'follow': cfg['gesture']['mapping'],
                              'timeout_ms': round(1000*cfg['safety']['perception_timeout_s']),
                              'hold_s': cfg['gesture']['hold_s'], 'camera_index': cfg['camera']['index'],
@@ -120,6 +141,9 @@ class WebDashboard:
                 if self.camera_views.get(viewer, 0) <= now:
                     return {'image': None, 'status': '카메라 꺼짐', 'people': [], 'lease_active': False}
                 self.camera_views[viewer] = now + CAMERA_VIEW_TIMEOUT_S
+                lease = self.engine.web_vision
+                if lease and lease[0] == viewer and now < lease[3]:
+                    self.engine.web_vision = (*lease[:3], now + WEB_VISION_LEASE_S)
             stream = self.stream
             if stream is None:
                 status = '카메라 연결 해제 중' if self.closing_stream else '카메라 꺼짐'
@@ -173,7 +197,15 @@ class WebDashboard:
             if action == 'agent_clear_conversation' and self.agent:
                 self.agent.clear_conversation()
                 return {'message': '대화 기록을 삭제했습니다.'}
-            unavailable = engine.client or engine.language.executing or engine.control_error
+            if action in ('save_esp32_ip', 'save_radar_ip'):
+                if action == 'save_esp32_ip':
+                    engine.save_esp32_host(self.settings_dir / 'connection.json', body.get('address'))
+                else:
+                    engine.save_radar_source(self.settings_dir / 'radar.json', body.get('address'))
+                return {'message': engine.notice}
+            if self.shared and action in ('disconnect_robot', 'manual_release'):
+                return self._shared_command(action, body)
+            unavailable = engine.control_error or (not self.shared and (engine.client or engine.language.executing))
             if action == 'camera_power':
                 viewer, enabled = body.get('viewer'), body.get('enabled')
                 if not isinstance(viewer, str) or not re.fullmatch('[0-9a-f]{32}', viewer) or type(enabled) is not bool:
@@ -181,16 +213,26 @@ class WebDashboard:
                 if enabled:
                     if unavailable:
                         raise ValueError('시뮬레이션 상태에서만 요청할 수 있습니다.')
-                    self.camera_views[viewer] = monotonic() + CAMERA_VIEW_TIMEOUT_S
+                    now = monotonic()
+                    self.camera_views = {key: expires for key, expires in self.camera_views.items() if expires > now}
+                    self.camera_views[viewer] = now + CAMERA_VIEW_TIMEOUT_S
                 else:
                     self.camera_views.pop(viewer, None)
+                    if self.shared and engine.web_vision and engine.web_vision[0] == viewer:
+                        engine.request('PAUSE')
+                if self.shared:
+                    return {'message': '공유 카메라 보기를 갱신했습니다.'}
                 if unavailable:
                     self.stop_camera_views()
                 else:
                     self.update_camera()
                 return {'message': '카메라를 요청했습니다.' if enabled else '카메라 보기를 종료했습니다.'}
             if unavailable:
-                raise ValueError('시뮬레이션 상태에서만 요청할 수 있습니다.')
+                raise ValueError('현재 관제 상태에서는 요청할 수 없습니다.')
+            if self.shared and action in ('connect_robot', 'select_mode', 'radar_rearm',
+                                           'manual_prepare', 'manual_hold', 'acknowledge_estop',
+                                           'agent_approve', 'activate_hand', 'recover_robot', 'test_turn'):
+                return self._shared_command(action, body)
             if self.agent and action == 'agent_message':
                 self.agent.submit(body.get('text'))
                 return {'message': '메시지를 받았습니다.'}
@@ -217,12 +259,99 @@ class WebDashboard:
             if action == 'pause':
                 engine.request('PAUSE')
             elif action == 'clear_target':
+                if self.shared and engine.client:
+                    engine.request('PAUSE')
                 engine.request('CLEAR')
             elif action in ('select_target', 'resume_follow'):
                 self._follow(action, body)
             else:
                 raise ValueError('이 명령은 웹 관제 1차에서 지원하지 않습니다.')
-        return {'message': '시뮬레이션 제어 요청을 전달했습니다.'}
+        return {'message': '관제에 요청을 전달했습니다.' if self.shared else '시뮬레이션 제어 요청을 전달했습니다.'}
+
+    def _shared_command(self, action, body):
+        engine = self.engine
+        if action == 'connect_robot':
+            if body.get('confirmed') is not True:
+                raise ValueError('ESP32 통신 연결을 확인하세요.')
+            engine.connect_robot(engine.cfg['communication']['host'])
+        elif action == 'disconnect_robot':
+            engine.disconnect_async()
+        elif action == 'select_mode':
+            engine.select_control_mode(body.get('mode'), auto_arm=False)
+        elif action == 'radar_rearm':
+            engine.rearm_radar()
+        elif action == 'recover_robot':
+            engine.recover_robot()
+        elif action == 'test_turn':
+            if (body.get('confirmed') is not True or engine.c.estop_latched or not engine.shared_session or
+                    engine.client_owner != 'MOTOR_TEST'):
+                raise ValueError('바퀴를 띄워 고정하고 바퀴 시험 제어권을 확인하세요.')
+            engine.begin_hold('TURN_LEFT', timed_trial=True)
+        elif action == 'activate_hand':
+            self._check_vision_operator(body, 'GESTURE_DIRECT')
+            hand = engine.hand
+            engine.configure_hand(confidence=hand.confidence, frames=hand.min_frames, hold=hand.hold, mapping=hand.mapping)
+            self._lease_vision(body['viewer'])
+        elif action == 'acknowledge_estop' and self.agent:
+            self.agent.acknowledge_estop()
+        elif action == 'agent_approve' and self.agent:
+            self.agent.review(body.get('plan_id'), body.get('revision'), approve=True,
+                              operator_confirmed=body.get('confirmed') is True)
+        elif action in ('manual_prepare', 'manual_hold', 'manual_release'):
+            return self._manual_command(action, body)
+        else:
+            raise ValueError('현재 공유 관제에서 사용할 수 없는 명령입니다.')
+        return {'message': '중앙관제에 요청을 전달했습니다.'}
+
+    def _check_vision_operator(self, body, owner):
+        engine = self.engine
+        viewer = body.get('viewer')
+        if (not isinstance(viewer, str) or self.camera_views.get(viewer, 0) <= monotonic() or
+                body.get('confirmed') is not True or not engine.shared_session or engine.client_owner != owner or
+                engine.c.estop_latched or engine.pending_mode or engine.release_future):
+            raise ValueError('카메라 보기, 제어권과 운영자 확인이 필요합니다.')
+        snapshot = engine.shared_session.snapshot()
+        state, _ = engine.render_state()
+        if (not state or not state.get('perception_fresh') or not snapshot['ready'] or
+                not snapshot['stop_verified'] or movement_block(snapshot)):
+            raise ValueError('최신 카메라 영상, 이동 차단 사유와 ESP32 STOP 응답을 확인하세요.')
+
+    def _lease_vision(self, viewer):
+        self.engine.web_vision = (viewer, self.engine.shared_session, self.engine.client_owner,
+                                  monotonic() + WEB_VISION_LEASE_S)
+
+    def _manual_command(self, action, body):
+        engine = self.engine
+        session = engine.shared_session
+        if action == 'manual_prepare':
+            direction = body.get('direction')
+            owner = engine.client_owner
+            direct = owner == 'DIRECT_CONTROL' and direction in ('FORWARD', 'BACKWARD', 'LEFT', 'RIGHT', 'TURN_LEFT', 'TURN_RIGHT')
+            wheel = owner == 'MOTOR_TEST' and direction in ('M1', 'M2', 'M3') and body.get('confirmed') is True
+            if not session or not (direct or wheel) or engine.c.estop_latched:
+                raise ValueError('수동 제어권과 ESP32 정지 상태를 확인하세요.')
+            session.release_web_hold()
+            token = token_hex(16)
+            self.manual_hold = (token, session, direction, monotonic() + .5, owner, engine.control_generation)
+            return {'token': token}
+        hold = self.manual_hold
+        if not hold or hold[0] != body.get('token') or hold[1] is not session:
+            raise ValueError('현재 수동 입력을 다시 시작하세요.')
+        _, _, direction, start_before, owner, generation = hold
+        if action == 'manual_release':
+            self.manual_hold = None
+            session.release_web_hold()
+        elif owner != engine.client_owner or generation != engine.control_generation:
+            raise ValueError('제어권 또는 안전 상태가 바뀌었습니다. 방향 버튼을 다시 누르세요.')
+        elif start_before is None:
+            session.renew_web_hold()
+        else:
+            self.manual_hold = None
+            if monotonic() >= start_before:
+                raise ValueError('수동 입력 시작 시간이 지났습니다.')
+            engine.begin_hold(direction, remote=True)
+            self.manual_hold = (hold[0], session, direction, None, owner, generation)
+        return {'message': '수동 입력을 갱신했습니다.'}
 
     def _follow(self, action, body):
         engine = self.engine
@@ -239,7 +368,11 @@ class WebDashboard:
                 or not max(now-age_limit, self.camera_started_at) <= selected_at <= frame.timestamp):
             raise ValueError('최신 영상에서 추종 대상을 다시 선택하세요.')
         if action == 'resume_follow':
+            if self.shared and engine.client:
+                self._check_vision_operator(body, 'GESTURE_FOLLOW')
             engine.resume_follow()
+            if self.shared and engine.client:
+                self._lease_vision(body['viewer'])
         else:
             engine.request('SELECT', target)
 
@@ -430,3 +563,21 @@ def run_web_dashboard(config, *, camera=False, port=8765, agent_enabled=False):
         if web.agent:
             web.agent.close()
     return 0
+
+
+def bind_shared_web(port):
+    if not 1 <= port <= 65535:
+        raise ValueError('웹 관제 포트는 1~65535여야 합니다.')
+    return ThreadingHTTPServer(('127.0.0.1', port), None)
+
+
+def start_shared_web(engine, stream, agent, server):
+    port = server.server_port
+    if not engine.cfg['communication']['host']:
+        engine.cfg['communication']['host'] = load_connection(ROOT.parent / 'settings' / 'connection.json')
+    web = WebDashboard(engine, None, agent, shared_stream=stream)
+    server.RequestHandlerClass = handler(web, port)
+    Thread(target=server.serve_forever, name='qt-shared-web', daemon=True).start()
+    url = f'http://127.0.0.1:{port}/'
+    print(f'D.I.G. Qt 공유 관제 · {url}', flush=True)
+    return url

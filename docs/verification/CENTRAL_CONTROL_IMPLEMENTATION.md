@@ -2,7 +2,7 @@
 
 2026-11-18 기준입니다. 기존 워크플로우의 제안 구조를 실행 코드에 반영했습니다.
 
-이후 watchdog 분리와 엔코더 복구를 구현했습니다. 현재 통신 작업 및 펌웨어 후보는 [Watchdog·엔코더 수정 결과](C:/Users/jugon/Desktop/NEW_ROBOT_START/docs/WATCHDOG_ENCODER_FIX_IMPLEMENTATION.md)를 참고하세요.
+이후 watchdog 분리와 엔코더 복구를 구현했습니다. 현재 통신 작업 및 펌웨어 후보는 [Watchdog·엔코더 수정 결과](WATCHDOG_ENCODER_FIX_IMPLEMENTATION.md)를 참고하세요.
 
 ## 실행과 화면
 

@@ -73,6 +73,25 @@ class RecoveryUiTests(unittest.TestCase):
         self.assertEqual(values['fault_motor_mask'].text(), '2')
         self.assertIn('65', values['fault_delta_count'].text())
 
+    def test_clear_radar_banner_shows_remaining_board_profile_gate(self):
+        data = self.window.last_data.copy()
+        data['transport'] = dict(data['transport'], connected=True, ready=False, stop_verified=True,
+                                 fault='NONE', telemetry={'fault': 'NONE'},
+                                 hardware_profile_status='HARDWARE_PROFILE_UNSELECTED',
+                                 radar=dict(state='CLEAR', blocked=False, reason='RADAR_CLEAR', age_s=.016))
+        self.window.update_display(data, None)
+        banner = self.window.radar_status.text()
+        self.assertIn('레이더 CLEAR · 이동 차단 · 보드 프로필 미선택', banner)
+        self.assertIn('ESP32 정지 확인', banner)
+        self.assertFalse(self.window.radar_rearm.isEnabled())
+
+    def test_session_conflict_can_request_stop_resync_even_if_mode_change_is_pending(self):
+        self.fake_session(ready=False, connected=False, session_lost=True, recovery_state='SESSION_CONFLICT')
+        self.engine.pending_mode = 'LLM_COMMAND'
+        self.window.update_recovery(self.transport, {'fault': 'NONE'})
+        self.assertTrue(self.window.recover_button.isEnabled())
+        self.assertFalse(self.window.encoder_policy_apply.isEnabled())
+
     def test_legacy_cannot_claim_test_profile_or_applied_timeout(self):
         self.fake_session(supported_test_profile=False, protocol_version=1, heartbeat_timeout_ms=600)
         self.window.update_recovery(self.transport, {'fault': 'NONE'})

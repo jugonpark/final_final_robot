@@ -19,6 +19,12 @@ from python_controller.models import MotionCommand
 
 
 CONTROL_MODES = ('DIRECT_CONTROL', 'GESTURE_DIRECT', 'GESTURE_FOLLOW', 'LLM_COMMAND', 'MOTOR_TEST')
+BENCH_LINEAR_LIMIT = 1.0  # cm/s
+BENCH_ANGULAR_LIMIT = .10  # rad/s
+BENCH_HOLD_SECONDS = 2.0
+WEB_HOLD_SECONDS = .25
+RADAR_NOT_SEEN = ('RADAR_NO_DATA', 'RADAR_NOT_CONFIGURED')
+PROFILE_FIELDS = ('hardware_profile', 'firmware_version', 'pinmap_revision')
 
 
 class RobotSession(MotorTestClient, HandDriveClient):
@@ -55,6 +61,11 @@ class RobotSession(MotorTestClient, HandDriveClient):
         self.distance_radar_generation = None
         self.hardware_profile = config['communication'].get('hardware_profile')
         self.profile_required = self.hardware_profile is not None
+        self.profile_declared = False
+        self.radarless_bench = config['communication'].get('radarless_bench') is True
+        self.bench_authorized = False
+        self.bench_hold_until = -math.inf
+        self.web_hold_until = None
 
     def start(self):
         if self.safety is None and self.socket_factory is socket.socket:
@@ -62,39 +73,66 @@ class RobotSession(MotorTestClient, HandDriveClient):
         self.profile_required = self.profile_required or self.socket_factory is socket.socket
         super().start()
 
-    def _profile_block(self, now):
+    def _profile_status(self, now):
         if not self.profile_required:
-            return None
+            return 'NOT_REQUIRED'
         if self.hardware_profile not in HARDWARE_PROFILES:
             return 'HARDWARE_PROFILE_UNSELECTED'
         telemetry = self.guard.data or {}
-        identity = tuple(telemetry.get(key) for key in ('hardware_profile', 'firmware_version', 'pinmap_revision'))
-        if not self.guard.link_fresh(now) or not all(isinstance(value, str) and value for value in identity):
+        if not self.guard.link_fresh(now):
+            return 'HARDWARE_PROFILE_UNKNOWN'
+        if (self.hardware_profile == 'BREADBOARD' and not self.profile_declared
+                and not any(key in telemetry for key in PROFILE_FIELDS)):
+            return 'LEGACY_BREADBOARD'
+        identity = tuple(telemetry.get(key) for key in PROFILE_FIELDS)
+        if not all(isinstance(value, str) and value for value in identity):
             return 'HARDWARE_PROFILE_UNKNOWN'
         if identity != (self.hardware_profile, 'SIMPLE_V2', f'{self.hardware_profile}_GPIO_V1'):
             return 'HARDWARE_PROFILE_MISMATCH'
-        return None
+        return 'MATCH'
+
+    def _profile_block(self, now):
+        status = self._profile_status(now)
+        return status if status.startswith('HARDWARE_PROFILE_') else None
 
     def radar_status(self):
-        return self.safety.snapshot(self.clock()) if self.safety is not None else None
+        if self.safety is None:
+            return None
+        status = self.safety.snapshot(self.clock())
+        if self.bench_authorized and status['boot_id'] is None and status['reason'] in RADAR_NOT_SEEN:
+            return dict(status, blocked=False, reason='RADARLESS_BENCH')
+        return status
+
+    def authorize_bench(self):
+        with self.lock:
+            status = self.snapshot()
+            if not status['bench_available']:
+                raise ValueError('레이더 미수신, 보드 프로필 일치와 ESP32 정지 확인이 필요합니다.')
+            self.bench_authorized = True
 
     def _apply_radar(self):
         status = self.radar_status()
-        if status and status['blocked'] and (
+        if self.bench_authorized and status and status['reason'] != 'RADARLESS_BENCH':
+            self.radar_generation = status['generation']
+            self.stop('RADARLESS_BENCH_RADAR_CHANGED')
+        elif status and status['blocked'] and (
             status['generation'] != self.radar_generation or self.active or self.armed
         ):
             self.radar_generation = status['generation']
             self.stop(status['reason'])
         return status
 
-    def rearm_radar(self):
+    def rearm_radar(self, *, after_evade=False):
         with self.lock:
             if self.safety is None:
                 raise ValueError('레이더를 사용하는 중앙 제어 연결이 필요합니다.')
             with self.safety.lock:
-                self._apply_radar()
-                if self.distance_leased or not self.snapshot()['stop_verified']:
+                radar = self._apply_radar()
+                status = self.snapshot()
+                if self.distance_leased or not status['stop_verified']:
                     raise ValueError('ESP32의 새 STOP 응답과 실행 종료를 확인하세요.')
+                if after_evade and (radar['reason'] != 'RADAR_EVADE' or not status['ready']):
+                    raise ValueError('위험 정지 이후의 레이더와 세션 상태를 확인하세요.')
                 self.safety.rearm(self.clock())
                 self.distance_cancelled = False
                 self.reason = 'RADAR_CLEAR'
@@ -116,10 +154,14 @@ class RobotSession(MotorTestClient, HandDriveClient):
     def arm(self):
         with self.lock:
             status = self._apply_radar()
+            if self.radarless_bench and not self.bench_authorized:
+                return False
             return not (status and status['blocked']) and not self._profile_block(self.clock()) and UdpClient.arm(self)
 
     def submit(self, decision, frame_timestamp, recognized_at=None):
         with self.lock:
+            if self.radarless_bench:
+                return
             status = self._apply_radar()
             if status and status['blocked']:
                 return
@@ -132,6 +174,8 @@ class RobotSession(MotorTestClient, HandDriveClient):
         with self.lock:
             if mode not in CONTROL_MODES:
                 raise ValueError('지원하지 않는 제어 기능입니다.')
+            if self.radarless_bench and mode != 'DIRECT_CONTROL':
+                raise ValueError('레이더 미수신 벤치 시험은 누르고 있는 방향 입력만 허용합니다.')
             status = self.snapshot()
             if self.distance_leased or not status['ready'] or not status['stop_verified']:
                 raise ValueError('현재 명령의 정지 응답을 기다리는 중입니다.')
@@ -142,8 +186,12 @@ class RobotSession(MotorTestClient, HandDriveClient):
             self.armed = self.active = False
             self.active_motion_id = None
 
-    def begin_hold(self, direction, *, timed_trial=False):
+    def begin_hold(self, direction, *, timed_trial=False, remote=False):
         with self.lock:
+            if remote and (self.radarless_bench or timed_trial or self.owner not in ('DIRECT_CONTROL', 'MOTOR_TEST')):
+                raise ValueError('웹의 방향 입력에는 일반 수동 제어권이 필요합니다.')
+            if self.radarless_bench and (not self.bench_authorized or timed_trial or self.owner != 'DIRECT_CONTROL'):
+                raise ValueError('바퀴 고정을 확인하고 벤치 방향 버튼을 누르세요.')
             if timed_trial and self.owner != 'MOTOR_TEST':
                 raise ValueError('시간 제한 시험은 바퀴 시험 화면에서 실행하세요.')
             if self.active or self.trial is not None:
@@ -162,15 +210,40 @@ class RobotSession(MotorTestClient, HandDriveClient):
             if self.owner == 'MOTOR_TEST':
                 self.authorize_manual(True, True)
                 self.begin_test(direction, duration=.5 if timed_trial else None, held=not timed_trial)
+                if remote:
+                    self.web_hold_until = self.clock() + WEB_HOLD_SECONDS
                 return
-            self.command = body_test_command(direction, self.cfg['motor_test'])
+            config = self.cfg['motor_test']
+            if self.radarless_bench:
+                config = dict(config, linear_cm_s=min(config['linear_cm_s'], BENCH_LINEAR_LIMIT),
+                              angular_rad_s=min(config['angular_rad_s'], BENCH_ANGULAR_LIMIT))
+                self.bench_hold_until = self.clock() + BENCH_HOLD_SECONDS
+            self.command = body_test_command(direction, config)
+            if remote:
+                self.web_hold_until = self.clock() + WEB_HOLD_SECONDS
             self.active = True
             self.reason = direction
+
+    def renew_web_hold(self):
+        with self.lock:
+            now = self.clock()
+            if not self.active or self.web_hold_until is None or now >= self.web_hold_until:
+                raise ValueError('웹 수동 입력이 종료됐습니다. 방향 버튼을 다시 누르세요.')
+            self.web_hold_until = now + WEB_HOLD_SECONDS
+
+    def release_web_hold(self):
+        with self.lock:
+            if self.web_hold_until is not None:
+                self.stop('HOLD_RELEASED')
 
     def end_hold(self):
         self.stop('HOLD_RELEASED')
 
     def _latch(self, reason):
+        self.web_hold_until = None
+        self.bench_hold_until = -math.inf
+        if reason != 'HOLD_RELEASED':
+            self.bench_authorized = False
         if self.distance_leased:
             self.distance_cancelled = True
         super()._latch(reason)
@@ -180,6 +253,10 @@ class RobotSession(MotorTestClient, HandDriveClient):
     def _accept_transport_packet(self, data, now):
         if not isinstance(data,dict):
             return True
+        if (data.get('session_id') != self.protocol.session_id and self.session_sync and
+                self.session_sync.delayed_previous_stop(data, self.guard.data)):
+            self.rx_rejections['DELAYED_PREVIOUS_STOP'] = self.rx_rejections.get('DELAYED_PREVIOUS_STOP', 0) + 1
+            return False
         boot = data.get('boot_id')
         if boot in self.retired_boots:
             self.rx_rejections['RETIRED_BOOT'] = self.rx_rejections.get('RETIRED_BOOT',0)+1
@@ -223,7 +300,12 @@ class RobotSession(MotorTestClient, HandDriveClient):
                     raise ValueError('출력 정지와 엔코더 정상 샘플 10개를 확인한 후 복구하세요.')
             self._start_recovery()
             if reset_encoder:
-                self.requests.put_nowait((dict(type='reset_fault'),Future(),self.recovery_generation))
+                self.requests.put_nowait((dict(type='reset_fault'),Future(),self.recovery_generation,None))
+
+    def _on_telemetry(self, data, now):
+        if any(key in data for key in PROFILE_FIELDS):
+            self.profile_declared = True
+        super()._on_telemetry(data, now)
 
     def _on_transport_packet(self, packet, source, now, accepted):
         if accepted:
@@ -283,7 +365,7 @@ class RobotSession(MotorTestClient, HandDriveClient):
 
     def _service_request(self, now):
         try:
-            command, future, generation = self.requests.get_nowait()
+            command, future, generation, channel = self.requests.get_nowait()
         except Empty:
             return False
         if not future.set_running_or_notify_cancel():
@@ -294,7 +376,8 @@ class RobotSession(MotorTestClient, HandDriveClient):
             generation != self.recovery_generation or
             (kind == 'cmd_move' and radar and
                 (radar['blocked'] or radar['generation'] != self.distance_radar_generation)) or
-            (kind in ('heartbeat','cmd_move') and (self.distance_cancelled or self.session_lost))):
+            (kind in ('heartbeat','cmd_move') and
+             (channel is None or channel is not self.distance_channel or self.distance_cancelled or self.session_lost))):
             future.set_exception(OSError('CONTROL_CANCELLED'))
             return False
         try:
@@ -341,6 +424,10 @@ class RobotSession(MotorTestClient, HandDriveClient):
     def _select_packet(self, now):
         radar = self._apply_radar()
         profile_block = self._apply_profile(now)
+        if self.radarless_bench and self.active and now >= self.bench_hold_until:
+            self.stop('RADARLESS_BENCH_HOLD_EXPIRED')
+        if self.web_hold_until is not None and now >= self.web_hold_until:
+            self.stop('WEB_HOLD_EXPIRED')
         if self.trial is not None:
             deadline = self.trial['deadline']
             if self.active and deadline is not None and now >= deadline:
@@ -414,13 +501,31 @@ class RobotSession(MotorTestClient, HandDriveClient):
             self._latch(blocked)
             super()._send_packet(self._stop_packet())
             return False
+        if self.radarless_bench and not self._bench_packet_allowed(command):
+            self._latch('RADARLESS_BENCH_HOLD_EXPIRED')
+            super()._send_packet(self._stop_packet())
+            return False
         if self.safety is None:
             return super()._send_packet(packet, moving)
         with self.safety.lock:
-            if self._apply_radar()['blocked']:
+            if self.web_hold_until is not None and self.clock() >= self.web_hold_until:
+                self._latch('WEB_HOLD_EXPIRED')
+                super()._send_packet(self._stop_packet())
+                return False
+            if self._apply_radar()['blocked'] or (self.radarless_bench and not self.bench_authorized):
                 super()._send_packet(self._stop_packet())
                 return False
             return super()._send_packet(packet, moving)
+
+    def _bench_packet_allowed(self, command):
+        if (not self.bench_authorized or not self.armed or not self.active or self.owner != 'DIRECT_CONTROL'
+                or self.safety is None or self.clock() >= self.bench_hold_until):
+            return False
+        if command['type'] == 'heartbeat':
+            return True
+        vx, vy, w = (command.get(axis) for axis in ('vx', 'vy', 'w'))
+        return (command['type'] == 'cmd_vel' and all(number(value) for value in (vx, vy, w))
+                and math.hypot(vx, vy) <= BENCH_LINEAR_LIMIT and abs(w) <= BENCH_ANGULAR_LIMIT)
 
     def _after_send(self, packet):
         super()._after_send(packet)
@@ -442,6 +547,8 @@ class RobotSession(MotorTestClient, HandDriveClient):
 
     def distance_socket(self):
         with self.lock:
+            if self.radarless_bench:
+                raise ValueError('레이더 미수신 벤치 시험은 계획 실행을 지원하지 않습니다.')
             radar = self._apply_radar()
             if radar and radar['blocked']:
                 raise ValueError(radar['reason'])
@@ -471,7 +578,7 @@ class RobotSession(MotorTestClient, HandDriveClient):
                 raise ValueError('출력 정지 확인 후 시험 정책을 변경하세요.')
             future = Future()
             try:
-                self.requests.put_nowait((dict(type='set_test_profile',encoder_policy=policy),future,self.recovery_generation))
+                self.requests.put_nowait((dict(type='set_test_profile',encoder_policy=policy),future,self.recovery_generation,None))
             except Full as exc:
                 raise ValueError('제어 요청 큐가 가득 찼습니다. 잠시 후 다시 시도하세요.') from exc
             return future
@@ -481,13 +588,13 @@ class RobotSession(MotorTestClient, HandDriveClient):
             data = super().snapshot()
             version,heartbeat,velocity = self._timing()
             telemetry = self.guard.data or {}
-            profile_block = self._profile_block(self.clock())
+            profile_status = self._profile_status(self.clock())
             data.update(hardware_profile_expected=self.hardware_profile,
                         hardware_profile=telemetry.get('hardware_profile'),
                         firmware_version=telemetry.get('firmware_version'),
                         pinmap_revision=telemetry.get('pinmap_revision'),
-                        hardware_profile_status=profile_block or ('MATCH' if self.profile_required else 'NOT_REQUIRED'))
-            if profile_block:
+                        hardware_profile_status=profile_status)
+            if profile_status.startswith('HARDWARE_PROFILE_'):
                 data['ready'] = False
             data.update(central_session=True,manual_test_only=False,controller_owner=self.owner,distance_leased=self.distance_leased,
                         body_command=asdict(self.command) if self.active else asdict(MotionCommand()))
@@ -499,6 +606,13 @@ class RobotSession(MotorTestClient, HandDriveClient):
                         supported_test_profile=version==2 and telemetry.get('encoder_policy') in ('STRICT','FILTERED_TEST'))
             if version == 2 and (self.v2_barrier is None or telemetry.get('last_seq',-1) < self.v2_barrier):
                 data.update(ready=False,stop_verified=False)
+            radar = data['radar'] or {}
+            data.update(radarless_bench=self.radarless_bench, bench_authorized=self.bench_authorized,
+                        bench_available=bool(self.radarless_bench and not self.bench_authorized and
+                                             self.owner == 'DIRECT_CONTROL' and not self.armed and not self.active and
+                                             data['hardware_profile_status'] == 'MATCH' and data['ready'] and
+                                             data['stop_verified'] and radar.get('boot_id') is None and
+                                             radar.get('reason') in RADAR_NOT_SEEN))
             return data
 
     def stop_and_release(self, timeout=.85):
@@ -536,7 +650,7 @@ class SessionChannel:
             if command['type'] != 'stop' and radar and radar['blocked']:
                 raise OSError('RADAR_BLOCKED')
             try:
-                s.requests.put_nowait((command,future,s.recovery_generation))
+                s.requests.put_nowait((command,future,s.recovery_generation,self))
             except Full as exc:
                 raise OSError('CONTROL_QUEUE_FULL') from exc
         deadline = time.monotonic()+.25

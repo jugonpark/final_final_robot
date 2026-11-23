@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import monotonic
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from python_controller.config import load_config
 from python_controller.dashboard_runtime import DashboardEngine, PreviewStream
@@ -22,7 +22,7 @@ class WebDashboardTests(unittest.TestCase):
         config = load_config()
         self.engine = DashboardEngine(config, Path(tmp.name), 'SYNTHETIC_PREVIEW', logger=False)
         self.addCleanup(self.engine.close)
-        self.web = WebDashboard(self.engine, PreviewStream)
+        self.web = WebDashboard(self.engine, PreviewStream, settings_dir=Path(tmp.name))
         self.addCleanup(self.web.close_camera)
 
     def power(self, enabled, viewer=VIEWER):
@@ -49,6 +49,67 @@ class WebDashboardTests(unittest.TestCase):
         self.assertEqual(self.web.state()['stop_code'], 'EMERGENCY_STOP')
         self.assertTrue(self.web.state()['estop_latched'])
         self.assertIsNone(self.engine.client)
+
+    def test_addresses_are_validated_persisted_and_blocked_while_connected(self):
+        from python_controller.communication.motor_test import load_connection
+
+        self.web.command({'action': 'save_esp32_ip', 'address': '192.0.2.136'})
+        self.web.command({'action': 'save_radar_ip', 'address': '192.0.2.106'})
+        self.assertEqual(load_connection(self.web.settings_dir / 'connection.json'), '192.0.2.136')
+        self.assertEqual(self.web.state()['settings']['radar'], '192.0.2.106')
+        with self.assertRaises(ValueError):
+            self.web.command({'action': 'save_esp32_ip', 'address': 12345})
+        with patch.object(self.engine, 'client', object()):
+            for action in ('save_esp32_ip', 'save_radar_ip'):
+                with self.assertRaises(ValueError):
+                    self.web.command({'action': action, 'address': '192.0.2.1'})
+
+    def test_shared_connection_and_agent_approval_use_existing_engine(self):
+        from python_controller.web_dashboard import WebDashboard
+
+        agent = Mock()
+        shared = WebDashboard(self.engine, None, agent, shared_stream=PreviewStream(), settings_dir=self.web.settings_dir)
+        shared.command({'action': 'save_esp32_ip', 'address': '192.0.2.136'})
+        with patch.object(self.engine, 'connect_robot') as connect:
+            with self.assertRaises(ValueError):
+                shared.command({'action': 'connect_robot', 'confirmed': 'true'})
+            shared.command({'action': 'connect_robot', 'confirmed': True})
+            connect.assert_called_once_with('192.0.2.136')
+        with self.assertRaises(ValueError):
+            self.web.command({'action': 'agent_approve', 'confirmed': True})
+        shared.command({'action': 'agent_approve', 'plan_id': 'draft', 'revision': 3, 'confirmed': True})
+        agent.review.assert_called_once_with('draft', 3, approve=True, operator_confirmed=True)
+
+    def test_shared_camera_view_never_stops_qt_stream(self):
+        from python_controller.web_dashboard import WebDashboard
+
+        stream = Mock()
+        shared = WebDashboard(self.engine, None, shared_stream=stream)
+        shared.command({'action': 'camera_power', 'viewer': VIEWER, 'enabled': True})
+        shared.command({'action': 'camera_power', 'viewer': VIEWER, 'enabled': False})
+        shared.close_camera()
+        self.assertIs(shared.stream, stream)
+        stream.stop.assert_not_called()
+        stream.close.assert_not_called()
+
+    def test_shared_wheel_test_requires_confirmation_and_keeps_one_hold(self):
+        from python_controller.web_dashboard import WebDashboard
+
+        shared = WebDashboard(self.engine, None, shared_stream=PreviewStream())
+        self.engine.client_owner = 'MOTOR_TEST'
+        session = Mock(central_session=True)
+        with patch.object(self.engine, 'client', session), patch.object(self.engine, 'begin_hold') as hold:
+            for action in ('manual_prepare', 'test_turn'):
+                with self.assertRaises(ValueError):
+                    shared.command({'action': action, 'direction': 'M1'})
+            result = shared.command({'action': 'manual_prepare', 'direction': 'M1', 'confirmed': True})
+            hold.assert_not_called()
+            shared.command({'action': 'manual_hold', **result})
+            hold.assert_called_once_with('M1', remote=True)
+            shared.command({'action': 'manual_hold', **result})
+            session.renew_web_hold.assert_called_once()
+            shared.command({'action': 'manual_release', **result})
+            self.assertEqual(session.release_web_hold.call_count, 2)
 
     def test_camera_matches_metadata_and_stale_frame_cannot_select(self):
         self.power(True)

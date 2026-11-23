@@ -192,6 +192,7 @@ class DashboardEngine:
         self.seen_radar_generation = None
         self.radar_neutral_required = False
         self.pending=None
+        self.web_vision = None
         self.last_result=None
         self.snapshot=None
         self.notice='ESP32 주소를 입력하거나 손동작 탭에서 카메라를 확인하세요.'
@@ -280,6 +281,19 @@ class DashboardEngine:
         return self.snapshot,self.last_result
 
     @control_locked
+    def save_esp32_host(self, path, host):
+        from python_controller.communication.motor_test import connection_host, save_connection
+
+        if self.client or self.release_future or self.language.executing:
+            raise ValueError('ESP32를 정지 후 연결 해제한 다음 주소를 저장하세요.')
+        if not isinstance(host, str):
+            raise ValueError('ESP32 IPv4 주소를 입력하세요.')
+        host = connection_host(host.strip())
+        save_connection(path, host)
+        self.cfg['communication']['host'] = host
+        self.notice = 'ESP32 주소를 저장했습니다.'
+
+    @control_locked
     def save_radar_source(self, path, host):
         from python_controller.config import radar_source_ip, save_radar_settings
 
@@ -301,8 +315,10 @@ class DashboardEngine:
         radar = self.radar.snapshot(now)
         if radar['blocked'] and radar['generation'] != self.seen_radar_generation:
             self.seen_radar_generation = radar['generation']
+            self.control_generation += 1
             self.language.cancel(radar['reason'])
             self.pending = None
+            self.pending_mode = None
             self.follow_auto_arm = False
             self.hand_armed_once = True
             self.radar_neutral_required = True
@@ -312,13 +328,28 @@ class DashboardEngine:
                 self.logger.write(dict(event='RADAR_BLOCKED', radar=radar), True)
         return radar
 
+    def _resume_after_evade(self, radar, now):
+        session = self.shared_session
+        if (not radar or not radar['blocked'] or radar['state'] != 'CLEAR' or radar['reason'] != 'RADAR_EVADE' or
+                not session or self.release_future or self.language.executing or self.c.estop_latched):
+            return radar
+        status = session.snapshot()
+        if not status['ready'] or not status['stop_verified'] or status.get('session_lost'):
+            return radar
+        try:
+            self.rearm_radar(after_evade=True)
+        except ValueError:
+            return radar
+        self.notice = '레이더 CLEAR 및 STOP 확인 · 새 입력 대기'
+        return self.radar.snapshot(now)
+
     @control_locked
-    def rearm_radar(self):
+    def rearm_radar(self, *, after_evade=False):
         session = self.shared_session
         if session is None or self.release_future or self.language.executing:
             raise ValueError('ESP32 연결과 이전 실행 종료를 확인하세요.')
         self._sync_radar(session.clock())
-        session.rearm_radar()
+        session.rearm_radar(after_evade=after_evade)
         self.pending = None
         self.hand.reset()
         self.hand_connected_at = session.clock()
@@ -404,6 +435,8 @@ class DashboardEngine:
         client = self.shared_session
         if client is None:
             return
+        if getattr(client, 'radarless_bench', False) and mode != 'DIRECT_CONTROL':
+            raise ValueError('레이더 미수신 벤치 시험은 수동 방향 입력만 지원합니다.')
         if self.release_future:
             raise ValueError('연결 해제 중입니다.')
         if mode == self.client_owner and self.pending_mode is None:
@@ -455,7 +488,10 @@ class DashboardEngine:
             if not self.last_release["stop_verified"]:
                 if not stationary_only or self.last_release["host"] != host:
                     raise ValueError("이전 정지가 미확인입니다. 같은 ESP32를 모터 시험의 통신 전용으로 다시 연결하세요.")
-                return None
+                if not self.last_release.get('boot_id') or not self.last_release.get('tx_session_id'):
+                    return None
+                # Bound delayed reports from the closed sender. The new connection still needs its own STOP.
+                return self.last_release
             if self.last_release["host"] == host:
                 return self.last_release
         return None
@@ -574,18 +610,30 @@ class DashboardEngine:
         self.pending = None
 
     @control_locked
-    def begin_hold(self, direction, *, timed_trial=False):
+    def authorize_bench(self):
+        if not self.shared_session or self.c.estop_latched or self.release_future or self.pending_mode:
+            raise ValueError('ESP32 연결, 비상 정지 상태와 제어권을 확인하세요.')
+        self.shared_session.authorize_bench()
+
+    @control_locked
+    def begin_hold(self, direction, *, timed_trial=False, remote=False):
         if self.shared_session:
             if self.pending_mode or self.release_future:
                 raise ValueError('기능 전환이 끝날 때까지 기다리세요.')
-            if timed_trial:
+            if getattr(self.shared_session, 'radarless_bench', False) and self.c.estop_latched:
+                raise ValueError('비상 정지 상태를 먼저 확인하세요.')
+            if remote:
+                if self.c.estop_latched or timed_trial or self.client_owner not in ('DIRECT_CONTROL', 'MOTOR_TEST'):
+                    raise ValueError('비상 정지 상태와 수동 제어권을 확인하세요.')
+                self.shared_session.begin_hold(direction, remote=True)
+            elif timed_trial:
                 self.shared_session.begin_hold(direction, timed_trial=True)
             else:
                 self.shared_session.begin_hold(direction)
             self.c.estop_latched = False
             self.pending = None
         else:
-            if timed_trial:
+            if timed_trial or remote:
                 raise ValueError('실물 바퀴 시험을 먼저 선택하세요.')
             self._manual_client().begin_hold(direction)
 
@@ -744,6 +792,10 @@ class DashboardEngine:
     @control_locked
     def request(self,action,target_id=None):
         if action in ('ESTOP','PAUSE'):
+            if self.web_vision:
+                self.hand_requires_activation = True
+                self.follow_auto_arm = False
+            self.web_vision = None
             self.control_generation += 1
         if action=='PAUSE' and self.shared_session:
             self.shared_session.stop('USER_PAUSE')
@@ -766,10 +818,17 @@ class DashboardEngine:
     @control_locked
     def tick(self,result,now=None,pipeline_error=None,pipeline_health=None):
         now=time.monotonic() if now is None else now
+        if self.web_vision:
+            _, session, owner, expires = self.web_vision
+            if session is not self.shared_session or owner != self.client_owner:
+                self.web_vision = None
+            elif now >= expires:
+                self.request('PAUSE')
         radar = self._sync_radar(now)
         was_executing=self.language.executing
         self.language.poll()
         self._take_language_release()
+        radar = self._resume_after_evade(radar, now)
         self._finish_mode_change()
         if was_executing and self.language.phase == 'FAILED':
             self.language_authorized_host = None
