@@ -1,5 +1,6 @@
 """A pure conversation graph. Even a resumed approval has no executor access."""
 import logging
+import re
 from typing import Callable, TypedDict
 from uuid import uuid4
 
@@ -44,12 +45,14 @@ class ConversationGraph:
     def __init__(self, interpreter, knowledge, responder):
         self.interpreter = interpreter
         self.responder = responder
+        self.last_document_question = None
         def classify(state, runtime: Runtime[DialogueContext]):
             previous = state['previous']
             text = state['message']
             if state['frozen']:
                 return {'card': state['frozen'], 'intent': None, 'decision': None, 'edit': None, 'error': None}
-            if not state['preview'] and (document_question(text) or hardware_scope(text) is not None):
+            followup = bool(self.last_document_question and re.fullmatch(r'(?:그럼\s*)?(?:그건|그 부분|차이는|동작 방식은|더 자세히|좀 더 자세히|왜 그런지)(?:\s*(?:설명해\s*줘|알려\s*줘))?[?？.! ]*',text))
+            if not state['preview'] and (followup or document_question(text, knowledge) or hardware_scope(text) is not None):
                 return {'intent': {'intent': 'ask_docs'}, 'card': previous, 'decision': None, 'edit': None, 'error': None}
             try:
                 if state['preview']:
@@ -79,7 +82,11 @@ class ConversationGraph:
             return {'decision': decision}
 
         def docs(state):
-            result = answer_documents(knowledge, state['message'])
+            question = state['message']
+            if self.last_document_question and re.fullmatch(r'(?:그럼\s*)?(?:그건|그 부분|차이는|동작 방식은|더 자세히|좀 더 자세히|왜 그런지)(?:\s*(?:설명해\s*줘|알려\s*줘))?[?？.! ]*',question):
+                question = self.last_document_question + ' ' + question
+            result = answer_documents(knowledge, question)
+            self.last_document_question = question[:350]
             return {'intent': None, 'reply': result['reply'], 'citations': result['citations']}
 
         def dialogue(state, runtime: Runtime[DialogueContext]):
@@ -106,7 +113,7 @@ class ConversationGraph:
         def route(state):
             kind = (state['intent'] or {}).get('intent')
             logger.debug('Agent route=%s', kind or ('edit' if state['edit'] else 'review_or_end'))
-            if kind == 'ask_docs':
+            if kind in ('ask_docs','explain_program'):
                 return 'docs'
             if kind in ('chat', 'clarify', 'identify', 'role_boundary', 'explain_menu'):
                 return 'dialogue'

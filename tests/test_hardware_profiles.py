@@ -149,7 +149,8 @@ class HardwareProfileTests(unittest.TestCase):
         self.assertFalse(self.session.bench_authorized)
         self.now += .31
         self.receive(**PCB)
-        self.assertEqual(self.session.radar_status()['reason'], 'RADAR_TIMEOUT')
+        self.assertEqual(self.session.radar_status()['reason'], 'RADAR_EVADE')
+        self.assertEqual(self.session.radar_status()['warning'], 'RADAR_TIMEOUT')
         with self.assertRaises(ValueError):
             self.session.authorize_bench()
 

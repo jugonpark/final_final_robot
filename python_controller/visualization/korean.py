@@ -88,7 +88,7 @@ MEANINGS={
  'RADAR_NOT_CONFIGURED':'레이더 Pi 주소 미설정',
  'RADAR_NO_DATA':'레이더 첫 응답 대기',
  'RADAR_SENSOR_UNKNOWN':'레이더 센서 상태 미확인',
- 'RADAR_TIMEOUT':'레이더 통신 만료',
+ 'RADAR_TIMEOUT':'레이더 수신 지연 경고 · 마지막 상태 유지',
  'RADAR_EVADE':'레이더 위험 감지',
  'RADAR_REBOOT':'레이더 Pi 서비스 재시작',
  'RADAR_HAZARD_REPORTED':'레이더 위험 이력 수신',

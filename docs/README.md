@@ -2,6 +2,8 @@
 
 ## 실행 경로
 
+브라우저 단독 중앙관제는 [run_web_control.bat](../run_web_control.bat)로 시작한다. HTML 화면과 Python 제어 엔진을 연결하고 기존 웹 Agent·RAG·미션 블록 기능을 유지한다. [Python·웹 기능 비교와 전환 범위](WEB_PYTHON_COMPARISON.md)
+
 | 구성 | 진입점과 관리 폴더 | 운영 문서 |
 | --- | --- | --- |
 | PC 중앙관제 | [웹 실행](../run_web.bat), [Qt 실행](../run_simulation.bat), [공용 런타임](../python_controller/dashboard_runtime.py), [웹 화면](../python_controller/web), [Qt 화면](../python_controller/visualization), [설정 스키마·기본값](../python_controller/config) | [대시보드](DASHBOARD_GUIDE.md) · [한국어 진단](KOREAN_DIAGNOSTICS_GUIDE.md) |

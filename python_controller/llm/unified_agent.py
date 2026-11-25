@@ -89,6 +89,8 @@ class RobotCommandFacade:
             'execution': f'실행 상태 {e.language.phase} · '
                          f'정지/보류 {ko("EMERGENCY_STOP" if e.c.estop_latched else data.get("stop_reason") or "UNKNOWN")}',
         }
+        if radar.get('warning'):
+            status['radar'] += ' · 수신 지연 경고 · 마지막 상태 유지 (이동 차단 사유와 별개)'
         if e.pending_mode:
             status['robot'] += f' · {MODE_LABELS.get(e.pending_mode, e.pending_mode)} 전환 대기'
         fault = telemetry.get('fault') or tr.get('fault')
@@ -123,7 +125,7 @@ class RobotCommandFacade:
         elif card['rotation']:
             reasons.append('각도 제어 미검증 · 전체 계획 실행 차단')
         else:
-            reasons.append('현재 버전의 Qt 운영자 승인 필요')
+            reasons.append('현재 버전의 새 운영자 승인 필요')
         suffix = '\n'.join(f'• {reason}' for reason in dict.fromkeys(reasons))
         return f'{self.get_status(target)}\n{suffix}'
 
@@ -380,22 +382,9 @@ class UnifiedAgent:
     def acknowledge_estop(self):
         """A separate, local operator event. Never called by an interpreted intent."""
         with self.engine.control_lock:
-            e = self.engine
-            if not e.c.estop_latched:
+            if not self.engine.c.estop_latched:
                 return
-            session, tr, radar, _ = self.bridge.live()
-            if e.release_future or e.pending_mode or e.language.busy or e.control_error or e.error:
-                raise ValueError('정지 처리와 관제 상태를 확인하세요.')
-            if e.client and (not session or movement_block(tr) or tr.get('distance_leased') or
-                             not tr.get('ready') or not tr.get('stop_verified') or
-                             radar.get('state') != 'CLEAR' or radar.get('blocked') is not False):
-                raise ValueError('정상 연결, 레이더 차단 해제 및 새 STOP 응답을 확인하세요.')
-            e.c.estop_latched = False
-            e.c.halt('PAUSED', 'OPERATOR_REARM_REQUIRED', True)
-            e.pending = None
-            e.hand_armed_once = True
-            e.follow_auto_arm = False
-            e.control_generation += 1
+            self.engine.acknowledge_estop()
             self._sync()
             self._append('assistant', '정지 상태를 확인했습니다. 제어를 재개하려면 새 입력이 필요합니다.')
 
@@ -456,11 +445,12 @@ class UnifiedAgent:
                 self._append('user', text)
                 self._append('assistant', reply)
                 return
-            if detail := program_detail(text):
+            document_followup = bool(getattr(self.graph,'last_document_question',None) and re.fullmatch(r'(?:그럼\s*)?(?:그건|그 부분|차이는|동작 방식은|더 자세히|좀 더 자세히|왜 그런지)(?:\s*(?:설명해\s*줘|알려\s*줘))?[?？.! ]*',text))
+            if not document_question(text) and not document_followup and (detail := program_detail(text)):
                 self._append('user', text)
                 self._append('assistant', detail, retain_in_dialogue=True)
                 return
-            if help_intent := menu_question(text):
+            if not document_question(text) and (help_intent := menu_question(text)):
                 self._append('user', text)
                 self._append('assistant', explain_menu(help_intent.menu), retain_in_dialogue=True)
                 return
@@ -468,7 +458,7 @@ class UnifiedAgent:
                 self._append('user', text)
                 self._append('assistant', self.bridge.get_status('radar'))
                 return
-            if program_question(text):
+            if not document_question(text) and program_question(text):
                 self._append('user', text)
                 self._append('assistant', self._describe_program(), retain_in_dialogue=True)
                 return

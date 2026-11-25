@@ -39,7 +39,7 @@ DOCUMENT_FIELDS = '''d.*, COALESCE(d.source_path, d.path) AS provenance_path, d.
 SOURCES = '''SELECT c.id, c.document_id, c.heading, c.heading AS title, c.heading AS section, c.page, c.line, c.body,
                     d.path, d.sha, COALESCE(d.source_digest, d.sha) AS source_sha256,
                     d.version, d.version AS revision, d.trust,
-                    d.effective_date, 0 AS reviewed_by_user, '0.2' AS index_version,
+                    d.effective_date, 0 AS reviewed_by_user, COALESCE(c.index_version,d.chunker_version) AS index_version, c.heading_path, c.chunk_hash, c.token_count, c.split_warning,
                     d.variant_id, d.source_kind, d.evidence_status, COALESCE(d.source_path, d.path) AS source_path
              FROM chunks c JOIN documents d ON d.id=c.document_id'''
 METADATA_COLUMNS = {
@@ -49,10 +49,19 @@ METADATA_COLUMNS = {
     'source_path': 'TEXT',
     'source_digest': 'TEXT',
     'effective_date': 'TEXT',
+    'embedding_status': "TEXT NOT NULL DEFAULT 'disabled'",
+    'embedding_done': 'INTEGER NOT NULL DEFAULT 0',
+    'embedding_total': 'INTEGER NOT NULL DEFAULT 0',
+    'embedding_error': 'TEXT',
+    'updated_at': 'TEXT',
+    'chunker_version': "TEXT NOT NULL DEFAULT 'legacy'",
+    'build_order': 'INTEGER NOT NULL DEFAULT 0',
+
 }
 SCOPED_STATUSES = {'hardware_reference': 'scoped', 'review_draft': 'review_only'}
 STOP_WORDS = set('문서 매뉴얼 설명서 알려줘 확인 어떻게 있나요 인가요 무엇 뭐야 설정값 대한 가이드 자료 참고 검색 하는지 관한 로봇'.split())
 ALIASES = (
+    ('프로그램', '아키텍처', 'architecture', '중앙관제'), ('qt','pyside6'),
     ('레이더', 'radar', 'iwr6843aop'), ('정지', 'stop', 'stopped'), ('긴급정지', '비상정지', 'estop', 'emergency_stop'),
     ('구동', '이동', 'motion'), ('통신', '연결', 'communication', 'connection', 'udp'),
     ('오류', 'fault', 'error'), ('초기화', 'reset_fault', 'reset'), ('대시보드', 'dashboard'),
@@ -98,13 +107,17 @@ def _extract(raw, extension):
     groups = []
     heading, start, lines = '본문', 1, []
     fenced = False
+    hierarchy = []
     for index, line in enumerate(text.splitlines(), 1):
         if line.lstrip().startswith('```'):
             fenced = not fenced
         title = re.match(r'^\s{0,3}#{1,6}\s+(.+?)\s*#*$', line) if extension == '.md' and not fenced else None
         if title:
             groups.append((heading, None, start, '\n'.join(lines)))
-            heading, start, lines = title[1], index, []
+            level = len(re.match(r'^\s{0,3}(#+)', line)[1])
+            hierarchy[:] = [(depth, text) for depth, text in hierarchy if depth < level]
+            hierarchy.append((level, title[1]))
+            heading, start, lines = ' / '.join(text for _, text in hierarchy), index+1, []
         else:
             lines.append(line)
     return [*groups, (heading, None, start, '\n'.join(lines))]
@@ -131,6 +144,8 @@ def query_terms(query):
     for group in ALIASES:
         if any(term in terms for term in group):
             terms.extend(group)
+    if re.search(r'우리\s*(?:프로그램|로봇|시스템)|(?:프로그램|시스템).{0,16}(?:설명|동작|구조)',query):
+        terms.extend(('esp32','pc','카메라','처리','제어','구조'))
     return list(dict.fromkeys(terms))[:32]
 
 
@@ -141,7 +156,8 @@ class KnowledgeLibrary:
         self.path, self.root = Path(path), Path(root)
         self._initialized = False
         self._init_lock = Lock()
-        self.vector = VectorRanker.configured(self.path.parent / 'knowledge-models')
+        self.cache = self.root / 'logs/knowledge-models' if (self.root / 'logs/knowledge-models').exists() else self.path.parent / 'knowledge-models'
+        self.vector = VectorRanker.configured(self.cache)
 
     @contextmanager
     def _db(self):
@@ -168,9 +184,17 @@ class KnowledgeLibrary:
                               WHERE trust='project_doc' AND variant_id='UNCLASSIFIED'""")
                 db.execute("""UPDATE documents SET source_kind='USER_UPLOAD', source_path=path
                               WHERE trust='user_reference' AND source_kind='REFERENCE'""")
+                chunk_columns = {row['name'] for row in db.execute('PRAGMA table_info(chunks)')}
+                for name, definition in {'heading_path':'TEXT','chunk_hash':'TEXT','token_count':'INTEGER','split_warning':'TEXT','active':'INTEGER NOT NULL DEFAULT 1','index_version':"TEXT NOT NULL DEFAULT 'legacy'"}.items():
+                    if name not in chunk_columns:
+                        db.execute(f'ALTER TABLE chunks ADD COLUMN {name} {definition}')
+                db.execute('CREATE TABLE IF NOT EXISTS chunk_group_cache(group_hash TEXT NOT NULL, chunker TEXT NOT NULL, chunks_json TEXT NOT NULL, PRIMARY KEY(group_hash,chunker))')
+                db.execute('CREATE TABLE IF NOT EXISTS embedding_cache(input_hash TEXT NOT NULL, model TEXT NOT NULL, vector BLOB NOT NULL, PRIMARY KEY(input_hash,model))')
             self._seed()
             self._remove_superseded_hardware()
             self._initialized = True
+            if self.vector is not None:
+                self.prepare_embeddings()
 
     def _remove_superseded_hardware(self):
         # Old citations must not reopen withdrawn or corrected evidence.
@@ -204,6 +228,25 @@ class KnowledgeLibrary:
             except (OSError, subprocess.SubprocessError):
                 continue
             self._ingest(path, raw, commit, 'project_doc' if commit else 'local_reference')
+        reference_dir = self.root / 'docs/user_reference'
+        try:
+            expected = self.root.resolve() / 'docs/user_reference'
+            references = list(reference_dir.glob('*.md')) if reference_dir.resolve() == expected else []
+        except (OSError, RuntimeError):
+            references = []
+        for reference in references:
+            try:
+                _check_name(reference.name)
+                if reference.is_symlink() or reference.resolve().parent != expected or not reference.is_file():
+                    continue
+                with reference.open('rb') as document:
+                    raw = document.read(MAX_DOCUMENT + 1)
+                if not raw or len(raw) > MAX_DOCUMENT:
+                    continue
+                # Reuse upload trust, validation and version retirement without re-entering _ready.
+                self._ingest(reference.name, raw, None, 'user_reference')
+            except (OSError, ValueError, RuntimeError):
+                continue
         # Local allowlist: seed only the curated excerpts, even before the worktree is committed.
         manifest_path = self.root / 'docs/hardware/SOURCE_MANIFEST.json'
         manifest = json.loads(manifest_path.read_text(encoding='utf-8-sig')) if manifest_path.is_file() else {}
@@ -237,6 +280,7 @@ class KnowledgeLibrary:
         digest = sha256(raw).hexdigest()
         version = version or digest
         args = (path, digest, version, trust)
+        desired_chunker = 'structure-e5-v2.1' if any(self.cache.glob('models--intfloat--multilingual-e5-small/snapshots/*/tokenizer.json')) else 'legacy-tokenizer-unavailable'
         indexed = SCOPED_STATUSES.get(trust, 'indexed')
         if metadata is None:
             if trust in ('project_doc', 'local_reference'):
@@ -246,13 +290,34 @@ class KnowledgeLibrary:
                 metadata = ('UNCLASSIFIED', 'USER_UPLOAD', 'UNVERIFIED', path)
         with self._db() as db:
             prior = db.execute('SELECT * FROM documents WHERE path=? AND sha=? AND version=? AND trust=?', args).fetchone()
-            if prior and prior['status'] == indexed:
+            if prior and prior['status'] == indexed and prior['chunker_version'] == desired_chunker:
                 return dict(prior)
         try:
             groups = _extract(raw, Path(path).suffix.lower())
             if SECRET.search(path) or any(SECRET.search(heading) or SECRET.search(body) for heading, _, _, body in groups):
                 raise KnowledgeError('민감 정보가 감지되어 문서를 색인하지 않았습니다.')
-            chunks = list(_chunks(groups))
+            from python_controller.knowledge.chunking import chunks as structured_chunks, VERSION
+            cache = self.cache
+            # A missing local tokenizer leaves the established FTS path available.
+            try:
+                chunks = []
+                for group in groups:
+                    group_hash = sha256((group[0]+'\n'+group[3]).encode()).hexdigest()
+                    with self._db() as db:
+                        saved = db.execute('SELECT chunks_json FROM chunk_group_cache WHERE group_hash=? AND chunker=?',(group_hash,VERSION)).fetchone()
+                    if saved:
+                        section = json.loads(saved['chunks_json'])
+                    else:
+                        relative_group = (group[0],None,0,group[3])
+                        section = list(structured_chunks([relative_group],cache))
+                        with self._db() as db:
+                            db.execute('INSERT OR IGNORE INTO chunk_group_cache VALUES(?,?,?)',(group_hash,VERSION,json.dumps(section,ensure_ascii=False)))
+                    for item in section:
+                        chunks.append({**item,'page':group[1],'line':None if group[2] is None else group[2]+item['line']})
+                chunker_version = VERSION
+            except (FileNotFoundError, ImportError, OSError, ValueError, RuntimeError):
+                chunks = [dict(heading=h.rsplit(' / ',1)[-1],heading_path=h,page=p,line=l,body=b,chunk_hash=sha256((h+'\n'+b).encode()).hexdigest(),token_count=None,split_warning='tokenizer_unavailable') for h,p,l,b in _chunks(groups)]
+                chunker_version = 'legacy-tokenizer-unavailable'
             if not chunks:
                 raise KnowledgeError('검색할 텍스트가 없습니다. 스캔 PDF는 텍스트가 있는 문서로 등록하세요.')
             if len(chunks) > 600:
@@ -260,31 +325,57 @@ class KnowledgeLibrary:
             status, detail = indexed, None
         except KnowledgeError as exc:
             status, detail, chunks = 'failed', str(exc), []
+        staging = self.vector is not None and status == indexed and indexed in ('indexed','scoped')
         with self._db() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT * FROM documents WHERE path=? AND sha=? AND version=? AND trust=?', args).fetchone()
-            if row and row['status'] == indexed:
+            if row and row['status'] == indexed and row['chunker_version'] == desired_chunker:
                 return dict(row)
-            if status == indexed:
+            if status == indexed and not staging:
                 db.execute("UPDATE documents SET status='outdated' WHERE path=? AND trust=? AND status IN (?, 'indexed')",
                            (path, trust, indexed))
+            stored_status = (row['status'] if row and row['status'] in ('indexed','scoped') else 'preparing') if staging else status
+            build_order = db.execute('SELECT COALESCE(MAX(build_order),0)+1 FROM documents').fetchone()[0]
             if row:
                 identifier = row['id']
                 db.execute('''UPDATE documents SET status=?, detail=?, variant_id=?, source_kind=?, evidence_status=?,
                               source_path=?, source_digest=?, effective_date=? WHERE id=?''',
-                           (status, detail, *metadata, source_digest, effective_date, identifier))
+                           (stored_status, detail, *metadata, source_digest, effective_date, identifier))
             else:
                 identifier = db.execute('''INSERT INTO documents(path, sha, version, trust, status, detail,
                                         variant_id, source_kind, evidence_status, source_path, source_digest, effective_date)
                                         VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
-                                        (*args, status, detail, *metadata, source_digest, effective_date)).lastrowid
-            has_chunks = db.execute('SELECT 1 FROM chunks WHERE document_id=? LIMIT 1', (identifier,)).fetchone()
+                                        (*args, stored_status, detail, *metadata, source_digest, effective_date)).lastrowid
+            target_active = 2 if staging else 1
+            if row and status == indexed and row['chunker_version'] != desired_chunker and not staging:
+                db.execute('UPDATE chunks SET active=0 WHERE document_id=?',(identifier,))
+            has_chunks = db.execute('SELECT 1 FROM chunks WHERE document_id=? AND active=? LIMIT 1', (identifier,target_active)).fetchone()
             if not has_chunks:
-                for heading, page, line, body in chunks:
+                for item in chunks:
+                    heading, page, line, body = (item[k] for k in ('heading','page','line','body'))
                     chunk = db.execute('INSERT INTO chunks(document_id, heading, page, line, body) VALUES(?,?,?,?,?)',
                                        (identifier, heading, page, line, body)).lastrowid
+                    db.execute('UPDATE chunks SET heading_path=?,chunk_hash=?,token_count=?,split_warning=?,active=?,index_version=? WHERE id=?',(item.get('heading_path',heading),item['chunk_hash'],item['token_count'],item['split_warning'],target_active,chunker_version,chunk))
                     db.execute('INSERT INTO chunk_search(rowid, path, title, body) VALUES(?,?,?,?)', (chunk, path, heading, body))
-            return dict(db.execute('SELECT * FROM documents WHERE id=?', (identifier,)).fetchone())
+            if status == indexed:
+                db.execute("UPDATE documents SET chunker_version=?,embedding_status=?,build_order=?,updated_at=datetime('now') WHERE id=?",(chunker_version,'pending' if self.vector else 'disabled',build_order,identifier))
+            result = dict(db.execute('SELECT * FROM documents WHERE id=?', (identifier,)).fetchone())
+        if status == indexed:
+            from python_controller.knowledge.indexing import schedule
+            schedule(self, identifier)
+        return result
+
+    def prepare_embeddings(self, *, wait=False):
+        self._ready()
+        from python_controller.knowledge.indexing import schedule
+        jobs = [schedule(self,row['id']) for row in self.documents() if row['status'] in ('indexed','scoped','preparing') and row['embedding_status'] != 'ready']
+        if wait:
+            return [job.result() for job in jobs if job is not None]
+        return jobs
+
+    def close(self):
+        for future in getattr(self,'_index_jobs',{}).values():
+            future.cancel()
 
     def documents(self):
         self._ready()
@@ -298,22 +389,22 @@ class KnowledgeLibrary:
                              (identifier,)).fetchone()
             return dict(row) if row else None
 
-    def search_robot_documents(self, query, *, limit=6):
+    def search_robot_documents(self, query, *, limit=6, mode=None, candidate_limit=20):
         variants = hardware_scope(query)
         if variants == ():
             raise KnowledgeError(clarification(query))
         if variants:
             results = []
             for variant in variants:
-                results.extend(self._search(query, variant, max(1, limit // len(variants))))
+                results.extend(self._search(query, variant, max(1, limit // len(variants)), mode, candidate_limit))
             return results[:limit]
-        return self._search(query, None, limit)
+        return self._search(query, None, limit, mode, candidate_limit)
 
-    def _search(self, query, variant, limit):
+    def _search(self, query, variant, limit, mode=None, candidate_limit=20):
         self._ready()
         with self._db() as db:
             if variant and (section := fact_section(query)):
-                rows = db.execute(SOURCES + " WHERE d.status='scoped' AND d.trust='hardware_reference'"
+                rows = db.execute(SOURCES + " WHERE c.active=1 AND d.status='scoped' AND d.trust='hardware_reference'"
                                   ' AND d.variant_id=? AND c.heading=? ORDER BY c.id LIMIT ?', (variant, section, limit)).fetchall()
                 return [dict(row) for row in rows]
         terms = query_terms(query)
@@ -325,14 +416,13 @@ class KnowledgeLibrary:
         if variant:
             match = '{title body} : (' + match + ')'
         with self._db() as db:
-            scope = ("d.status='scoped' AND d.trust='hardware_reference' AND d.variant_id=?" if variant else
-                     "d.status='indexed' AND d.trust NOT IN ('hardware_reference','review_draft')")
-            binds = (match, variant, max(12, limit)) if variant else (match, max(12, limit))
+            db.execute('BEGIN')  # One WAL read snapshot for lexical, dense and final source rows.
+            scope = ("c.active=1 AND d.status='scoped' AND d.trust='hardware_reference' AND d.variant_id=?" if variant else
+                     "c.active=1 AND d.status='indexed' AND d.trust NOT IN ('hardware_reference','review_draft')")
+            binds = (match, variant, max(candidate_limit, limit)) if variant else (match, max(candidate_limit, limit))
             rows = db.execute(SOURCES + ' JOIN chunk_search ON chunk_search.rowid=c.id'
                               ' WHERE chunk_search MATCH ? AND ' + scope +
                               ' ORDER BY bm25(chunk_search,2.0,3.0,1.0), c.id LIMIT ?', binds).fetchall()
             lexical = [dict(row) for row in rows]
-            if self.vector and not variant:
-                from python_controller.knowledge.vector import hybrid_rank
-                return hybrid_rank(db, query, lexical, self.vector, limit)
-            return lexical[:limit]
+            from python_controller.knowledge.retrieval import combine
+            return combine(self, db, query, lexical, variant=variant, limit=limit, mode=mode, candidate_limit=candidate_limit)

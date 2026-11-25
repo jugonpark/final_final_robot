@@ -1,0 +1,12 @@
+..................................................s........ [ 17%]
+.................................................s....................................................................................................................................... [ 72%]
+........................................... [ 85%]
+............................................... [ 99%]
+...                                                                      [100%]
+============================== warnings summary ===============================
+python_controller\monitoring.py:32
+  C:\Users\jugon\Desktop\LAST_DANCE\python_controller\monitoring.py:32: PytestCollectionWarning: cannot collect test class 'TestBook' because it has a __init__ constructor (from: tests/test_dashboard_core.py)
+    class TestBook:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+335 passed, 2 skipped, 2 deselected, 1 warning, 458 subtests passed in 293.79s (0:04:53)

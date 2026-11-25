@@ -1,0 +1,8 @@
+{
+  "source": "SYNTHETIC_PREVIEW",
+  "real_camera": false,
+  "hardware": false,
+  "samples": 438,
+  "p50_tick_gap_ms": 55.40024999936577,
+  "max_tick_gap_ms": 75.25160000659525
+}

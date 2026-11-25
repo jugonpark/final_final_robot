@@ -15,10 +15,10 @@
       <div><strong>D.I.G.</strong><span>로봇 미션 컨트롤</span></div>
     </div>
     <nav aria-label="중앙관제 메뉴">
-      <button type="button" data-page="ai" aria-current="page"><img src="/icons/chat.svg" alt="">미션 컨트롤</button>
+      <button type="button" data-page="ai" aria-current="page"><img src="/icons/chat.svg" alt="">AI 이동 계획</button>
+      <button type="button" data-page="camera"><img src="/icons/hand.svg" alt="">손동작 직접 제어</button>
       <button type="button" data-page="history"><img src="/icons/clock.svg" alt="">작업 이력</button>
       <button type="button" data-page="knowledge"><img src="/icons/file-text.svg" alt="">로봇 문서</button>
-      <button type="button" data-page="camera"><img src="/icons/hand.svg" alt="">카메라 · 손동작</button>
       <button type="button" data-page="manual"><img src="/icons/gamepad.svg" alt="">수동 제어</button>
       <button type="button" data-page="diagnostics"><img src="/icons/activity.svg" alt="">상태 · 진단</button>
       <button type="button" data-page="settings"><img src="/icons/settings.svg" alt="">설정</button>
@@ -28,13 +28,22 @@
   <main>
     <header class="topbar">
       <div class="topline"><strong id="page-title">미션 컨트롤</strong><span class="badge" id="esp32">ESP32 · 미확인</span><span class="badge camera-badge" id="camera-badge">카메라 · 대기</span><button class="danger" id="estop" type="button"><img src="/icons/stop.svg" alt="">긴급 정지 <kbd>Space</kbd></button></div>
+      <div class="operator-bar">
+        <div class="owner-controls" role="group" aria-label="실제 이동 제어권">
+          <span>이동 제어권</span><button type="button" class="outline" data-owner="GESTURE_DIRECT" aria-pressed="false" disabled>손동작</button><button type="button" class="outline" data-owner="LLM_COMMAND" aria-pressed="false" disabled>AI 계획</button>
+        </div>
+        <button type="button" class="outline" id="camera-power" aria-pressed="false">카메라 켜기</button>
+        <p class="muted" id="owner-switch-state" role="status">이동 제어권 · 서버 연결 확인 중</p>
+      </div>
       <div class="safety" id="safety" data-tone="warn"><img src="/icons/shield.svg" alt=""><strong id="radar">레이더 UNKNOWN · 이동 차단</strong><span id="stop-proof">ESP32 정지 미확인</span><button class="outline" type="button" data-command="radar_rearm" id="web-radar-rearm" hidden>레이더 해제 확인</button><button class="outline" type="button" data-command="acknowledge_estop" id="web-estop-reset" hidden>긴급 정지 확인</button></div>
+      <p class="announcement muted" id="radar-link-warning" role="status" hidden></p>
+      <p class="announcement muted" id="auto-recovery" role="status">자동 해제 상태 확인 중</p>
       <p class="announcement muted" id="announcement" role="status"></p>
     </header>
     <div class="content">
       <section data-panel="ai">
         <h1>미션 컨트롤</h1>
-        <p class="intro">대화로 이동 계획을 만들고, 예상 경로와 장치가 보고한 실행 결과를 확인하세요.</p>
+        <p class="intro">손동작 제어 중에도 계획을 만들고 편집할 수 있습니다. 실제 실행은 AI 계획 제어권으로 전환한 뒤 별도로 승인하세요.</p>
         <div class="mission-layout">
           <article class="card conversation">
             <header class="chat-header">
@@ -78,7 +87,7 @@
               <p class="warning" id="rotate" hidden>각도 제어 미검증 · 회전 계획 실행 차단</p>
               <p id="draft-feedback" class="muted" role="status"></p>
               <div class="plan-actions">
-                <p class="muted" id="approval-note"><img src="/icons/lock.svg" alt=""><span id="draft-review-state">실물 실행 승인 · Qt 관제</span></p>
+                <p class="muted" id="approval-note"><img src="/icons/lock.svg" alt=""><span id="draft-review-state">실물 실행 승인 · 연결 상태 확인 중</span></p>
                 <div class="actions"><button type="button" class="outline" id="discard" disabled>초안 비우기</button><button type="button" class="primary" id="request-review" aria-describedby="approval-note" hidden disabled>실행 요청</button><button type="button" class="primary" id="web-approve" hidden disabled>실물 실행 승인</button></div>
               </div>
             </div>
@@ -122,7 +131,7 @@
                 <button class="outline" type="button" id="open-history">작업 이력 열기</button>
               </div>
             </article>
-            <details class="card mission-safety"><summary>안전 상세</summary><div class="card-body"><dl id="ai-safety" class="data"></dl><p class="warning">웹 시뮬레이션 · 실물 이동 차단</p></div></details>
+            <details class="card mission-safety"><summary>안전 상세</summary><div class="card-body"><dl id="ai-safety" class="data"></dl><p class="warning" id="runtime-safety" role="status">서버 연결 확인 중 · 이동 차단</p></div></details>
           </div>
         </div>
       </section>
@@ -135,9 +144,9 @@
         </div>
       </section>
       <section data-panel="camera" hidden>
-        <div class="intro-row"><div><h1>카메라 · 손동작</h1><p class="intro">영상과 인식 결과를 확인하세요. 이 화면을 벗어나면 카메라가 꺼집니다.</p></div><div class="segments" aria-label="카메라 모드"><button type="button" data-camera="direct" aria-pressed="true">손동작 직접 제어</button><button type="button" data-camera="follow" aria-pressed="false">사람 추종</button></div></div>
+        <div class="intro-row"><div><h1>카메라 · 손동작</h1><p class="intro">상단에서 카메라를 켜면 다른 화면에서도 인식을 유지합니다. 손동작 제어권으로 전환한 뒤 별도로 활성화하세요. 카메라 끄기 또는 관제 탭 숨김 시 영상을 해제합니다.</p></div><div class="segments" aria-label="카메라 모드"><button type="button" data-camera="direct" aria-pressed="true">손동작 직접 제어</button><button type="button" data-camera="follow" aria-pressed="false">사람 추종</button></div></div>
         <div class="columns camera-columns">
-          <article class="card"><div class="camera-header"><h2><img src="/icons/camera.svg" alt="">실시간 인식 화면</h2><button type="button" class="outline" id="camera-power">카메라 켜기</button></div><div class="card-body"><div class="feed" id="feed"><img id="frame" alt="카메라 영상" hidden><svg id="landmarks" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"></svg><div class="overlays" id="overlays"></div><span class="feed-label" id="feed-label">카메라 꺼짐</span></div><p class="muted caption" id="frame-detail">FPS — · 처리 —</p></div></article>
+          <article class="card"><div class="camera-header"><h2><img src="/icons/camera.svg" alt="">실시간 인식 화면</h2></div><div class="card-body"><div class="feed" id="feed"><img id="frame" alt="카메라 영상" hidden><svg id="landmarks" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"></svg><div class="overlays" id="overlays"></div><span class="feed-label" id="feed-label">카메라 꺼짐</span></div><p class="muted caption" id="frame-detail">FPS — · 처리 —</p></div></article>
           <div class="stack">
             <article class="card"><h2><img src="/icons/hand.svg" alt="">인식 결과</h2><div class="card-body"><p class="recognition" id="gesture">인식 대기</p><dl id="camera-details" class="data"></dl><h3>현재 모드 가이드</h3><dl class="data" id="guide"></dl></div></article>
             <article class="card" id="follow-controls" hidden><h2><img src="/icons/eye.svg" alt="">사람 추종</h2><div class="card-body"><p class="muted">영상에서 사람을 선택한 후 추종을 시작하세요.</p><div class="actions"><button type="button" class="primary" data-command="resume_follow" id="follow-start" disabled>추종 시작 / 재개</button><button type="button" data-command="pause">일시정지</button><button type="button" data-command="clear_target">목표 해제</button></div></div></article>
@@ -170,7 +179,7 @@
       </section>
       <section data-panel="manual" hidden>
         <h1>수동 제어</h1><p class="intro">로봇 이동 방향과 바퀴 피드백을 확인합니다.</p>
-        <div class="columns"><article class="card"><h2><img src="/icons/gamepad.svg" alt="">본체 방향 제어</h2><div class="card-body"><div class="pad"><button type="button" data-jog="TURN_LEFT" disabled><img src="/icons/rotate-left.svg" alt="">좌회전</button><button type="button" data-jog="FORWARD" disabled><img src="/icons/arrow-up.svg" alt="">전진</button><button type="button" data-jog="TURN_RIGHT" disabled><img src="/icons/rotate-right.svg" alt="">우회전</button><button type="button" data-jog="LEFT" disabled><img src="/icons/arrow-left.svg" alt="">좌측</button><button type="button" class="danger" data-command="estop"><img src="/icons/stop.svg" alt="">정지</button><button type="button" data-jog="RIGHT" disabled><img src="/icons/arrow-right.svg" alt="">우측</button><button type="button" class="back" data-jog="BACKWARD" disabled><img src="/icons/arrow-down.svg" alt="">후진</button></div><p class="warning" id="web-manual-help">Qt 공유 관제에서 수동 조작을 사용할 수 있습니다.</p></div></article><div class="stack"><article class="card"><h2><img src="/icons/shield.svg" alt="">구동 준비</h2><dl class="card-body data" id="manual-safety"></dl></article><article class="card"><h2><img src="/icons/activity.svg" alt="">바퀴 상태</h2><div class="card-body"><div id="motor-summary" class="wheel-summary"></div></div></article></div></div>
+        <div class="columns"><article class="card"><h2><img src="/icons/gamepad.svg" alt="">본체 방향 제어</h2><div class="card-body"><div class="pad"><button type="button" data-jog="TURN_LEFT" disabled><img src="/icons/rotate-left.svg" alt="">좌회전</button><button type="button" data-jog="FORWARD" disabled><img src="/icons/arrow-up.svg" alt="">전진</button><button type="button" data-jog="TURN_RIGHT" disabled><img src="/icons/rotate-right.svg" alt="">우회전</button><button type="button" data-jog="LEFT" disabled><img src="/icons/arrow-left.svg" alt="">좌측</button><button type="button" class="danger" data-command="estop"><img src="/icons/stop.svg" alt="">정지</button><button type="button" data-jog="RIGHT" disabled><img src="/icons/arrow-right.svg" alt="">우측</button><button type="button" class="back" data-jog="BACKWARD" disabled><img src="/icons/arrow-down.svg" alt="">후진</button></div><p class="warning" id="web-manual-help">제어 연결 상태를 확인한 뒤 수동 조작을 시작하세요.</p></div></article><div class="stack"><article class="card"><h2><img src="/icons/shield.svg" alt="">구동 준비</h2><dl class="card-body data" id="manual-safety"></dl></article><article class="card"><h2><img src="/icons/activity.svg" alt="">바퀴 상태</h2><div class="card-body"><div id="motor-summary" class="wheel-summary"></div></div></article></div></div>
         <article class="card gap" id="web-wheel-test" hidden><h2><img src="/icons/activity.svg" alt="">바퀴별 시험</h2><div class="card-body">
           <label><input id="web-wheels-lifted" type="checkbox">세 바퀴를 띄워 고정했습니다</label>
           <div class="actions"><button type="button" class="outline" data-jog="M1" disabled>M1 누름 시험</button><button type="button" class="outline" data-jog="M2" disabled>M2 누름 시험</button><button type="button" class="outline" data-jog="M3" disabled>M3 누름 시험</button><button type="button" class="outline" id="web-turn-test" disabled>저속 좌회전 0.5초</button></div>
@@ -192,6 +201,13 @@
       </section>
     </div>
   </main>
+  <dialog id="control-confirm-dialog" aria-labelledby="control-confirm-title" aria-describedby="control-confirm-message">
+    <form method="dialog" class="clear-chat-form">
+      <h2 id="control-confirm-title">운영자 확인</h2>
+      <p id="control-confirm-message"></p>
+      <div class="actions"><button value="cancel" autofocus>취소</button><button class="primary" value="confirm">확인</button></div>
+    </form>
+  </dialog>
   <dialog id="clear-chat-dialog" aria-labelledby="clear-chat-title">
     <form method="dialog" class="clear-chat-form">
       <h2 id="clear-chat-title">대화 기록을 삭제할까요?</h2>

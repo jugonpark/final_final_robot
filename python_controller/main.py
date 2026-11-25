@@ -121,9 +121,10 @@ def main(argv=None):
     parser.add_argument('--demo',action='store_true',help='Synthetic, headless, dependency-free control demo; never sends UDP')
     parser.add_argument('--ui',choices=('opencv','dashboard','web'),default='opencv',help='Select the OpenCV, Qt or local web console')
     parser.add_argument('--web-camera',action='store_true',help='Use the local camera in the web simulation instead of the synthetic preview')
+    parser.add_argument('--web-control', action='store_true', help='Enable browser-only control; connect to hardware explicitly in the web console')
     parser.add_argument('--web-port',type=int,default=8765,help='Local web console port')
     parser.add_argument('--share-web', action='store_true', help='Serve the live Qt control session on localhost')
-    parser.add_argument('--open-web', action='store_true', help='Open the shared console in the default browser')
+    parser.add_argument('--open-web', action='store_true', help='Open the web console in the default browser')
     parser.add_argument('--agent-enabled',action='store_true',help='Enable the opt-in unified conversation agent')
     parser.add_argument('--dashboard-preview',action='store_true',help='Clearly labeled synthetic dashboard; no hardware allowed')
     parser.add_argument('--smoke-seconds',type=float,help='Close dashboard after this many seconds (0.1 to 60)')
@@ -148,8 +149,10 @@ def main(argv=None):
         parser.error('--radarless-bench requires the live Qt dashboard')
     if args.share_web and (args.ui != 'dashboard' or args.demo or args.dashboard_preview or args.radarless_bench):
         parser.error('--share-web requires the regular live Qt dashboard')
-    if args.open_web and not args.share_web:
-        parser.error('--open-web requires --share-web')
+    if args.web_control and (args.ui != 'web' or args.demo or args.mode != 'SIMULATION'):
+        parser.error('--web-control requires --ui web and the default SIMULATION startup; connect in the browser')
+    if args.open_web and not (args.share_web or (args.ui == 'web' and not args.demo)):
+        parser.error('--open-web requires --ui web or --share-web')
     try:
         config = load_config(args.config, radar_path=RADAR_SETTINGS if args.ui in ('dashboard','web') else None)
         if args.esp32_host: config['communication']['host'] = args.esp32_host
@@ -162,7 +165,8 @@ def main(argv=None):
         if args.demo: return demo(config)
         if args.ui=='web':
             from python_controller.web_dashboard import run_web_dashboard
-            return run_web_dashboard(config,camera=args.web_camera,port=args.web_port,agent_enabled=args.agent_enabled)
+            return run_web_dashboard(config,camera=args.web_camera,port=args.web_port,agent_enabled=args.agent_enabled,
+                                     control=args.web_control,open_web=args.open_web)
         if args.ui=='dashboard':
             from python_controller.visualization.dashboard import run_dashboard
             return run_dashboard(config,args.mode=='HARDWARE',args.dashboard_preview,args.smoke_seconds,args.agent_enabled,

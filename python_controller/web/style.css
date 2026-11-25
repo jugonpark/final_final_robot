@@ -52,6 +52,13 @@ main{margin-left:var(--rail);min-width:0}
 .topbar{position:sticky;z-index:3;top:0;background:var(--app);padding:16px 26px 0}
 .topline{display:flex;align-items:center;gap:8px;min-height:56px;background:#0b1d32;border-bottom:1px solid var(--border);padding:8px 12px;border-radius:10px 10px 0 0}
 .topline strong{margin-right:auto;font-size:16px}
+.operator-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;padding-top:10px}
+.owner-controls{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.owner-controls>span{font-size:14px;color:var(--muted)}
+.operator-bar button{min-height:38px;padding:6px 12px}
+.owner-controls button[aria-pressed=true]{--button-bg:#183e70;--button-border:#3d77ae;color:var(--text)}
+#camera-power{margin-left:auto}
+#owner-switch-state{flex-basis:100%;font-size:13px;overflow-wrap:anywhere}
 .badge{padding:7px 10px;background:var(--raised);border:1px solid var(--border);border-radius:8px;white-space:nowrap;font-size:12px}
 kbd{font-size:11px;font-family:inherit;border:1px solid #ff9aa5;border-radius:4px;padding:1px 4px}
 .safety{margin-top:10px;padding:10px 13px;min-height:44px;border:1px solid #395570;background:#152b43;border-radius:9px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13px}
@@ -78,8 +85,8 @@ h3{font-size:13px;margin:14px 0 5px}
 .chat-header h2{border:0;padding:0}
 .chat-mode{margin-left:auto;font-size:12px;color:var(--muted);text-align:right}
 #clear-chat{flex:none;min-height:34px;padding:4px 8px;font-size:12px}
-#clear-chat-dialog{width:min(420px,calc(100% - 32px));padding:20px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px}
-#clear-chat-dialog::backdrop{background:#0009}
+#clear-chat-dialog,#control-confirm-dialog{width:min(420px,calc(100% - 32px));padding:20px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px}
+#clear-chat-dialog::backdrop,#control-confirm-dialog::backdrop{background:#0009}
 .clear-chat-form{display:grid;gap:14px}
 .clear-chat-form h2{border:0;padding:0}
 .clear-chat-form .actions{justify-content:flex-end}

@@ -1,4 +1,4 @@
-"""Local web console for simulation or an explicitly shared Qt session."""
+"""Local HTML console backed by the existing Python control engine."""
 import base64
 import binascii
 import json
@@ -27,21 +27,45 @@ STATIC = ROOT / 'web'
 ICONS = ROOT / 'visualization' / 'assets' / 'icons'
 CAMERA_VIEW_TIMEOUT_S = 3.0
 WEB_VISION_LEASE_S = 1.0
+OPERATOR_TIMEOUT_S = 1.5
 
 
 class WebDashboard:
-    def __init__(self, engine, stream_factory, agent=None, *, shared_stream=None, settings_dir=ROOT.parent / 'settings'):
+    def __init__(self, engine, stream_factory, agent=None, *, shared_stream=None, control_enabled=False, settings_dir=ROOT.parent / 'settings'):
         self.engine = engine
         self.stream_factory = stream_factory
         self.stream = shared_stream
         self.closing_stream = None
         self.shared = shared_stream is not None
+        if control_enabled and engine.source != 'LIVE_CAMERA':
+            raise ValueError('합성 미리보기에서는 실물 웹 관제를 사용할 수 없습니다.')
+        self.control_available = self.shared or control_enabled
+        self.operator_until = None
+        if control_enabled:
+            engine.browser_operator_required = True
         self.settings_dir = settings_dir
         self.manual_hold = None
         self.camera_views = {}
         self.camera_started_at = 0
         self.plan = None
         self.agent = agent
+
+    @property
+    def operator_ready(self):
+        return self.shared or (self.control_available and self.operator_until is not None and
+                               monotonic() < self.operator_until)
+
+    def _supervise_operator(self):
+        if not self.shared and self.operator_until is not None and monotonic() >= self.operator_until:
+            self.operator_until = None
+            self.manual_hold = None
+            # ESTOP also invalidates queued approvals and cancels backend-leased LLM motion.
+            self.engine.request('ESTOP')
+            self.engine.notice = '브라우저 연결이 끊겨 긴급 정지했습니다. 정지 확인 후 새 입력이 필요합니다.'
+
+    def _require_operator(self):
+        if not self.operator_ready:
+            raise ValueError('활성 브라우저 관제 화면과 운영자 연결을 확인하세요.')
 
     def _stop_camera(self):
         self.closing_stream, self.stream = self.stream, None
@@ -55,6 +79,7 @@ class WebDashboard:
 
     def update_camera(self):
         """Reconcile browser requests under the same lock as the next perception tick."""
+        self._supervise_operator()
         now = monotonic()
         self.camera_views = {viewer: expires for viewer, expires in self.camera_views.items() if expires > now}
         if self.stream is not None and not self.camera_views:
@@ -83,6 +108,7 @@ class WebDashboard:
 
     def state(self):
         with self.engine.control_lock:
+            self._supervise_operator()
             data, result = self.engine.render_state()
             data = data or {}
             tr = data.get('transport', {})
@@ -101,12 +127,16 @@ class WebDashboard:
             if radar['blocked'] and tr.get('recovery_state') == 'SESSION_CONFLICT':
                 movement_reason += ' · ' + ko('SESSION_CONFLICT')
             prepared = bool(tr.get('connected') and tr.get('ready') and tr.get('stop_verified') and
-                            not blocker and not estop and not self.engine.control_error)
+                            not blocker and not estop and not self.engine.control_error and
+                            (not self.control_available or self.operator_ready))
             return {
                 'source': self.engine.source, 'owner': self.engine.active_control_mode,
-                'shared_control': self.shared, 'session_open': bool(self.engine.client or self.engine.release_future),
+                'pending_mode': self.engine.pending_mode, 'auto_recovery': self.engine.auto_recovery,
+                'shared_control': self.shared, 'control_available': self.control_available,
+                'runtime_kind': 'qt_shared' if self.shared else 'browser_control' if self.control_available else 'simulation',
+                'operator_ready': self.operator_ready, 'session_open': bool(self.engine.client or self.engine.release_future),
                 'movement_reason': movement_reason, 'movement_ready': prepared,
-                'radar_can_rearm': bool(self.shared and self.engine.shared_session and radar['blocked'] and
+                'radar_can_rearm': bool(self.control_available and self.engine.shared_session and radar['blocked'] and
                                         radar['state'] == 'CLEAR' and tr.get('stop_verified') and not self.engine.language.executing),
                 'state': ko(data.get('state', 'STARTING')), 'stop_code': code, 'stop_reason': ko(code),
                 'connected': bool(tr.get('connected')), 'ready': bool(tr.get('ready')),
@@ -187,6 +217,13 @@ class WebDashboard:
         action = body.get('action')
         engine = self.engine
         with engine.control_lock:
+            self._supervise_operator()
+            if action == 'operator_heartbeat':
+                if not self.control_available or self.shared:
+                    raise ValueError('독립 웹 관제에서만 운영자 연결을 갱신할 수 있습니다.')
+                self.operator_until = monotonic() + OPERATOR_TIMEOUT_S
+                engine.operator_alive()
+                return {'operator_ready': True}
             if action == 'estop':
                 if self.agent:
                     self.agent.emergency()
@@ -203,9 +240,9 @@ class WebDashboard:
                 else:
                     engine.save_radar_source(self.settings_dir / 'radar.json', body.get('address'))
                 return {'message': engine.notice}
-            if self.shared and action in ('disconnect_robot', 'manual_release'):
+            if self.control_available and action in ('disconnect_robot', 'manual_release'):
                 return self._shared_command(action, body)
-            unavailable = engine.control_error or (not self.shared and (engine.client or engine.language.executing))
+            unavailable = engine.control_error or (not self.control_available and (engine.client or engine.language.executing))
             if action == 'camera_power':
                 viewer, enabled = body.get('viewer'), body.get('enabled')
                 if not isinstance(viewer, str) or not re.fullmatch('[0-9a-f]{32}', viewer) or type(enabled) is not bool:
@@ -218,7 +255,7 @@ class WebDashboard:
                     self.camera_views[viewer] = now + CAMERA_VIEW_TIMEOUT_S
                 else:
                     self.camera_views.pop(viewer, None)
-                    if self.shared and engine.web_vision and engine.web_vision[0] == viewer:
+                    if self.control_available and engine.web_vision and engine.web_vision[0] == viewer:
                         engine.request('PAUSE')
                 if self.shared:
                     return {'message': '공유 카메라 보기를 갱신했습니다.'}
@@ -229,7 +266,7 @@ class WebDashboard:
                 return {'message': '카메라를 요청했습니다.' if enabled else '카메라 보기를 종료했습니다.'}
             if unavailable:
                 raise ValueError('현재 관제 상태에서는 요청할 수 없습니다.')
-            if self.shared and action in ('connect_robot', 'select_mode', 'radar_rearm',
+            if self.control_available and action in ('connect_robot', 'select_mode', 'radar_rearm',
                                            'manual_prepare', 'manual_hold', 'acknowledge_estop',
                                            'agent_approve', 'activate_hand', 'recover_robot', 'test_turn'):
                 return self._shared_command(action, body)
@@ -259,17 +296,19 @@ class WebDashboard:
             if action == 'pause':
                 engine.request('PAUSE')
             elif action == 'clear_target':
-                if self.shared and engine.client:
+                if self.control_available and engine.client:
                     engine.request('PAUSE')
                 engine.request('CLEAR')
             elif action in ('select_target', 'resume_follow'):
                 self._follow(action, body)
             else:
                 raise ValueError('이 명령은 웹 관제 1차에서 지원하지 않습니다.')
-        return {'message': '관제에 요청을 전달했습니다.' if self.shared else '시뮬레이션 제어 요청을 전달했습니다.'}
+        return {'message': '관제에 요청을 전달했습니다.' if self.control_available else '시뮬레이션 제어 요청을 전달했습니다.'}
 
     def _shared_command(self, action, body):
         engine = self.engine
+        if action not in ('disconnect_robot', 'manual_release'):
+            self._require_operator()
         if action == 'connect_robot':
             if body.get('confirmed') is not True:
                 raise ValueError('ESP32 통신 연결을 확인하세요.')
@@ -292,18 +331,22 @@ class WebDashboard:
             hand = engine.hand
             engine.configure_hand(confidence=hand.confidence, frames=hand.min_frames, hold=hand.hold, mapping=hand.mapping)
             self._lease_vision(body['viewer'])
-        elif action == 'acknowledge_estop' and self.agent:
-            self.agent.acknowledge_estop()
+        elif action == 'acknowledge_estop':
+            if self.agent:
+                self.agent.acknowledge_estop()
+            else:
+                engine.acknowledge_estop()
         elif action == 'agent_approve' and self.agent:
             self.agent.review(body.get('plan_id'), body.get('revision'), approve=True,
                               operator_confirmed=body.get('confirmed') is True)
         elif action in ('manual_prepare', 'manual_hold', 'manual_release'):
             return self._manual_command(action, body)
         else:
-            raise ValueError('현재 공유 관제에서 사용할 수 없는 명령입니다.')
+            raise ValueError('현재 중앙관제에서 사용할 수 없는 명령입니다.')
         return {'message': '중앙관제에 요청을 전달했습니다.'}
 
     def _check_vision_operator(self, body, owner):
+        self._require_operator()
         engine = self.engine
         viewer = body.get('viewer')
         if (not isinstance(viewer, str) or self.camera_views.get(viewer, 0) <= monotonic() or
@@ -368,10 +411,10 @@ class WebDashboard:
                 or not max(now-age_limit, self.camera_started_at) <= selected_at <= frame.timestamp):
             raise ValueError('최신 영상에서 추종 대상을 다시 선택하세요.')
         if action == 'resume_follow':
-            if self.shared and engine.client:
+            if self.control_available and engine.client:
                 self._check_vision_operator(body, 'GESTURE_FOLLOW')
             engine.resume_follow()
-            if self.shared and engine.client:
+            if self.control_available and engine.client:
                 self._lease_vision(body['viewer'])
         else:
             engine.request('SELECT', target)
@@ -538,21 +581,31 @@ def handler(web, port):
     return Handler
 
 
-def run_web_dashboard(config, *, camera=False, port=8765, agent_enabled=False):
+def run_web_dashboard(config, *, camera=False, port=8765, agent_enabled=False, control=False, open_web=False):
     if not 1 <= port <= 65535:
         raise ValueError('웹 관제 포트는 1~65535여야 합니다.')
     if not config['communication']['host']:
         config['communication']['host'] = load_connection(ROOT.parent / 'settings' / 'connection.json')
+    camera = camera or control
     engine = DashboardEngine(config, ROOT.parent / 'logs', 'LIVE_CAMERA' if camera else 'SYNTHETIC_PREVIEW', logger=False)
     engine.central_ui = True
-    web = WebDashboard(engine, (lambda: VisionStream(config)) if camera else PreviewStream)
+    web = WebDashboard(engine, (lambda: VisionStream(config)) if camera else PreviewStream, control_enabled=control)
     try:
         if agent_enabled:
             from python_controller.llm.unified_agent import UnifiedAgent
             web.agent = UnifiedAgent(engine)
-        with ThreadingHTTPServer(('127.0.0.1', port), handler(web, port)) as server:
+        with ThreadingHTTPServer(('127.0.0.1', port), None) as server:
+            server.RequestHandlerClass = handler(web, server.server_port)
             engine.start_control_loop(web.update_camera, on_exit=web.stop_camera_views)
-            print(f'D.I.G. Web · http://127.0.0.1:{port}', flush=True)
+            url = f'http://127.0.0.1:{server.server_port}/'
+            print(f'D.I.G. Web · {url}', flush=True)
+            if open_web:
+                import webbrowser
+                try:
+                    if not webbrowser.open(url):
+                        print('브라우저에서 위 주소를 열어 주세요.', flush=True)
+                except (OSError, webbrowser.Error):
+                    print('브라우저에서 위 주소를 열어 주세요.', flush=True)
             server.serve_forever()
     except KeyboardInterrupt:
         pass

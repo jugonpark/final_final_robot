@@ -98,29 +98,27 @@ class RadarPublisherTests(unittest.TestCase):
 
 
 class RadarStateTests(unittest.TestCase):
-    def test_receive_worker_real_loopback_times_out_after_sender_closes(self):
+    def test_receive_worker_keeps_receiving_and_warns_after_sender_stops(self):
         gate = SafetySupervisor('127.0.0.1', .15)
-        receiver = RadarReceiver(gate)
-        original_bind = socket.socket.bind
-        def local_bind(sock, address):
-            return original_bind(sock, ('127.0.0.1', 0) if address==('',8891) else address)
-        with patch.object(socket.socket, 'bind', local_bind):
-            receiver.start()
-        self.addCleanup(receiver.close)
-        self.assertIsNotNone(receiver.thread)
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as pi:
-            pi.sendto(radar(1), receiver.sock.getsockname())
-        def wait_for(check):
-            deadline = time.monotonic()+1
-            while time.monotonic()<deadline:
-                if check():
-                    return
-                time.sleep(.005)
-            self.fail('Expected radar worker state')
-        wait_for(lambda: gate.snapshot(time.monotonic())['state']=='CLEAR')
-        gate.rearm(time.monotonic())
-        wait_for(lambda: gate.latched)
-        self.assertEqual(gate.reason,'RADAR_TIMEOUT')
+        receiver = RadarReceiver(gate, clock=Mock(side_effect=[1., 1.2, 1.4]))
+        receiver.sock = Mock()
+        count = [0]
+        def receive(_):
+            count[0] += 1
+            if count[0] == 1:
+                return radar(1), ('127.0.0.1', 12345)
+            if count[0] == 2:
+                gate.rearm(1.)
+            else:
+                receiver.done.set()
+            raise socket.timeout()
+        receiver.sock.recvfrom.side_effect = receive
+        receiver._receive()
+        state = gate.snapshot(1.4)
+        self.assertEqual(receiver.sock.recvfrom.call_count, 3)
+        self.assertEqual(state['state'], 'CLEAR')
+        self.assertFalse(state['blocked'])
+        self.assertEqual(state['warning'], 'RADAR_TIMEOUT')
 
     def test_source_sequence_timeout_reboot_and_rearm(self):
         gate = SafetySupervisor(PI, .30)
@@ -129,10 +127,10 @@ class RadarStateTests(unittest.TestCase):
         gate.receive(radar(10), PI, 1.)
         gate.rearm(1.)
         self.assertFalse(gate.receive(radar(9), PI, 1.2))
-        self.assertTrue(gate.snapshot(1.31)['blocked'])
-        self.assertEqual(gate.snapshot(1.31)['reason'], 'RADAR_TIMEOUT')
+        self.assertFalse(gate.snapshot(1.31)['blocked'])
+        self.assertEqual(gate.snapshot(1.31)['warning'], 'RADAR_TIMEOUT')
         gate.receive(radar(11), PI, 1.32)
-        self.assertTrue(gate.snapshot(1.32)['blocked'])
+        self.assertFalse(gate.snapshot(1.32)['blocked'])
         gate.rearm(1.32)
         gate.receive(radar(1, boot=2), PI, 1.33)
         self.assertEqual(gate.snapshot(1.33)['reason'], 'RADAR_REBOOT')
@@ -244,6 +242,12 @@ class RadarMotionTests(unittest.TestCase):
 
         fixture.receive(**dict(wire_fixture.V2, motion_permit=False))
         engine.tick(None, fixture.now)
+        self.assertTrue(gate.snapshot(fixture.now)['blocked'])
+        for seq in range(4, 10):
+            fixture.now += .18
+            gate.receive(radar(seq, 'CLEAR', epoch=1), PI, fixture.now)
+            fixture.receive(**dict(wire_fixture.V2, motion_permit=False))
+            engine.tick(None, fixture.now)
         self.assertFalse(gate.snapshot(fixture.now)['blocked'])
         self.assertFalse(session.armed)
         session.tick()
@@ -255,29 +259,23 @@ class RadarMotionTests(unittest.TestCase):
 
         fixture.now += gate.timeout + .01
         session.tick()
-        gate.receive(radar(4, 'CLEAR', epoch=1), PI, fixture.now)
-        fixture.receive(**dict(wire_fixture.V2, motion_permit=False))
-        engine.tick(None, fixture.now)
-        self.assertEqual(gate.snapshot(fixture.now)['reason'], 'RADAR_TIMEOUT')
-        self.assertTrue(gate.snapshot(fixture.now)['blocked'])
+        self.assertEqual(gate.snapshot(fixture.now)['warning'], 'RADAR_TIMEOUT')
+        self.assertFalse(gate.snapshot(fixture.now)['blocked'])
+        gate.receive(radar(10, 'CLEAR', epoch=1), PI, fixture.now)
+        self.assertTrue(gate.snapshot(fixture.now)['fresh'])
 
-    def test_silent_link_and_pi_reboot_send_stop_without_operator_poll(self):
-        for trigger in ('RADAR_TIMEOUT','RADAR_REBOOT'):
-            with self.subTest(trigger=trigger):
-                fixture, session, gate = self.ready_wire()
-                session.operator_alive()
-                session.begin_hold('FORWARD')
-                session.tick()
-                self.assertEqual(session.tx.sent[-1]['type'], 'cmd_vel')
-                if trigger == 'RADAR_TIMEOUT':
-                    fixture.now += gate.timeout
-                else:
-                    gate.receive(radar(1, boot=2), PI, fixture.now)
-                session.tick()
-                self.assertEqual(session.tx.sent[-1]['type'], 'stop')
-                self.assertEqual(session.radar_status()['reason'], trigger)
-                self.assertFalse(session.active)
-                self.assertFalse(session.arm())
+    def test_pi_reboot_sends_stop_without_operator_poll(self):
+        fixture, session, gate = self.ready_wire()
+        session.operator_alive()
+        session.begin_hold('FORWARD')
+        session.tick()
+        self.assertEqual(session.tx.sent[-1]['type'], 'cmd_vel')
+        gate.receive(radar(1, boot=2), PI, fixture.now)
+        session.tick()
+        self.assertEqual(session.tx.sent[-1]['type'], 'stop')
+        self.assertEqual(session.radar_status()['reason'], 'RADAR_REBOOT')
+        self.assertFalse(session.active)
+        self.assertFalse(session.arm())
 
     def test_llm_first_move_and_between_moves_never_dispatch_second(self):
         for trigger in ('MOVE_ACCEPTED', 'STOP_CONFIRMED'):

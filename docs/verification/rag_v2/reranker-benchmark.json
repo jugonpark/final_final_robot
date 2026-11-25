@@ -1,0 +1,143 @@
+{
+  "model": "BAAI/bge-reranker-v2-m3",
+  "load_seconds": 9.303453100001207,
+  "load_cpu_seconds": 7.21875,
+  "rss_after_load": 1007509504,
+  "runs": [
+    {
+      "candidates": 10,
+      "actual_candidates": 10,
+      "question": "레이더 UDP 8891 발행자 실행 방법",
+      "ms": 14742.50010002288,
+      "cpu_seconds": 25.859375,
+      "rss_bytes": 2691452928,
+      "documents": [
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_LLM_INTEGRATION.md"
+      ]
+    },
+    {
+      "candidates": 10,
+      "actual_candidates": 10,
+      "question": "Qt PySide6 대시보드",
+      "ms": 14076.80270000128,
+      "cpu_seconds": 27.5,
+      "rss_bytes": 2664468480,
+      "documents": [
+        "docs/ARCHITECTURE.md",
+        "docs/DASHBOARD_GUIDE.md",
+        "docs/DASHBOARD_GUIDE.md",
+        "docs/ARCHITECTURE.md",
+        "docs/RADAR_OPERATION_GUIDE.md"
+      ]
+    },
+    {
+      "candidates": 10,
+      "actual_candidates": 10,
+      "question": "RobotSession 역할",
+      "ms": 12897.656699991785,
+      "cpu_seconds": 25.3125,
+      "rss_bytes": 2700025856,
+      "documents": [
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "HONG_SEUNGJO.md"
+      ]
+    },
+    {
+      "candidates": 20,
+      "actual_candidates": 20,
+      "question": "레이더 UDP 8891 발행자 실행 방법",
+      "ms": 21975.365299993427,
+      "cpu_seconds": 43.421875,
+      "rss_bytes": 2700382208,
+      "documents": [
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_LLM_INTEGRATION.md"
+      ]
+    },
+    {
+      "candidates": 20,
+      "actual_candidates": 20,
+      "question": "Qt PySide6 대시보드",
+      "ms": 24523.31580000464,
+      "cpu_seconds": 47.9375,
+      "rss_bytes": 2676838400,
+      "documents": [
+        "docs/ARCHITECTURE.md",
+        "docs/DASHBOARD_GUIDE.md",
+        "docs/DASHBOARD_GUIDE.md",
+        "docs/ARCHITECTURE.md",
+        "docs/RADAR_OPERATION_GUIDE.md"
+      ]
+    },
+    {
+      "candidates": 20,
+      "actual_candidates": 20,
+      "question": "RobotSession 역할",
+      "ms": 25065.956299979007,
+      "cpu_seconds": 49.390625,
+      "rss_bytes": 2609082368,
+      "documents": [
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/DASHBOARD_GUIDE.md"
+      ]
+    },
+    {
+      "candidates": 40,
+      "actual_candidates": 40,
+      "question": "레이더 UDP 8891 발행자 실행 방법",
+      "ms": 52793.76390000107,
+      "cpu_seconds": 102.109375,
+      "rss_bytes": 2186940416,
+      "documents": [
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_OPERATION_GUIDE.md",
+        "docs/RADAR_LLM_INTEGRATION.md"
+      ]
+    },
+    {
+      "candidates": 40,
+      "actual_candidates": 40,
+      "question": "Qt PySide6 대시보드",
+      "ms": 49616.42720000236,
+      "cpu_seconds": 96.53125,
+      "rss_bytes": 1533333504,
+      "documents": [
+        "docs/ARCHITECTURE.md",
+        "docs/DASHBOARD_GUIDE.md",
+        "docs/DASHBOARD_GUIDE.md",
+        "docs/ARCHITECTURE.md",
+        "docs/RADAR_OPERATION_GUIDE.md"
+      ]
+    },
+    {
+      "candidates": 40,
+      "actual_candidates": 40,
+      "question": "RobotSession 역할",
+      "ms": 42190.207200008444,
+      "cpu_seconds": 83.421875,
+      "rss_bytes": 1547321344,
+      "documents": [
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/RADAR_LLM_INTEGRATION.md",
+        "docs/C6_HARDWARE_PREFLIGHT.md"
+      ]
+    }
+  ]
+}

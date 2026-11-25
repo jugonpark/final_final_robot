@@ -17,6 +17,7 @@ class SafetySupervisor:
         self.lock = threading.RLock()
         self.boot_id = self.seq = self.epoch = None
         self.retired_boots = set()
+        self.clear_since = None
         self.received_at = None
         self.state = 'UNKNOWN'
         self.reason = 'RADAR_NO_DATA' if source_ip else 'RADAR_NOT_CONFIGURED'
@@ -26,6 +27,7 @@ class SafetySupervisor:
         self.points = 0
 
     def _trip(self, reason):
+        self.clear_since = None
         if not self.latched or self.reason != reason:
             self.generation += 1
         self.latched = True
@@ -41,7 +43,7 @@ class SafetySupervisor:
 
     def _expire(self, now):
         if self.received_at is not None and now - self.received_at >= self.timeout:
-            self.receiver_error('RADAR_TIMEOUT')
+            self.clear_since = None
 
     def receive(self, raw, source_ip, now):
         if not self.source_ip or source_ip != self.source_ip:
@@ -78,6 +80,10 @@ class SafetySupervisor:
                 self._trip('RADAR_REBOOT')
             elif b == self.boot_id and epoch != self.epoch:
                 self._trip('RADAR_HAZARD_REPORTED')
+            if state == 'CLEAR' and self.clear_since is None:
+                self.clear_since = now
+            elif state != 'CLEAR':
+                self.clear_since = None
             self.boot_id, self.seq, self.epoch = b, seq, epoch
             self.received_at = now
             self.state, self.minimum, self.points = state, minimum, points
@@ -88,7 +94,10 @@ class SafetySupervisor:
     def snapshot(self, now):
         with self.lock:
             self._expire(now)
+            fresh = self.received_at is not None and now-self.received_at < self.timeout
             return dict(state=self.state, blocked=self.latched, reason=self.reason,
+                        fresh=fresh, warning='RADAR_TIMEOUT' if self.received_at is not None and not fresh else None,
+                        clear_for_s=max(0., now-self.clear_since) if fresh and self.clear_since is not None else 0.,
                         generation=self.generation, boot_id=self.boot_id, seq=self.seq,
                         age_s=None if self.received_at is None else max(0., now-self.received_at),
                         min_distance_m=self.minimum, danger_points=self.points)
@@ -96,7 +105,7 @@ class SafetySupervisor:
     def rearm(self, now):
         with self.lock:
             self._expire(now)
-            if self.state != 'CLEAR':
+            if self.state != 'CLEAR' or self.received_at is None or now-self.received_at >= self.timeout:
                 raise ValueError('Pi에서 유효한 CLEAR를 받을 때까지 이동할 수 없습니다.')
             self.latched = False
             self.reason = 'RADAR_CLEAR'

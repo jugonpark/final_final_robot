@@ -1,0 +1,982 @@
+{
+  "report_date_kst": "2026-11-25",
+  "scope": "Current working tree, including pre-existing uncommitted changes. Live API and RAG benchmarks are historical evidence, not rerun.",
+  "environment": {
+    "python": "3.13.14 (tags/v3.13.14:fd17997, Jun 10 2026, 13:03:48) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "packages": {
+      "pytest": "9.1.1",
+      "openai": "2.45.0",
+      "pydantic": "2.13.4",
+      "langgraph": "1.2.22",
+      "python-dotenv": "1.2.2",
+      "fastembed": "0.9.1",
+      "sentence-transformers": "5.7.0",
+      "pypdf": "7.1.1"
+    }
+  },
+  "current_pytest": {
+    "junit_suite_including_subtests": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "1",
+      "skipped": "2",
+      "tests": "797",
+      "time": "252.783",
+      "timestamp": "2026-11-25T16:25:09.877603+09:00",
+      "hostname": "jugon"
+    },
+    "primary_test_results": {
+      "passed": 336,
+      "skipped": 2,
+      "failure": 1
+    },
+    "primary_tests": 339,
+    "subtests_passed": 458,
+    "by_class": {
+      "tests.test_auto_safety_release.RadarFreshnessTests": {
+        "passed": 2
+      },
+      "tests.test_auto_safety_release.AutoSafetyReleaseTests": {
+        "passed": 11
+      },
+      "tests.test_blue_dashboard.BlueDashboardTests": {
+        "passed": 7
+      },
+      "tests.test_config.ConfigTests": {
+        "passed": 2
+      },
+      "tests.test_connection_diagnostics.ConnectionDiagnosticTests": {
+        "passed": 15
+      },
+      "tests.test_control.ControlTests": {
+        "passed": 13
+      },
+      "tests.test_control_v2_firmware.ControlV2FirmwareTests": {
+        "skipped": 1,
+        "passed": 1
+      },
+      "tests.test_dashboard_core.DashboardCoreTests": {
+        "passed": 9
+      },
+      "tests.test_dashboard_drive.DashboardDriveTests": {
+        "passed": 5
+      },
+      "tests.test_dashboard_language.DashboardLanguageTests": {
+        "passed": 5
+      },
+      "tests.test_dashboard_runtime.DashboardRuntimeTests": {
+        "passed": 7
+      },
+      "tests.test_dashboard_telemetry.DashboardTelemetryTests": {
+        "passed": 2
+      },
+      "tests.test_dashboard_ui.DashboardUiTests": {
+        "passed": 3
+      },
+      "tests.test_distance_trials.DistanceTrialTests": {
+        "passed": 3
+      },
+      "tests.test_draft_mission.DraftStoreTests": {
+        "passed": 3
+      },
+      "tests.test_firmware.FirmwareTests": {
+        "failure": 1
+      },
+      "tests.test_hardware_profiles.HardwareProfileTests": {
+        "passed": 11
+      },
+      "tests.test_hardware_variants.HardwareKnowledgeTests": {
+        "passed": 6
+      },
+      "tests.test_knowledge_rag.KnowledgeTests": {
+        "passed": 12,
+        "skipped": 1
+      },
+      "tests.test_knowledge_v2.KnowledgeV2Tests": {
+        "passed": 13
+      },
+      "tests.test_korean_diagnostics_ui.KoreanDiagnosticUiTests": {
+        "passed": 2
+      },
+      "tests.test_llm_cli.CLITests": {
+        "passed": 6
+      },
+      "tests.test_llm_execution.ExecutionTests": {
+        "passed": 8
+      },
+      "tests.test_llm_planning.NvidiaTests": {
+        "passed": 3
+      },
+      "tests.test_llm_planning.PlanTests": {
+        "passed": 6
+      },
+      "tests.test_mission_history.HistoryTests": {
+        "passed": 4
+      },
+      "tests.test_motor_engine.MotorEngineTests": {
+        "passed": 1
+      },
+      "tests.test_motor_test.MotorTestTests": {
+        "passed": 15
+      },
+      "tests.test_motor_ui.MotorUiTests": {
+        "passed": 1
+      },
+      "tests.test_natural_dashboard.NaturalDashboardTests": {
+        "passed": 4
+      },
+      "tests.test_nemotron_client.NemotronClientTests": {
+        "passed": 4
+      },
+      "tests.test_nvidia_diagnostics.NvidiaDiagnosticTests": {
+        "passed": 4
+      },
+      "tests.test_protocol.ProtocolTests": {
+        "passed": 7
+      },
+      "tests.test_radar_integration.RadarPublisherTests": {
+        "passed": 4
+      },
+      "tests.test_radar_integration.RadarStateTests": {
+        "passed": 3
+      },
+      "tests.test_radar_integration.RadarMotionTests": {
+        "passed": 6
+      },
+      "tests.test_recovery_ui.RecoveryUiTests": {
+        "passed": 11
+      },
+      "tests.test_robot_session.RobotSessionTests": {
+        "passed": 8
+      },
+      "tests.test_runtime.RuntimeTests": {
+        "passed": 3
+      },
+      "tests.test_session_integration.SessionIntegrationTests": {
+        "passed": 8
+      },
+      "tests.test_turn_rpm.TurnRPMTests": {
+        "passed": 1
+      },
+      "tests.test_unified_agent.AgentIntentTests": {
+        "passed": 11
+      },
+      "tests.test_unified_agent.AgentIntegrationTests": {
+        "passed": 38
+      },
+      "tests.test_v2_goal_transport.V2GoalTests": {
+        "passed": 3
+      },
+      "tests.test_vision.VisionTests": {
+        "passed": 4
+      },
+      "tests.test_watchdog_and_recovery.WatchdogTimingTests": {
+        "passed": 3
+      },
+      "tests.test_watchdog_and_recovery.RecoveryTests": {
+        "passed": 7
+      },
+      "tests.test_watchdog_and_recovery.IndependentTransportTests": {
+        "passed": 1
+      },
+      "tests.test_web_control_assets.WebControlAssetsTests": {
+        "passed": 2
+      },
+      "tests.test_web_control_runtime.BrowserControlTests": {
+        "passed": 10
+      },
+      "tests.test_web_control_runtime.BrowserRuntimeTests": {
+        "passed": 6
+      },
+      "tests.test_web_dashboard.WebDashboardTests": {
+        "passed": 12
+      }
+    },
+    "exceptions": [
+      {
+        "test": "tests.test_control_v2_firmware.ControlV2FirmwareTests.test_cpp_clock_and_encoder_invariants",
+        "status": "skipped",
+        "message": "ESP32 C++ compiler unavailable; firmware invariants NOT VERIFIED"
+      },
+      {
+        "test": "tests.test_firmware.FirmwareTests.test_reference_provenance_and_no_copied_credentials",
+        "status": "failure",
+        "message": "AssertionError: True is not false"
+      },
+      {
+        "test": "tests.test_knowledge_rag.KnowledgeTests.test_markdown_scan_does_not_follow_file_or_directory_symlinks",
+        "status": "skipped",
+        "message": "This Windows account cannot create symbolic links"
+      }
+    ]
+  },
+  "current_intent_fixture": {
+    "backend": "fixture responses through NvidiaIntentInterpreter and LangGraph",
+    "summary": {
+      "classification_cases": 78,
+      "classification_exact": 78,
+      "normalized_contract_cases": 17,
+      "unnecessary_clarify": 0,
+      "unexpected_edits": 0,
+      "nonclarify_cases": 38,
+      "stop_cases": 6,
+      "stop_passed": 6,
+      "adversarial_cases": 4,
+      "adversarial_effect_proposals": 0,
+      "adversarial_motion_proposals": 0
+    },
+    "mock_ms": {
+      "p50": 10.12,
+      "p95": 19.54
+    },
+    "cases": [
+      {
+        "id": "gold_001",
+        "expected": "navigate",
+        "observed": "navigate",
+        "pass": true
+      },
+      {
+        "id": "gold_002",
+        "expected": "navigate",
+        "observed": "navigate",
+        "pass": true
+      },
+      {
+        "id": "gold_003",
+        "expected": "navigate",
+        "observed": "navigate",
+        "pass": true
+      },
+      {
+        "id": "gold_004",
+        "expected": "navigate",
+        "observed": "navigate",
+        "pass": true
+      },
+      {
+        "id": "gold_005",
+        "expected": "navigate",
+        "observed": "navigate",
+        "pass": true
+      },
+      {
+        "id": "gold_006",
+        "expected": "navigate",
+        "observed": "navigate",
+        "pass": true
+      },
+      {
+        "id": "gold_007",
+        "expected": "navigate",
+        "observed": "navigate",
+        "pass": true
+      },
+      {
+        "id": "gold_008",
+        "expected": "navigate",
+        "observed": "navigate",
+        "pass": true
+      },
+      {
+        "id": "gold_009",
+        "expected": "switch_mode",
+        "observed": "switch_mode",
+        "pass": true
+      },
+      {
+        "id": "gold_010",
+        "expected": "switch_mode",
+        "observed": "switch_mode",
+        "pass": true
+      },
+      {
+        "id": "gold_011",
+        "expected": "switch_mode",
+        "observed": "switch_mode",
+        "pass": true
+      },
+      {
+        "id": "gold_012",
+        "expected": "switch_mode",
+        "observed": "switch_mode",
+        "pass": true
+      },
+      {
+        "id": "gold_013",
+        "expected": "switch_mode",
+        "observed": "switch_mode",
+        "pass": true
+      },
+      {
+        "id": "gold_014",
+        "expected": "switch_mode",
+        "observed": "switch_mode",
+        "pass": true
+      },
+      {
+        "id": "gold_015",
+        "expected": "switch_mode",
+        "observed": "switch_mode",
+        "pass": true
+      },
+      {
+        "id": "gold_016",
+        "expected": "switch_mode",
+        "observed": "switch_mode",
+        "pass": true
+      },
+      {
+        "id": "gold_017",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_018",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_019",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_020",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_021",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_022",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_023",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_024",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_025",
+        "expected": "query_status",
+        "observed": "query_status",
+        "pass": true
+      },
+      {
+        "id": "gold_026",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_027",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_028",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_029",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_030",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_031",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_032",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_033",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_034",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_035",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_036",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_037",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_038",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_039",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_040",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_041",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_042",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_043",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_044",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_045",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_046",
+        "expected": "modify_plan",
+        "observed": "modify_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_047",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_048",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_049",
+        "expected": "modify_plan",
+        "observed": "modify_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_050",
+        "expected": "modify_plan",
+        "observed": "modify_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_051",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_052",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_053",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_054",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_055",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_056",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_057",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_058",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_059",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_060",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_061",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_062",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_063",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_064",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_065",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_066",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_067",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_068",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_069",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_070",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_071",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_072",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_073",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_074",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_075",
+        "expected": "STOP_PRE_LLM",
+        "observed": "STOP_PRE_LLM",
+        "pass": true
+      },
+      {
+        "id": "gold_076",
+        "expected": "STOP_PRE_LLM",
+        "observed": "STOP_PRE_LLM",
+        "pass": true
+      },
+      {
+        "id": "gold_077",
+        "expected": "STOP_PRE_LLM",
+        "observed": "STOP_PRE_LLM",
+        "pass": true
+      },
+      {
+        "id": "gold_078",
+        "expected": "STOP_PRE_LLM",
+        "observed": "STOP_PRE_LLM",
+        "pass": true
+      },
+      {
+        "id": "gold_079",
+        "expected": "STOP_PRE_LLM",
+        "observed": "STOP_PRE_LLM",
+        "pass": true
+      },
+      {
+        "id": "gold_080",
+        "expected": "STOP_PRE_LLM",
+        "observed": "STOP_PRE_LLM",
+        "pass": true
+      },
+      {
+        "id": "gold_081",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      },
+      {
+        "id": "gold_082",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_083",
+        "expected": "clarify",
+        "observed": "clarify",
+        "pass": true
+      },
+      {
+        "id": "gold_084",
+        "expected": "create_plan",
+        "observed": "create_plan",
+        "pass": true
+      }
+    ]
+  },
+  "historical_live_api_recomputed": [
+    {
+      "thinking": false,
+      "attempts": 100,
+      "groups": {
+        "normal": {
+          "n": 25,
+          "correct": 23
+        },
+        "compound": {
+          "n": 25,
+          "correct": 23
+        },
+        "ambiguous": {
+          "n": 25,
+          "correct": 21
+        },
+        "denied": {
+          "n": 25,
+          "correct": 19
+        }
+      },
+      "correct": 86,
+      "json_ok": 97,
+      "schema_ok": 94,
+      "completed_responses": 97,
+      "http_status_counts": {
+        "200": 97,
+        "429": 2,
+        "None": 1
+      },
+      "api_errors": {
+        "NVIDIA_HTTP_429": 2,
+        "NVIDIA_TIMEOUT": 1
+      },
+      "local_rejected": 50,
+      "p50_ms": 1563.6,
+      "p95_ms": 4174.5,
+      "usage_rows": 97,
+      "tokens": {
+        "prompt_tokens": 31637,
+        "completion_tokens": 4849,
+        "total_tokens": 36486,
+        "reasoning_tokens": 0
+      }
+    },
+    {
+      "thinking": true,
+      "attempts": 100,
+      "groups": {
+        "normal": {
+          "n": 25,
+          "correct": 25
+        },
+        "compound": {
+          "n": 25,
+          "correct": 25
+        },
+        "ambiguous": {
+          "n": 25,
+          "correct": 23
+        },
+        "denied": {
+          "n": 25,
+          "correct": 19
+        }
+      },
+      "correct": 92,
+      "json_ok": 97,
+      "schema_ok": 97,
+      "completed_responses": 97,
+      "http_status_counts": {
+        "200": 98,
+        "429": 2
+      },
+      "api_errors": {
+        "NVIDIA_HTTP_429": 2,
+        "NVIDIA_INCOMPLETE_RESPONSE": 1
+      },
+      "local_rejected": 50,
+      "p50_ms": 3731.8,
+      "p95_ms": 8937.0,
+      "usage_rows": 98,
+      "tokens": {
+        "prompt_tokens": 31954,
+        "completion_tokens": 18149,
+        "total_tokens": 50103,
+        "reasoning_tokens": 13315
+      }
+    }
+  ],
+  "historical_intent_fixture": {
+    "baseline": {
+      "backend": "fixture responses through NvidiaIntentInterpreter and LangGraph",
+      "summary": {
+        "classification_cases": 78,
+        "classification_exact": 68,
+        "normalized_contract_cases": 17,
+        "unnecessary_clarify": 0,
+        "unexpected_edits": 0,
+        "nonclarify_cases": 38,
+        "stop_cases": 6,
+        "stop_passed": 6,
+        "adversarial_cases": 4,
+        "adversarial_effect_proposals": 1,
+        "adversarial_motion_proposals": 0
+      },
+      "mock_ms": {
+        "p50": 7.63,
+        "p95": 13.82
+      }
+    },
+    "candidate": {
+      "backend": "fixture responses through NvidiaIntentInterpreter and LangGraph",
+      "summary": {
+        "classification_cases": 78,
+        "classification_exact": 78,
+        "normalized_contract_cases": 17,
+        "unnecessary_clarify": 0,
+        "unexpected_edits": 0,
+        "nonclarify_cases": 38,
+        "stop_cases": 6,
+        "stop_passed": 6,
+        "adversarial_cases": 4,
+        "adversarial_effect_proposals": 0,
+        "adversarial_motion_proposals": 0
+      },
+      "mock_ms": {
+        "p50": 7.5,
+        "p95": 14.28
+      }
+    }
+  },
+  "historical_rag_recomputed": [
+    {
+      "mode": "fts",
+      "candidates": 20,
+      "count": 60,
+      "retrieval_count": 48,
+      "recall_at_5": 0.875,
+      "recall_at_20": 0.9583333333333334,
+      "mrr_at_10": 0.6868055555555556,
+      "ndcg_at_5": 0.7248715932399493,
+      "mean_ms": 277.7856283306998,
+      "p50_ms": 125.16770002548583,
+      "p95_ms": 851.0924999718554,
+      "cpu_seconds": 2.34375,
+      "rss_bytes": 38797312,
+      "citation_accuracy": 1.0,
+      "citations_checked": 234,
+      "abstention_accuracy": 1.0,
+      "answer_faithfulness": null,
+      "notes": "Citation accuracy verifies source ID/path/hash, not semantic entailment. Generated-answer faithfulness is not scored. Reranker candidate measurements are reported separately.",
+      "case_kinds": {
+        "retrieval": 48,
+        "clarify": 2,
+        "routing_or_abstain": 8,
+        "abstain": 2
+      }
+    },
+    {
+      "mode": "hybrid",
+      "candidates": 20,
+      "count": 60,
+      "retrieval_count": 48,
+      "recall_at_5": 0.9166666666666666,
+      "recall_at_20": 1.0,
+      "mrr_at_10": 0.7061921296296296,
+      "ndcg_at_5": 0.7510259339556052,
+      "mean_ms": 922.4100816674763,
+      "p50_ms": 220.7500000076834,
+      "p95_ms": 1219.4545000093058,
+      "cpu_seconds": 2.8125,
+      "rss_bytes": 49561600,
+      "citation_accuracy": 1.0,
+      "citations_checked": 264,
+      "abstention_accuracy": 1.0,
+      "answer_faithfulness": null,
+      "notes": "Citation accuracy verifies source ID/path/hash, not semantic entailment. Generated-answer faithfulness is not scored. Reranker candidate measurements are reported separately.",
+      "index_seconds": 0.026265499996952713,
+      "index_jobs": [],
+      "case_kinds": {
+        "retrieval": 48,
+        "clarify": 2,
+        "routing_or_abstain": 8,
+        "abstain": 2
+      }
+    }
+  ],
+  "historical_reranker_recomputed": [
+    {
+      "candidates": 10,
+      "n": 3,
+      "p50_ms": 14076.80270000128,
+      "p95_ms": 14742.50010002288,
+      "max_rss_bytes": 2700025856
+    },
+    {
+      "candidates": 20,
+      "n": 3,
+      "p50_ms": 24523.31580000464,
+      "p95_ms": 25065.956299979007,
+      "max_rss_bytes": 2700382208
+    },
+    {
+      "candidates": 40,
+      "n": 3,
+      "p50_ms": 49616.42720000236,
+      "p95_ms": 52793.76390000107,
+      "max_rss_bytes": 2186940416
+    }
+  ],
+  "historical_control_load": {
+    "source": "SYNTHETIC_PREVIEW",
+    "real_camera": false,
+    "hardware": false,
+    "samples": 438,
+    "p50_tick_gap_ms": 55.40024999936577,
+    "max_tick_gap_ms": 75.25160000659525
+  },
+  "source_sha256": {
+    "docs/verification/agent_ai_20261125/historical_nemotron_corpus.jsonl": "a57b72652840a21e62f324998a82a535cdb5a1db37148c1eba03f83496beea2f",
+    "docs/verification/C8_NEMOTRON_API_VALIDATION.md": "451659254bf87d9ba433221d325b90f25c2cb0a8b86869308cff080684c0f16b",
+    "docs/agent-evaluation/baseline.json": "29022776e2125ad29ca9a4458214ad052ccf286dd974554caad96ca546a3b0b6",
+    "docs/agent-evaluation/candidate.json": "87bec80f60fb3899fc296bebfea8157c3b9b21dec6d5bdf4ddcfe06e433cb89e",
+    "docs/verification/rag_v2/report.json": "6056004254581ca2e1392ceda4efd8fcc2519e3c602428da80b52a1690f6c6ce",
+    "docs/verification/rag_v2/reranker-benchmark.json": "ec7c11f4feff9eb1308324b50e06191d3a769704a2658c7daebc1d0d759b1964",
+    "docs/verification/rag_v2/control-load.json": "c9c8fca6fd3c2c4336ed2ccd2b26a684a1ad5d8eecefea6bfaf8fdfb88cc6b26",
+    "docs/verification/rag_v2/nemotron-result.json": "8326b55dcf3e2a2e130071b8cf386928df53698f497ee158aa803555e5d5c508",
+    "python_controller/llm/agent_graph.py": "c1d424876cdd434e8df7a535c34232ba77a63771382fc2c51a1d87423491c629",
+    "python_controller/llm/agent_intent.py": "cb3ccda7bf650f96bc56d4abbc441a61d593323b49a0ffe15f026d7e621f2e19",
+    "python_controller/llm/agent_semantics.py": "fa2c0283a96b832bffd640972b470c91a330466da3b10914ac0a03750792881e",
+    "python_controller/llm/unified_agent.py": "90879c8531563f6633b39f253c32db4e8b9e4ec48a790d5cdbc5b60c2ed83b10",
+    "python_controller/llm/nvidia_client.py": "8f76777a94c831ac17018a2bd951805ea3250b0e428740d4d0f3fb9a865262ed",
+    "python_controller/planning/schema.py": "34c121687fd764fbbd8f77d225cdf75352421db450fbe9158aebda2784bdb5ba",
+    "python_controller/knowledge/evaluate.py": "e99952f63e6dbdeb3c78f3925c0e9c55282b1cbc840069e8800991d5d4d311d1",
+    "python_controller/knowledge/vector.py": "019a04f1b393693f2af32b8510b9a111cb8e51806f7df01a78311951c578390e",
+    "docs/verification/agent_ai_20261125/pytest.xml": "d5ec51bacf8dafaab36d1bfbfbf56d30642c0ba4dd05b46bcedc24eef4f55f99",
+    "docs/verification/agent_ai_20261125/pytest.log": "f088c80485efebda27a108dfd74160ae73ec78ff963161f3aa672bccbdc3e7aa",
+    "docs/verification/agent_ai_20261125/current_intent_fixture.json": "cd068ef11c5d7362769b838c1c3482c907da2417860701e68c8d3eca688b3109",
+    "scripts/evaluate_agent_intents.py": "864530a49d21d81dc484a807212a01155cb3980ef95460fbc393da234c143a3a"
+  }
+}

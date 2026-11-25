@@ -1,0 +1,71 @@
+{
+  "session_open": false,
+  "camera": "CAMERA_OFF",
+  "connected": false,
+  "agent": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "홍승조가 누구야"
+      },
+      {
+        "role": "assistant",
+        "content": "문서에서 찾은 관련 원문입니다. 현재 장치 상태는 관제 상태에서 확인하세요.\n\n[1] 홍승조 / 직업: 뮤즈 장로드래곤 / 전공: 20학번 전전 / 역할: 넘어지기 / 좋아하는 것: 자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬.",
+        "citations": [
+          {
+            "id": 251,
+            "document_id": 28,
+            "path": "HONG_SEUNGJO.md",
+            "heading": "홍승조",
+            "title": "홍승조",
+            "section": "홍승조",
+            "page": null,
+            "line": 3,
+            "version": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+            "revision": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+            "sha": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+            "source_sha256": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+            "trust": "user_reference",
+            "variant_id": "UNCLASSIFIED",
+            "source_kind": "USER_UPLOAD",
+            "evidence_status": "UNVERIFIED",
+            "source_path": "HONG_SEUNGJO.md",
+            "effective_date": null,
+            "reviewed_by_user": 0,
+            "index_version": "structure-e5-v2.1",
+            "heading_path": "홍승조",
+            "chunk_hash": "dca62cb5b1a3092a61914b10ec034f719022b3c31ffcd7a8503625d272baa190",
+            "token_count": 63,
+            "split_warning": null
+          }
+        ]
+      }
+    ],
+    "partial_reply": "",
+    "chat_stream_id": null,
+    "busy": false,
+    "can_approve": false,
+    "card": null,
+    "page": null,
+    "navigation_id": 0,
+    "status": "제어 모드 SIMULATION · ESP32 미연결 · STOP 미확인\n레이더 UNKNOWN · 이동 차단 · 레이더 첫 응답 대기 (RADAR_NO_DATA)\n카메라 꺼짐\n실행 상태 IDLE · 정지/보류 카메라 오류 또는 영상 지연 (CAMERA_FAILED_OR_STALE)",
+    "execution": "IDLE",
+    "execution_detail": null,
+    "stop_result": null,
+    "history_degraded": false,
+    "progress": null,
+    "vision_facts": {
+      "source": "LIVE_CAMERA",
+      "fresh": false,
+      "people": null,
+      "hands": [],
+      "mapping": {},
+      "mode": "SIMULATION",
+      "camera_status": "CAMERA_OFF"
+    },
+    "waiting_mode_plan": false,
+    "estop_latched": false,
+    "mode": "SIMULATION",
+    "pending_mode": null
+  }
+}

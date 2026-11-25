@@ -1,0 +1,185 @@
+{
+  "question": "Qt 관제가 뭐야?",
+  "source_documents": [
+    "docs/DASHBOARD_GUIDE.md",
+    "docs/DASHBOARD_GUIDE.md",
+    "docs/ARCHITECTURE.md"
+  ],
+  "timeout_seconds": 90,
+  "user_uploads_sent": false,
+  "success": true,
+  "raw_result": {
+    "answers": [
+      {
+        "text": "Qt 관제는 PySide6 기반의 4탭 대시보드 UI(`visualization/dashboard.py`)와 이를 구동하는 런타임(`dashboard_runtime.py`), 모니터링(`monitoring.py`)으로 구성된 실시간 제어·모니터링 시스템입니다.",
+        "sources": [
+          {
+            "id": 95,
+            "quote_index": 1,
+            "quote": "- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프."
+          },
+          {
+            "id": 75,
+            "quote_index": 1,
+            "quote": "배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다."
+          },
+          {
+            "id": 75,
+            "quote_index": 2,
+            "quote": "`visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다."
+          }
+        ]
+      },
+      {
+        "text": "기본 실행은 `python -m python_controller --ui dashboard`(또는 `run_simulation.bat`)로 Qt 대시보드를 열며, 카메라 없이 합성 미리보기(`--dashboard-preview`)도 지원합니다.",
+        "sources": [
+          {
+            "id": 86,
+            "quote_index": 0,
+            "quote": "```powershell"
+          },
+          {
+            "id": 86,
+            "quote_index": 1,
+            "quote": ".\\.venv\\Scripts\\python.exe -m python_controller --ui dashboard"
+          },
+          {
+            "id": 86,
+            "quote_index": 7,
+            "quote": "```powershell"
+          },
+          {
+            "id": 86,
+            "quote_index": 8,
+            "quote": ".\\.venv\\Scripts\\python.exe -m python_controller --ui dashboard --dashboard-preview"
+          }
+        ]
+      },
+      {
+        "text": "아키텍처는 Camera worker → 최신 슬롯 → Vision worker → 최신 결과 슬롯 → GUI 50ms QTimer 상태 머신 → 안전 명령 순서로, GUI 스레드에서 카메라 읽기·AI 추론·소켓 수신·로그 플러시를 수행하지 않고 오래된 프레임 큐를 쌓지 않습니다.",
+        "sources": [
+          {
+            "id": 75,
+            "quote_index": 3,
+            "quote": "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다."
+          },
+          {
+            "id": 75,
+            "quote_index": 4,
+            "quote": "GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다."
+          },
+          {
+            "id": 75,
+            "quote_index": 5,
+            "quote": "느린 처리 중 오래된 프레임 큐를 쌓지 않는다."
+          }
+        ]
+      },
+      {
+        "text": "GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인해 STOP으로 전환하며, Raw 관측은 보존하되 제어 입력은 단일 인물·목표 소유권 제한을 통과해야 합니다.",
+        "sources": [
+          {
+            "id": 75,
+            "quote_index": 6,
+            "quote": "GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다."
+          },
+          {
+            "id": 75,
+            "quote_index": 7,
+            "quote": "오래된 결과로 lease 시간을 갱신하지 않는다."
+          },
+          {
+            "id": 75,
+            "quote_index": 8,
+            "quote": "Raw 관측은 차단 여부와 무관하게 보존하지만, 제어 입력은 기존 단일 인물·목표 소유권 제한을 통과해야 한다."
+          }
+        ]
+      }
+    ]
+  },
+  "verified_answer": {
+    "reply": "Qt 관제는 PySide6 기반의 4탭 대시보드 UI(`visualization/dashboard.py`)와 이를 구동하는 런타임(`dashboard_runtime.py`), 모니터링(`monitoring.py`)으로 구성된 실시간 제어·모니터링 시스템입니다. [1][2][2]\n\n기본 실행은 `python -m python_controller --ui dashboard`(또는 `run_simulation.bat`)로 Qt 대시보드를 열며, 카메라 없이 합성 미리보기(`--dashboard-preview`)도 지원합니다. [3][3][3][3]\n\n아키텍처는 Camera worker → 최신 슬롯 → Vision worker → 최신 결과 슬롯 → GUI 50ms QTimer 상태 머신 → 안전 명령 순서로, GUI 스레드에서 카메라 읽기·AI 추론·소켓 수신·로그 플러시를 수행하지 않고 오래된 프레임 큐를 쌓지 않습니다. [2][2][2]\n\nGUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인해 STOP으로 전환하며, Raw 관측은 보존하되 제어 입력은 단일 인물·목표 소유권 제한을 통과해야 합니다. [2][2][2]",
+    "citations": [
+      {
+        "id": 95,
+        "document_id": 2,
+        "path": "docs/DASHBOARD_GUIDE.md",
+        "heading": "파일 변경",
+        "title": "파일 변경",
+        "section": "파일 변경",
+        "page": null,
+        "line": 77,
+        "version": "d16e728199bbc5d18421a6fe2a491321c8880c0d",
+        "revision": "d16e728199bbc5d18421a6fe2a491321c8880c0d",
+        "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "source_sha256": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "trust": "project_doc",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DASHBOARD_GUIDE.md",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "structure-e5-v2.1",
+        "heading_path": "실시간 검증 대시보드 사용 및 구현 안내 / 파일 변경",
+        "chunk_hash": "03425fce74862d0e816f6e4b146ec275c73829d7dd3720d4bfa9f6fbf508b951",
+        "token_count": 379,
+        "split_warning": null
+      },
+      {
+        "id": 75,
+        "document_id": 1,
+        "path": "docs/ARCHITECTURE.md",
+        "heading": "현재 대시보드 확장",
+        "title": "현재 대시보드 확장",
+        "section": "현재 대시보드 확장",
+        "page": null,
+        "line": 13,
+        "version": "d16e728199bbc5d18421a6fe2a491321c8880c0d",
+        "revision": "d16e728199bbc5d18421a6fe2a491321c8880c0d",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "trust": "project_doc",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "structure-e5-v2.1",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+        "chunk_hash": "add97a57d18f285a8e155e9647bc5e9b826d1d98f88749d18d1826dc24f742b9",
+        "token_count": 367,
+        "split_warning": null
+      },
+      {
+        "id": 86,
+        "document_id": 2,
+        "path": "docs/DASHBOARD_GUIDE.md",
+        "heading": "실행",
+        "title": "실행",
+        "section": "실행",
+        "page": null,
+        "line": 9,
+        "version": "d16e728199bbc5d18421a6fe2a491321c8880c0d",
+        "revision": "d16e728199bbc5d18421a6fe2a491321c8880c0d",
+        "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "source_sha256": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "trust": "project_doc",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DASHBOARD_GUIDE.md",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "structure-e5-v2.1",
+        "heading_path": "실시간 검증 대시보드 사용 및 구현 안내 / 실행",
+        "chunk_hash": "25ac1661a131fa2e36ab17eb92f55769995974a9fc5c2bf9c4a6305e22e6ff57",
+        "token_count": 268,
+        "split_warning": null
+      }
+    ],
+    "insufficient_evidence": false
+  },
+  "elapsed_seconds": 23.291940800030716
+}

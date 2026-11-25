@@ -13,6 +13,7 @@ from python_controller.control.hand_drive import HandDrive, HandDriveClient
 from python_controller.models import MotionCommand,PerceptionFrame,PersonObservation,GestureObservation
 from python_controller.monitoring import SessionLogger,TestBook,motor_feedback
 from python_controller.vision.person_tracker import TargetSelector
+from python_controller.visualization.korean import movement_block
 from python_controller.vision.gesture_recognizer import gesture_diagnostics
 
 
@@ -216,6 +217,13 @@ class DashboardEngine:
         self.pending_mode_auto_arm = True
         self.control_generation = 0
         self.central_ui = False
+        self.browser_operator_required = False
+        self.operator_seen_at = None
+        self.auto_release_since = None
+        self.auto_recover_attempt = None
+        self.auto_link_fault = False
+        self.auto_fault = None
+        self.auto_recovery = dict(state='IDLE', remaining_s=None)
         from python_controller.llm.central_control import NaturalControl
         self.language = NaturalControl(folder, config['motor_test']['ui_lease_s'])
 
@@ -273,6 +281,7 @@ class DashboardEngine:
 
     def operator_alive(self):
         client = self.shared_session
+        self.operator_seen_at = client.clock() if client else time.monotonic()
         if client:
             client.operator_alive()
 
@@ -315,7 +324,10 @@ class DashboardEngine:
         radar = self.radar.snapshot(now)
         if radar['blocked'] and radar['generation'] != self.seen_radar_generation:
             self.seen_radar_generation = radar['generation']
+            self.auto_release_since = None
             self.control_generation += 1
+            self.web_vision = None
+            self.hand_requires_activation = True
             self.language.cancel(radar['reason'])
             self.pending = None
             self.pending_mode = None
@@ -328,20 +340,122 @@ class DashboardEngine:
                 self.logger.write(dict(event='RADAR_BLOCKED', radar=radar), True)
         return radar
 
-    def _resume_after_evade(self, radar, now):
+    def _auto_release_safety(self, radar, now):
         session = self.shared_session
-        if (not radar or not radar['blocked'] or radar['state'] != 'CLEAR' or radar['reason'] != 'RADAR_EVADE' or
-                not session or self.release_future or self.language.executing or self.c.estop_latched):
+        status = session.snapshot() if session else {}
+        telemetry = status.get('telemetry') or {}
+        fault = telemetry.get('fault') or status.get('fault')
+        link_fault = bool(telemetry and not status.get('connected') and fault in (None, 'NONE'))
+        if link_fault and not self.auto_link_fault:
+            self.request('ESTOP')
+        self.auto_link_fault = link_fault
+        if fault not in (None, 'NONE', 'UNKNOWN') and fault != self.auto_fault:
+            self.auto_fault = fault
+            self.request('ESTOP')
+        incident = bool(self.c.estop_latched or (radar and radar['blocked']) or
+                        fault not in (None, 'NONE', 'UNKNOWN') or link_fault or status.get('session_lost') or
+                        status.get('recovery_state') == 'SYNC_STOP')
+        if not incident:
+            self.auto_release_since = None
+            self.auto_fault = None
+            self.auto_recover_attempt = None
+            if self.auto_recovery['state'] != 'READY_NEW_INPUT':
+                self.auto_recovery = dict(state='IDLE', remaining_s=None)
             return radar
-        status = session.snapshot()
-        if not status['ready'] or not status['stop_verified'] or status.get('session_lost'):
+        if not session or self.release_future:
+            self.auto_release_since = None
+            self.auto_recovery = dict(state='WAITING_CONNECTION', remaining_s=None)
+            return radar
+        if (self.operator_seen_at is None or
+                not 0 <= now-self.operator_seen_at <= self.cfg['motor_test']['ui_lease_s']):
+            self.auto_release_since = None
+            self.auto_recovery = dict(state='WAITING_OPERATOR', remaining_s=None)
+            return radar
+        if not radar or radar['state'] != 'CLEAR' or not radar.get('fresh'):
+            self.auto_release_since = None
+            self.auto_recovery = dict(state='WAITING_CLEAR', remaining_s=None)
+            return radar
+        if self.auto_release_since is None:
+            self.auto_release_since = now
+        stable = min(now-self.auto_release_since, radar.get('clear_for_s', 0.))
+        if stable < 1.:
+            self.auto_recovery = dict(state='CLEAR_STABILIZING', remaining_s=max(0., 1.-stable))
+            return radar
+        if (self.control_error or self.error or self.language.executing or self.language.busy or
+                self.pending_mode or status.get('distance_leased')):
+            self.auto_recovery = dict(state='WAITING_STOP', remaining_s=None)
+            return radar
+        profile = status.get('hardware_profile_status') or ''
+        if (status.get('guard_error') or (profile.startswith('HARDWARE_PROFILE_') and profile != 'HARDWARE_PROFILE_UNKNOWN') or
+                status.get('recovery_state') == 'SESSION_CONFLICT' or
+                (status.get('session_lost') and status.get('recovery_state') != 'SYNC_STOP')):
+            self.auto_recovery = dict(state='BLOCKED', remaining_s=None)
+            return radar
+        if status.get('recovery_state') == 'SYNC_STOP':
+            self.auto_recovery = dict(state='RECOVERING', remaining_s=None)
+            return radar
+        if not status.get('stop_verified'):
+            self.auto_recovery = dict(state='WAITING_STOP', remaining_s=None)
+            return radar
+        if radar['blocked']:
+            try:
+                self.rearm_radar()
+            except ValueError:
+                self.auto_recovery = dict(state='WAITING_STOP', remaining_s=None)
+                return radar
+            radar = self.radar.snapshot(now)
+            status = session.snapshot()
+        if fault not in (None, 'NONE'):
+            attempt = (session, telemetry.get('boot_id'), fault)
+            if (fault in ('ENCODER_JUMP', 'ENCODER_INVALID') and
+                    status.get('protocol_version') == 2 and telemetry.get('encoder_good_samples', 0) >= 10 and
+                    self.auto_recover_attempt != attempt):
+                try:
+                    session.recover()
+                except ValueError:
+                    self.auto_recovery = dict(state='BLOCKED', remaining_s=None)
+                    return radar
+                self.auto_recover_attempt = attempt
+                self.auto_recovery = dict(state='RECOVERING', remaining_s=None)
+            else:
+                self.auto_recovery = dict(state='BLOCKED', remaining_s=None)
             return radar
         try:
-            self.rearm_radar(after_evade=True)
+            self.acknowledge_estop()
         except ValueError:
+            self.auto_recovery = dict(state='WAITING_STOP', remaining_s=None)
             return radar
-        self.notice = '레이더 CLEAR 및 STOP 확인 · 새 입력 대기'
-        return self.radar.snapshot(now)
+        self.auto_recovery = dict(state='READY_NEW_INPUT', remaining_s=None)
+        self.auto_release_since = None
+        self.auto_recover_attempt = None
+        self.auto_fault = None
+        self.notice = 'CLEAR 1초 및 장치 STOP 확인 · 자동 차단 해제 · 새 입력 필요'
+        return radar
+
+    @control_locked
+    def acknowledge_estop(self):
+        session = self.shared_session
+        status = session.snapshot() if session else {}
+        radar = status.get('radar') or {}
+        if self.release_future or self.pending_mode or self.language.busy or self.control_error or self.error:
+            raise ValueError('정지 처리와 관제 상태를 확인하세요.')
+        if self.client and (not session or movement_block(status) or status.get('distance_leased') or
+                            not status.get('ready') or not status.get('stop_verified') or
+                            status.get('fault') != 'NONE' or radar.get('state') != 'CLEAR' or
+                            radar.get('blocked') is not False or not radar.get('fresh', True)):
+            raise ValueError('정상 연결, 레이더 차단 해제 및 새 STOP 응답을 확인하세요.')
+        if session:
+            session.release_web_hold()
+        self.c.estop_latched = False
+        self.c.halt('PAUSED', 'OPERATOR_REARM_REQUIRED', True)
+        self.pending = None
+        self.web_vision = None
+        self.hand.reset()
+        self.hand_armed_once = True
+        self.hand_requires_activation = True
+        self.follow_auto_arm = False
+        self.radar_neutral_required = True
+        self.control_generation += 1
 
     @control_locked
     def rearm_radar(self, *, after_evade=False):
@@ -802,6 +916,8 @@ class DashboardEngine:
         if action == 'ESTOP' or (action == 'PAUSE' and self.language.executing):
             self.language.cancel('EMERGENCY_STOP' if action == 'ESTOP' else 'USER_PAUSE')
         if action=='ESTOP':
+            self.auto_release_since = None
+            self.auto_recovery = dict(state='WAITING_CLEAR', remaining_s=None)
             self.pending_mode = None
             self.language_authorized_host = None
             self.hand_armed_once = True
@@ -818,6 +934,8 @@ class DashboardEngine:
     @control_locked
     def tick(self,result,now=None,pipeline_error=None,pipeline_health=None):
         now=time.monotonic() if now is None else now
+        if self.shared_session and self.control_thread is None and not self.browser_operator_required:
+            self.operator_alive()
         if self.web_vision:
             _, session, owner, expires = self.web_vision
             if session is not self.shared_session or owner != self.client_owner:
@@ -828,7 +946,7 @@ class DashboardEngine:
         was_executing=self.language.executing
         self.language.poll()
         self._take_language_release()
-        radar = self._resume_after_evade(radar, now)
+        radar = self._auto_release_safety(radar, now)
         self._finish_mode_change()
         if was_executing and self.language.phase == 'FAILED':
             self.language_authorized_host = None
@@ -856,8 +974,6 @@ class DashboardEngine:
         shared = self.shared_session
         if shared:
             shared.controller_alive()
-            if self.control_thread is None:
-                shared.operator_alive()
             if shared.recovery_generation != self.seen_recovery_generation:
                 self.seen_recovery_generation = shared.recovery_generation
                 self.language.cancel()

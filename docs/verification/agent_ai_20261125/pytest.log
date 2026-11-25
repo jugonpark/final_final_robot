@@ -1,0 +1,19 @@
+..................................................s........ [ 17%]
+..............................F...................s............................................... [ 46%]
+....................................................................................... [ 71%]
+.......................................................................................... [ 98%]
+.....                                                                    [100%]
+================================== FAILURES ===================================
+______ FirmwareTests.test_reference_provenance_and_no_copied_credentials ______
+tests\test_firmware.py:17: in test_reference_provenance_and_no_copied_credentials
+    self.assertFalse((reference/'secrets.h').exists())
+E   AssertionError: True is not false
+============================== warnings summary ===============================
+python_controller\monitoring.py:32
+  C:\Users\jugon\Desktop\LAST_DANCE\python_controller\monitoring.py:32: PytestCollectionWarning: cannot collect test class 'TestBook' because it has a __init__ constructor (from: tests/test_dashboard_core.py)
+    class TestBook:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_firmware.py::FirmwareTests::test_reference_provenance_and_no_copied_credentials
+1 failed, 336 passed, 2 skipped, 1 warning, 458 subtests passed in 252.79s (0:04:12)

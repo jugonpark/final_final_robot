@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from python_controller.knowledge.answer import answer_documents
+from python_controller.knowledge.answer import answer_documents, document_question
 from python_controller.knowledge.library import KnowledgeError, KnowledgeLibrary
 
 
@@ -35,6 +35,96 @@ class KnowledgeTests(unittest.TestCase):
         self.temp = Path(temp.name)
         self.library = KnowledgeLibrary(self.temp / 'knowledge.sqlite3', self.temp)
         self.library.vector = None
+
+    def test_named_reference_question_matches_only_indexed_markdown_heading_and_whole_question(self):
+        self.library.register('person.md', '# 홍승조\n홍승조는 사용자 제공 소개의 대상입니다.'.encode())
+        for question in ('홍승조가 누구야', '홍승조는 누구야?', '홍승조 누구야', '  홍승조 가 누구야 ?  ', '홍승조는 누구야？'):
+            with self.subTest(question=question):
+                self.assertTrue(document_question(question, self.library))
+        for question in ('김철수가 누구야', '홍승조가 누구야 그리고 앞으로 5cm 가',
+                         '앞으로 5cm 가고 홍승조가 누구야', '홍승조가 누구야? 앞으로 이동해'):
+            with self.subTest(question=question):
+                self.assertFalse(document_question(question, self.library))
+
+    def test_user_provided_biography_is_complete_cited_and_never_sent_to_cloud(self):
+        source = Path(__file__).resolve().parents[1] / 'docs/user_reference/HONG_SEUNGJO.md'
+        destination = self.temp / 'docs/user_reference' / source.name
+        destination.parent.mkdir(parents=True)
+        destination.write_bytes(source.read_bytes())
+        self.assertTrue(document_question('홍승조가 누구야', self.library))
+        with patch('python_controller.llm_cli.load_environment', return_value={'DIG_KNOWLEDGE_CLOUD': '1'}), \
+             patch('python_controller.llm.nvidia_client.NvidiaPlanner.complete',
+                   side_effect=AssertionError('User reference must stay local')) as complete:
+            result = answer_documents(self.library, '홍승조가 누구야')
+        complete.assert_not_called()
+        for fact in ('홍승조', '직업: 뮤즈 장로드래곤', '전공: 20학번 전전', '역할: 넘어지기',
+                     '자칭 삼성팬', '브리또', '원피스(옷 → 절대 애니 아님)', '포켓몬'):
+            with self.subTest(fact=fact):
+                self.assertIn(fact, result['reply'])
+        self.assertTrue(result['citations'])
+        self.assertTrue(all(citation['trust'] == 'user_reference' for citation in result['citations']))
+        self.assertEqual(result['citations'][0]['path'], source.name)
+
+    def test_markdown_scan_is_generic_idempotent_and_retires_modified_versions(self):
+        directory = self.temp / 'docs/user_reference'
+        directory.mkdir(parents=True)
+        source = directory / 'another.md'
+        source.write_text('# 이서연\n이서연은 별빛 공방의 도예가이며 첫번째작품을 만들었습니다.', encoding='utf-8')
+        self.assertTrue(document_question('이서연은 누구인가요?', self.library))
+        first = self.library.documents()[0]
+        self.assertEqual((first['trust'], first['source_kind']), ('user_reference', 'USER_UPLOAD'))
+        again = KnowledgeLibrary(self.library.path, self.temp)
+        again.vector = None
+        self.assertEqual(len(again.documents()), 1)
+        self.assertEqual(again.documents()[0]['id'], first['id'])
+        source.write_text('# 이서연\n이서연은 별빛 공방의 도예가이며 두번째작품을 만들었습니다.', encoding='utf-8')
+        following = KnowledgeLibrary(self.library.path, self.temp)
+        following.vector = None
+        answer = answer_documents(following, '이서연은 누구예요?', use_nemotron=False)
+        self.assertIn('두번째작품', answer['reply'])
+        self.assertNotIn('첫번째작품', answer['reply'])
+        self.assertEqual({row['status'] for row in following.documents()}, {'indexed', 'outdated'})
+
+    def test_who_routing_requires_markdown_heading_and_leaves_self_and_unknown_alone(self):
+        self.library.register('person.txt', '# 김철수\n김철수는 소개 문서의 대상입니다.'.encode())
+        self.library.register('other.md', '# 다른 사람\n김민주는 언급만 된 이름입니다.'.encode())
+        self.library.register('self.md', '# 너\n너는 별칭으로 쓰이는 단어입니다.'.encode())
+        for question in ('김철수가 누구야', '김민주는 누구야', '너 누구야', '아무개가 누구야'):
+            self.assertFalse(document_question(question, self.library))
+        with patch.object(self.library, 'search_robot_documents', side_effect=AssertionError('Not a who question')):
+            self.assertFalse(document_question('앞으로 5cm 이동해', self.library))
+        with patch.object(self.library, 'search_robot_documents', side_effect=KnowledgeError('Unavailable')):
+            self.assertFalse(document_question('김철수가 누구야', self.library))
+
+    def test_markdown_scan_skips_invalid_oversized_and_secret_documents(self):
+        directory = self.temp / 'docs/user_reference'
+        directory.mkdir(parents=True)
+        (directory / 'credentials.md').write_text('# 제외이름\n제외이름은 색인에서 제외합니다.', encoding='utf-8')
+        (directory / 'large.md').write_bytes(b'x' * (4 * 1024 * 1024 + 1))
+        (directory / 'notes.md').write_bytes(b'# Hidden\nWIFI_PASSWORD=exampleSecret123')
+        (directory / 'valid.md').write_text('# 정상인물\n정상인물은 정상 문서에서 검색할 수 있습니다.', encoding='utf-8')
+        rows = self.library.documents()
+        self.assertEqual([row['path'] for row in rows if row['status'] == 'indexed'], ['valid.md'])
+        self.assertEqual(next(row['status'] for row in rows if row['path'] == 'notes.md'), 'failed')
+        self.assertTrue(document_question('정상인물은 누구야', self.library))
+
+    def test_markdown_scan_does_not_follow_file_or_directory_symlinks(self):
+        with TemporaryDirectory() as outside:
+            external = Path(outside)
+            (external / 'outside.md').write_text('# 외부인물\n외부인물은 경계 밖의 참고 문서에 있습니다.', encoding='utf-8')
+            directory = self.temp / 'docs/user_reference'
+            directory.mkdir(parents=True)
+            try:
+                (directory / 'linked.md').symlink_to(external / 'outside.md')
+            except OSError:
+                self.skipTest('This Windows account cannot create symbolic links')
+            self.assertFalse(self.library.documents())
+            (directory / 'linked.md').unlink()
+            directory.rmdir()
+            directory.symlink_to(external, target_is_directory=True)
+            fresh = KnowledgeLibrary(self.library.path, self.temp)
+            fresh.vector = None
+            self.assertFalse(fresh.documents())
 
     def test_korean_to_english_search_and_exact_error_code(self):
         self.library.register('motor-manual.md', b'# Encoder telemetry\nEncoder telemetry is only diagnostic feedback.\n'

@@ -1,0 +1,208 @@
+[
+  {
+    "mode": "fts",
+    "hits_at_3": 7,
+    "total": 9,
+    "exceptions": 1,
+    "p50_ms": 25.41259996360168,
+    "p95_ms": 270.5289000296034,
+    "results": [
+      {
+        "question": "레이더 udp 8891 발행자",
+        "expected": "RADAR_OPERATION_GUIDE.md",
+        "top_three": [
+          "RADAR_LLM_INTEGRATION.md",
+          "RADAR_OPERATION_GUIDE.md",
+          "RADAR_OPERATION_GUIDE.md"
+        ],
+        "ms": 178.3106999937445,
+        "error": null
+      },
+      {
+        "question": "bpmCfg",
+        "expected": "RADAR_OPERATION_GUIDE.md",
+        "top_three": [
+          "RADAR_OPERATION_GUIDE.md",
+          "RADAR_OPERATION_GUIDE.md",
+          "RADAR_LLM_INTEGRATION.md"
+        ],
+        "ms": 270.5289000296034,
+        "error": null
+      },
+      {
+        "question": "엔코더 정책 FILTERED_TEST",
+        "expected": "CONTROL_SIMPLE_V2_PLAN.md",
+        "top_three": [
+          "CONTROL_SIMPLE_V2_PLAN.md",
+          "ARCHITECTURE.md",
+          "ARCHITECTURE.md"
+        ],
+        "ms": 135.326299990993,
+        "error": null
+      },
+      {
+        "question": "C6 하드웨어 시험 준비",
+        "expected": "C6_HARDWARE_PREFLIGHT.md",
+        "top_three": [],
+        "ms": 0.33549999352544546,
+        "error": "KnowledgeError"
+      },
+      {
+        "question": "수동 시험 정책",
+        "expected": "ARCHITECTURE.md",
+        "top_three": [
+          "ARCHITECTURE.md",
+          "ARCHITECTURE.md",
+          "RADAR_OPERATION_GUIDE.md"
+        ],
+        "ms": 22.908999992068857,
+        "error": null
+      },
+      {
+        "question": "레이더 UNKNOWN 이동 차단",
+        "expected": "RADAR_LLM_INTEGRATION.md",
+        "top_three": [
+          "RADAR_LLM_INTEGRATION.md",
+          "RADAR_LLM_INTEGRATION.md",
+          "RADAR_OPERATION_GUIDE.md"
+        ],
+        "ms": 25.41259996360168,
+        "error": null
+      },
+      {
+        "question": "UDP watchdog heartbeat",
+        "expected": "CONTROL_SIMPLE_V2_PLAN.md",
+        "top_three": [
+          "C6_HARDWARE_PREFLIGHT.md",
+          "C6_HARDWARE_PREFLIGHT.md",
+          "CONTROL_SIMPLE_V2_PLAN.md"
+        ],
+        "ms": 13.528299983590841,
+        "error": null
+      },
+      {
+        "question": "motor thermal latch inspection",
+        "expected": "benchmark-en.md",
+        "top_three": [
+          "benchmark-en.md",
+          "ARCHITECTURE.md",
+          "C6_HARDWARE_PREFLIGHT.md"
+        ],
+        "ms": 18.658299988601357,
+        "error": null
+      },
+      {
+        "question": "과열 보호가 동작하면 어떻게 되나요",
+        "expected": "benchmark-en.md",
+        "top_three": [],
+        "ms": 82.30519999051467,
+        "error": null
+      }
+    ]
+  },
+  {
+    "mode": "hybrid",
+    "hits_at_3": 6,
+    "total": 9,
+    "exceptions": 1,
+    "p50_ms": 151.87750000040978,
+    "p95_ms": 441.88320002285764,
+    "results": [
+      {
+        "question": "레이더 udp 8891 발행자",
+        "expected": "RADAR_OPERATION_GUIDE.md",
+        "top_three": [
+          "RADAR_LLM_INTEGRATION.md",
+          "RADAR_OPERATION_GUIDE.md",
+          "RADAR_LLM_INTEGRATION.md"
+        ],
+        "ms": 28.454599960241467,
+        "error": null
+      },
+      {
+        "question": "bpmCfg",
+        "expected": "RADAR_OPERATION_GUIDE.md",
+        "top_three": [
+          "RADAR_OPERATION_GUIDE.md",
+          "RADAR_OPERATION_GUIDE.md",
+          "RADAR_LLM_INTEGRATION.md"
+        ],
+        "ms": 52.3346999543719,
+        "error": null
+      },
+      {
+        "question": "엔코더 정책 FILTERED_TEST",
+        "expected": "CONTROL_SIMPLE_V2_PLAN.md",
+        "top_three": [
+          "CONTROL_SIMPLE_V2_PLAN.md",
+          "C6_HARDWARE_PREFLIGHT.md",
+          "ARCHITECTURE.md"
+        ],
+        "ms": 61.171600013040006,
+        "error": null
+      },
+      {
+        "question": "C6 하드웨어 시험 준비",
+        "expected": "C6_HARDWARE_PREFLIGHT.md",
+        "top_three": [],
+        "ms": 0.069500005338341,
+        "error": "KnowledgeError"
+      },
+      {
+        "question": "수동 시험 정책",
+        "expected": "ARCHITECTURE.md",
+        "top_three": [
+          "ARCHITECTURE.md",
+          "ARCHITECTURE.md",
+          "DASHBOARD_GUIDE.md"
+        ],
+        "ms": 212.08989998558536,
+        "error": null
+      },
+      {
+        "question": "레이더 UNKNOWN 이동 차단",
+        "expected": "RADAR_LLM_INTEGRATION.md",
+        "top_three": [
+          "RADAR_OPERATION_GUIDE.md",
+          "RADAR_LLM_INTEGRATION.md",
+          "RADAR_LLM_INTEGRATION.md"
+        ],
+        "ms": 151.87750000040978,
+        "error": null
+      },
+      {
+        "question": "UDP watchdog heartbeat",
+        "expected": "CONTROL_SIMPLE_V2_PLAN.md",
+        "top_three": [
+          "C6_HARDWARE_PREFLIGHT.md",
+          "C6_HARDWARE_PREFLIGHT.md",
+          "C6_HARDWARE_PREFLIGHT.md"
+        ],
+        "ms": 204.84170003328472,
+        "error": null
+      },
+      {
+        "question": "motor thermal latch inspection",
+        "expected": "benchmark-en.md",
+        "top_three": [
+          "benchmark-en.md",
+          "ARCHITECTURE.md",
+          "DASHBOARD_GUIDE.md"
+        ],
+        "ms": 441.88320002285764,
+        "error": null
+      },
+      {
+        "question": "과열 보호가 동작하면 어떻게 되나요",
+        "expected": "benchmark-en.md",
+        "top_three": [
+          "RADAR_OPERATION_GUIDE.md",
+          "ARCHITECTURE.md",
+          "HONG_SEUNGJO.md"
+        ],
+        "ms": 301.33280000882223,
+        "error": null
+      }
+    ]
+  }
+]

@@ -1,0 +1,240 @@
+{
+  "root": "C:\\Users\\jugon\\Desktop\\LAST_DANCE",
+  "database": "C:\\Users\\jugon\\Desktop\\LAST_DANCE\\.tmp\\rag-v2-baseline\\wrapped-evaluation.sqlite3",
+  "no_download": true,
+  "system": {
+    "processor": "AMD64 Family 26 Model 104 Stepping 0, AuthenticAMD",
+    "logical_cpus": 12,
+    "ram_bytes": 16279851008,
+    "gpu": "CIM unavailable in sandbox"
+  },
+  "counts": {
+    "documents": 13,
+    "chunks": 72,
+    "embeddings": 45
+  },
+  "metrics": [
+    {
+      "mode": "FTS5",
+      "model_available": true,
+      "hits_at_3": 6,
+      "total": 9,
+      "exceptions": 1,
+      "mean_ms": 12.96111111111111,
+      "p50_ms": 7.15,
+      "p95_nearest_rank_ms": 61.97,
+      "cpu_s": 0.0625,
+      "wall_s": 0.11733510001795366,
+      "max_rss_bytes": 29032448,
+      "results": [
+        {
+          "question": "레이더 udp 8891 발행자",
+          "expected": "RADAR_OPERATION_GUIDE.md",
+          "top_three": [
+            "RADAR_LLM_INTEGRATION.md",
+            "RADAR_OPERATION_GUIDE.md",
+            "RADAR_LLM_INTEGRATION.md"
+          ],
+          "ms": 12.18,
+          "rss_bytes": 28712960
+        },
+        {
+          "question": "bpmCfg",
+          "expected": "RADAR_OPERATION_GUIDE.md",
+          "top_three": [
+            "RADAR_OPERATION_GUIDE.md",
+            "RADAR_LLM_INTEGRATION.md",
+            "RADAR_LLM_INTEGRATION.md"
+          ],
+          "ms": 5.74,
+          "rss_bytes": 28958720
+        },
+        {
+          "question": "엔코더 정책 FILTERED_TEST",
+          "expected": "CONTROL_SIMPLE_V2_PLAN.md",
+          "top_three": [
+            "ARCHITECTURE.md",
+            "CONTROL_SIMPLE_V2_PLAN.md",
+            "ARCHITECTURE.md"
+          ],
+          "ms": 7.15,
+          "rss_bytes": 29003776
+        },
+        {
+          "question": "C6 하드웨어 시험 준비",
+          "expected": "C6_HARDWARE_PREFLIGHT.md",
+          "top_three": [],
+          "error_type": "KnowledgeError",
+          "error": "어느 자료 기준인가요? 브레드보드 시제품, PCB V18 설계, PCB V19 설계 중 하나를 알려 주세요.",
+          "ms": 0.35,
+          "rss_bytes": 29003776
+        },
+        {
+          "question": "수동 시험 정책",
+          "expected": "ARCHITECTURE.md",
+          "top_three": [
+            "ARCHITECTURE.md",
+            "C6_HARDWARE_PREFLIGHT.md",
+            "RADAR_OPERATION_GUIDE.md"
+          ],
+          "ms": 6.04,
+          "rss_bytes": 28631040
+        },
+        {
+          "question": "레이더 UNKNOWN 이동 차단",
+          "expected": "RADAR_LLM_INTEGRATION.md",
+          "top_three": [
+            "RADAR_LLM_INTEGRATION.md",
+            "RADAR_LLM_INTEGRATION.md",
+            "RADAR_OPERATION_GUIDE.md"
+          ],
+          "ms": 8.52,
+          "rss_bytes": 28782592
+        },
+        {
+          "question": "UDP watchdog heartbeat",
+          "expected": "CONTROL_SIMPLE_V2_PLAN.md",
+          "top_three": [
+            "C6_HARDWARE_PREFLIGHT.md",
+            "C6_HARDWARE_PREFLIGHT.md",
+            "C6_HARDWARE_PREFLIGHT.md"
+          ],
+          "ms": 9.41,
+          "rss_bytes": 28794880
+        },
+        {
+          "question": "motor thermal latch inspection",
+          "expected": "benchmark-en.md",
+          "top_three": [
+            "benchmark-en.md",
+            "C6_HARDWARE_PREFLIGHT.md",
+            "DASHBOARD_GUIDE.md"
+          ],
+          "ms": 61.97,
+          "rss_bytes": 28741632
+        },
+        {
+          "question": "과열 보호가 동작하면 어떻게 되나요",
+          "expected": "benchmark-en.md",
+          "top_three": [],
+          "ms": 5.29,
+          "rss_bytes": 29032448
+        }
+      ]
+    },
+    {
+      "mode": "HYBRID",
+      "model_available": true,
+      "hits_at_3": 5,
+      "total": 9,
+      "exceptions": 1,
+      "mean_ms": 2490.861111111111,
+      "p50_ms": 43.72,
+      "p95_nearest_rank_ms": 22118.14,
+      "cpu_s": 18.421875,
+      "wall_s": 22.4186936999904,
+      "max_rss_bytes": 1187201024,
+      "results": [
+        {
+          "question": "레이더 udp 8891 발행자",
+          "expected": "RADAR_OPERATION_GUIDE.md",
+          "top_three": [
+            "RADAR_LLM_INTEGRATION.md",
+            "RADAR_LLM_INTEGRATION.md",
+            "RADAR_OPERATION_GUIDE.md"
+          ],
+          "ms": 22118.14,
+          "rss_bytes": 1187201024
+        },
+        {
+          "question": "bpmCfg",
+          "expected": "RADAR_OPERATION_GUIDE.md",
+          "top_three": [
+            "RADAR_OPERATION_GUIDE.md",
+            "RADAR_LLM_INTEGRATION.md",
+            "RADAR_LLM_INTEGRATION.md"
+          ],
+          "ms": 70.14,
+          "rss_bytes": 1184772096
+        },
+        {
+          "question": "엔코더 정책 FILTERED_TEST",
+          "expected": "CONTROL_SIMPLE_V2_PLAN.md",
+          "top_three": [
+            "ARCHITECTURE.md",
+            "C6_HARDWARE_PREFLIGHT.md",
+            "C6_HARDWARE_PREFLIGHT.md"
+          ],
+          "ms": 14.3,
+          "rss_bytes": 1184854016
+        },
+        {
+          "question": "C6 하드웨어 시험 준비",
+          "expected": "C6_HARDWARE_PREFLIGHT.md",
+          "top_three": [],
+          "error_type": "KnowledgeError",
+          "error": "어느 자료 기준인가요? 브레드보드 시제품, PCB V18 설계, PCB V19 설계 중 하나를 알려 주세요.",
+          "ms": 0.07,
+          "rss_bytes": 1184862208
+        },
+        {
+          "question": "수동 시험 정책",
+          "expected": "ARCHITECTURE.md",
+          "top_three": [
+            "ARCHITECTURE.md",
+            "DASHBOARD_GUIDE.md",
+            "RADAR_OPERATION_GUIDE.md"
+          ],
+          "ms": 19.07,
+          "rss_bytes": 1184878592
+        },
+        {
+          "question": "레이더 UNKNOWN 이동 차단",
+          "expected": "RADAR_LLM_INTEGRATION.md",
+          "top_three": [
+            "RADAR_LLM_INTEGRATION.md",
+            "RADAR_OPERATION_GUIDE.md",
+            "RADAR_LLM_INTEGRATION.md"
+          ],
+          "ms": 43.72,
+          "rss_bytes": 1184890880
+        },
+        {
+          "question": "UDP watchdog heartbeat",
+          "expected": "CONTROL_SIMPLE_V2_PLAN.md",
+          "top_three": [
+            "C6_HARDWARE_PREFLIGHT.md",
+            "C6_HARDWARE_PREFLIGHT.md",
+            "C6_HARDWARE_PREFLIGHT.md"
+          ],
+          "ms": 81.16,
+          "rss_bytes": 1184890880
+        },
+        {
+          "question": "motor thermal latch inspection",
+          "expected": "benchmark-en.md",
+          "top_three": [
+            "benchmark-en.md",
+            "ARCHITECTURE.md",
+            "DASHBOARD_GUIDE.md"
+          ],
+          "ms": 23.62,
+          "rss_bytes": 1184899072
+        },
+        {
+          "question": "과열 보호가 동작하면 어떻게 되나요",
+          "expected": "benchmark-en.md",
+          "top_three": [
+            "RADAR_OPERATION_GUIDE.md",
+            "RADAR_LLM_INTEGRATION.md",
+            "ARCHITECTURE.md"
+          ],
+          "ms": 47.53,
+          "rss_bytes": 1184911360
+        }
+      ]
+    }
+  ],
+  "legacy_evaluate_exit": 1,
+  "legacy_evaluate_blocker": "KnowledgeError: ambiguous hardware scope in fixed legacy query"
+}
