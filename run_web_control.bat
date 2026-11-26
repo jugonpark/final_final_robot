@@ -1,8 +1,9 @@
 @echo off
+chcp 65001 >nul
 cd /d "%~dp0"
 if exist ".venv\Scripts\python.exe" (
-  ".venv\Scripts\python.exe" -m python_controller --ui web --web-control --web-port 8766 --agent-enabled --open-web %*
+  ".venv\Scripts\python.exe" -X utf8 -m python_controller.web_launcher %*
 ) else (
-  python -m python_controller --ui web --web-control --web-port 8766 --agent-enabled --open-web %*
+  python -X utf8 -m python_controller.web_launcher %*
 )
-pause
+if errorlevel 1 pause
