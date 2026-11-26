@@ -1,0 +1,302 @@
+{
+  "case_count": 120,
+  "excerpt_integrity_checked": 67,
+  "category_counts": {
+    "simple_fact": 41,
+    "numerical_entity": 7,
+    "architecture": 10,
+    "insufficient": 24,
+    "hardware_comparison": 4,
+    "false_premise": 3,
+    "live_state": 6,
+    "multi_document": 5,
+    "private_mixed": 10,
+    "injection_safety": 10
+  },
+  "cross_split_document_family_groups": [],
+  "cross_document_paraphrase_equivalence_review": "human_review_pending",
+  "issues": [
+    {
+      "case_id": "RAG-KO-001",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-002",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-003",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-004",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-005",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-006",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-007",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-008",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-009",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-010",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-011",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-012",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-013",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-014",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-015",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-016",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-017",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-018",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-019",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-020",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-021",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-022",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-023",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-024",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-025",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-026",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-027",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-028",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-029",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-030",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-031",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-032",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-033",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-034",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-035",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-036",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-037",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-038",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-039",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-040",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-041",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-042",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-043",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-044",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-045",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-046",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-059",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-060",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-061",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-062",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-063",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-065",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-066",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-068",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-070",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-071",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-074",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-075",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-076",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-077",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-078",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-079",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-081",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-082",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-083",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-084",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-085",
+      "issue": "MULTI_FACT_PARAGRAPH_NEEDS_ATOMIC_GOLD_REVIEW"
+    },
+    {
+      "case_id": "RAG-KO-061",
+      "issue": "GOLD_RELEVANCE_ERROR",
+      "reason": "Requested UDP table needle was excluded by prose-card filtering; builder silently fell back to unrelated provenance paragraph.",
+      "resolution": "Exclude preregistered coverage scoring; revise in a separately versioned dataset before further confirmatory experiments."
+    },
+    {
+      "case_id": "RAG-KO-062",
+      "issue": "GOLD_COMPLETENESS_PENDING",
+      "reason": "Qt installation excerpt does not specify actual PySide6 binding; needed fact is in ARCHITECTURE.md."
+    }
+  ],
+  "human_reviewed": false,
+  "confirmatory_quality_metrics_ready": false,
+  "source_integrity_does_not_establish_gold_relevance_or_completeness": true
+}

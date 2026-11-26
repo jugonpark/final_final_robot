@@ -251,10 +251,12 @@ class UnifiedAgent:
         self.generation = 0
         self._seen_control_generation = engine.control_generation
 
-    def _append(self, role, text, citations=None, *, retain_in_dialogue=False):
+    def _append(self, role, text, citations=None, *, retain_in_dialogue=False, rag=None):
         entry = {'role': role, 'content': text}
         if citations:
             entry['citations'] = citations
+        if rag is not None:
+            entry.update(rag)
         self.messages = [*self.messages[-39:], entry]
         if role == 'user' or retain_in_dialogue:
             self.dialogue_history = [*self.dialogue_history[-9:], {'role': role, 'content': text}]
@@ -445,11 +447,12 @@ class UnifiedAgent:
                 self._append('user', text)
                 self._append('assistant', reply)
                 return
-            document_followup = bool(getattr(self.graph,'last_document_question',None) and re.fullmatch(r'(?:그럼\s*)?(?:그건|그 부분|차이는|동작 방식은|더 자세히|좀 더 자세히|왜 그런지)(?:\s*(?:설명해\s*줘|알려\s*줘))?[?？.! ]*',text))
-            if not document_question(text) and not document_followup and (detail := program_detail(text)):
-                self._append('user', text)
-                self._append('assistant', detail, retain_in_dialogue=True)
+            if re.fullmatch(r'(?:지금|현재)\s*로봇(?:은|이|는)?\s*(?:움직이고\s*있(?:어|나요)|주행\s*중이(?:야|니)|상태(?:가)?\s*(?:어때|뭐야|알려\s*줘))[?？.! ]*',text):
+                self._append('user',text)
+                reply=self.bridge.get_status('all')
+                self._append('assistant',reply,rag={'answer_mode':'runtime','verification_status':'runtime_snapshot','speech_text':reply})
                 return
+            document_followup = self.graph.document_followup(text)
             if not document_question(text) and (help_intent := menu_question(text)):
                 self._append('user', text)
                 self._append('assistant', explain_menu(help_intent.menu), retain_in_dialogue=True)
@@ -457,10 +460,6 @@ class UnifiedAgent:
             if re.fullmatch(r'(?:지금\s*)?레이더(?:가|는)?\s*CLEAR(?:야|인가요|인지\s*알려\s*줘)?[?!.]?', text, re.I):
                 self._append('user', text)
                 self._append('assistant', self.bridge.get_status('radar'))
-                return
-            if not document_question(text) and program_question(text):
-                self._append('user', text)
-                self._append('assistant', self._describe_program(), retain_in_dialogue=True)
                 return
             if self.busy or self.mode_plan or self.engine.language.executing:
                 reply = self._read_during_operation(text)
@@ -727,8 +726,10 @@ class UnifiedAgent:
                     self._append('assistant', '초안을 비웠습니다.')
                 return
             if kind == 'message' and result.get('reply'):
+                if result.get('rag') is not None and token != self.generation:
+                    return
                 self._append('assistant', result['reply'], result.get('citations'),
-                             retain_in_dialogue=result.get('retain_in_dialogue', False))
+                             retain_in_dialogue=result.get('retain_in_dialogue', False),rag=result.get('rag'))
                 return
             staged_during_run = kind == 'message' and result.get('edit') and value[2]
             if not current_ticket and not (token == self.generation and staged_during_run):

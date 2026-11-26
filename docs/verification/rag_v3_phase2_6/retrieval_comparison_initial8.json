@@ -1,0 +1,2749 @@
+{
+  "corpus": [
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "revision": "8861848",
+      "sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc"
+    },
+    {
+      "path": "docs/DASHBOARD_GUIDE.md",
+      "revision": "8861848",
+      "sha256": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332"
+    },
+    {
+      "path": "docs/RADAR_OPERATION_GUIDE.md",
+      "revision": "8861848",
+      "sha256": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486"
+    },
+    {
+      "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+      "revision": "8861848",
+      "sha256": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096"
+    },
+    {
+      "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+      "revision": "8861848",
+      "sha256": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a"
+    },
+    {
+      "path": "docs/hardware/breadboard/FACTS.md",
+      "revision": "8861848",
+      "sha256": "a5d33c06ad2d3cd5fc06f1d828937e2a5470679aa88e81e612a3860ca3034e5b"
+    },
+    {
+      "path": "docs/hardware/pcb-v18/FACTS.md",
+      "revision": "8861848",
+      "sha256": "48f5fa12271205dd7a8f089e759794d7c4981edfb61709411d3b8f69bc2f1a30"
+    },
+    {
+      "path": "docs/hardware/pcb-v19/FACTS.md",
+      "revision": "8861848",
+      "sha256": "4cc81815e4662096f4639bdfc024258c071956608291963b3722a33077a4ecc8"
+    }
+  ],
+  "same_input_all_arms": true,
+  "hybrid_note": "No local dense model configured in this isolated run. Hybrid arm is FTS fallback, NOT a dense comparison.",
+  "marker_note": "Evaluation-only lexical markers, not human answer success or faithfulness. Not used by candidate inference.",
+  "results": [
+    {
+      "case_id": "061",
+      "question": "우리 프로그램은 노트북이랑 로봇이 어떻게 통신해?",
+      "arm": "fts",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 2,
+      "local_retrieval_selection_ms": 32.15880005154759,
+      "evidence": [
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다.",
+            "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+            "Raw 관측은 차단 여부와 무관하게 보존하지만, 제어 입력은 기존 단일 인물·목표 소유권 제한을 통과해야 한다. Controller에 진단 값과 긴급 정지 latch를 추가했으며 기존 30개 테스트를 유지한다. 요청 명령은 제한 전 출력이고 안전 명령과 구분한다. PAUSED/FAULT에서도 요청은 진단 목적으로 표시될 수 있으며 전송 가능성을 의미하지 않는다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+            "아래는 재사용한 1차 제어 기반이다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다."
+          ]
+        },
+        {
+          "source_id": 6,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "현재 거리 대용값 계산은 `control/distance_estimator.py`의 `relative_height_ratio`로 분리했다. FollowController는 이 함수와 같은 `(target, frame_height) -> dimensionless proxy` callable을 주입받을 수 있다. 실제 거리 센서를 연결할 때에는 새 관측값의 유효성·단위와 목표값 의미도 함께 검증해야 한다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "061",
+      "question": "우리 프로그램은 노트북이랑 로봇이 어떻게 통신해?",
+      "arm": "hybrid_unavailable",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 2,
+      "local_retrieval_selection_ms": 239.79780002264306,
+      "evidence": [
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다.",
+            "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+            "Raw 관측은 차단 여부와 무관하게 보존하지만, 제어 입력은 기존 단일 인물·목표 소유권 제한을 통과해야 한다. Controller에 진단 값과 긴급 정지 latch를 추가했으며 기존 30개 테스트를 유지한다. 요청 명령은 제한 전 출력이고 안전 명령과 구분한다. PAUSED/FAULT에서도 요청은 진단 목적으로 표시될 수 있으며 전송 가능성을 의미하지 않는다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+            "아래는 재사용한 1차 제어 기반이다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다."
+          ]
+        },
+        {
+          "source_id": 6,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "현재 거리 대용값 계산은 `control/distance_estimator.py`의 `relative_height_ratio`로 분리했다. FollowController는 이 함수와 같은 `(target, frame_height) -> dimensionless proxy` callable을 주입받을 수 있다. 실제 거리 센서를 연결할 때에는 새 관측값의 유효성·단위와 목표값 의미도 함께 검증해야 한다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "061",
+      "question": "우리 프로그램은 노트북이랑 로봇이 어떻게 통신해?",
+      "arm": "dedup_only",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 2,
+      "local_retrieval_selection_ms": 98.93659997032955,
+      "evidence": [
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다.",
+            "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+            "Raw 관측은 차단 여부와 무관하게 보존하지만, 제어 입력은 기존 단일 인물·목표 소유권 제한을 통과해야 한다. Controller에 진단 값과 긴급 정지 latch를 추가했으며 기존 30개 테스트를 유지한다. 요청 명령은 제한 전 출력이고 안전 명령과 구분한다. PAUSED/FAULT에서도 요청은 진단 목적으로 표시될 수 있으며 전송 가능성을 의미하지 않는다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+            "아래는 재사용한 1차 제어 기반이다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다."
+          ]
+        },
+        {
+          "source_id": 6,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "현재 거리 대용값 계산은 `control/distance_estimator.py`의 `relative_height_ratio`로 분리했다. FollowController는 이 함수와 같은 `(target, frame_height) -> dimensionless proxy` callable을 주입받을 수 있다. 실제 거리 센서를 연결할 때에는 새 관측값의 유효성·단위와 목표값 의미도 함께 검증해야 한다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "061",
+      "question": "우리 프로그램은 노트북이랑 로봇이 어떻게 통신해?",
+      "arm": "structure",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 20302.03929997515,
+      "evidence": [
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "1. Requested는 방향·상대 크기 제어의 제한 전 요구다. 상태가 PAUSED여도 진단용 요청이 보일 수 있다.\n2. Safe는 상태·속도·가속도·후진 제한을 적용한 실제 상위 출력이다. 항상 최대 5cm/s·0.5rad/s이며 vy=0이다.\n3. Last successful UDP send는 sendto가 반환한 실제 wire 패킷이다. 모터 수신·동작 성공의 증거가 아니다.\n4. Matched ack command는 유효 텔레메트리의 last_seq에 대응하는 송신 이력이다. `host_sent_at`/`perception_frame_at`는 호스트 부가 정보이며 wire에 넣지 않는다.\n5. ESP32 reported desired cmd는 `cmd_vx/cmd_vy/cmd_w`다. 펌웨어 내부의 desired 값이므로 가속도 제한 이후 본체 적용 속도로 부르지 않는다. 해당 본체 속도 필드는 NOT REPORTED로 표시한다.\n6. wheel_target/wheel_speed는 cm/s, wheel_pwm은 PWM, encoder_count는 누적 count다. RPM은 `cm/s * 60 / (2*pi*wheel_radius_cm)`으로 환산한다. 설정 기본 반지름 2.9cm는 기존 firmware config에서 확인했다."
+          ]
+        },
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "UDP snapshot은 성공한 sendto 패킷, 수신 나이·유효성, ACK seq에 매칭된 송신 패킷, STOP 이후 확인 여부를 구분한다. `cmd_vx/cmd_vy/cmd_w`는 펌웨어가 보고한 희망 명령이며 제한 이후 본체 속도는 현재 펌웨어에 없다. `wheel_target/wheel_speed`가 실제 바퀴 목표/측정 피드백이다. cm/s를 설정 반지름 2.9cm로 환산한 RPM에는 환산 표시를 붙인다."
+          ]
+        },
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "UDP 8888/8889, 텔레메트리 200ms, SLOW와 300ms 워치독을 펌웨어에서 재확인했다. source IP:8888, session, seq, boot, uptime, 숫자/배열을 검증한다. STOP 검증은 STOP 송신 이후에 해당 seq 이상을 보고한 fresh STOPPED·fault NONE·0 명령/PWM·낮은 wheel_speed가 있어야 한다. 이것도 물리 전원 차단이나 본체 정지 거리 검증은 아니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서 STOP 전용 재동기화를 요청하세요. |"
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다."
+          ]
+        },
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "061",
+      "question": "우리 프로그램은 노트북이랑 로봇이 어떻게 통신해?",
+      "arm": "structure_diverse",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 18286.165199999232,
+      "evidence": [
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "1. Requested는 방향·상대 크기 제어의 제한 전 요구다. 상태가 PAUSED여도 진단용 요청이 보일 수 있다.\n2. Safe는 상태·속도·가속도·후진 제한을 적용한 실제 상위 출력이다. 항상 최대 5cm/s·0.5rad/s이며 vy=0이다.\n3. Last successful UDP send는 sendto가 반환한 실제 wire 패킷이다. 모터 수신·동작 성공의 증거가 아니다.\n4. Matched ack command는 유효 텔레메트리의 last_seq에 대응하는 송신 이력이다. `host_sent_at`/`perception_frame_at`는 호스트 부가 정보이며 wire에 넣지 않는다.\n5. ESP32 reported desired cmd는 `cmd_vx/cmd_vy/cmd_w`다. 펌웨어 내부의 desired 값이므로 가속도 제한 이후 본체 적용 속도로 부르지 않는다. 해당 본체 속도 필드는 NOT REPORTED로 표시한다.\n6. wheel_target/wheel_speed는 cm/s, wheel_pwm은 PWM, encoder_count는 누적 count다. RPM은 `cm/s * 60 / (2*pi*wheel_radius_cm)`으로 환산한다. 설정 기본 반지름 2.9cm는 기존 firmware config에서 확인했다."
+          ]
+        },
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "UDP snapshot은 성공한 sendto 패킷, 수신 나이·유효성, ACK seq에 매칭된 송신 패킷, STOP 이후 확인 여부를 구분한다. `cmd_vx/cmd_vy/cmd_w`는 펌웨어가 보고한 희망 명령이며 제한 이후 본체 속도는 현재 펌웨어에 없다. `wheel_target/wheel_speed`가 실제 바퀴 목표/측정 피드백이다. cm/s를 설정 반지름 2.9cm로 환산한 RPM에는 환산 표시를 붙인다."
+          ]
+        },
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "UDP 8888/8889, 텔레메트리 200ms, SLOW와 300ms 워치독을 펌웨어에서 재확인했다. source IP:8888, session, seq, boot, uptime, 숫자/배열을 검증한다. STOP 검증은 STOP 송신 이후에 해당 seq 이상을 보고한 fresh STOPPED·fault NONE·0 명령/PWM·낮은 wheel_speed가 있어야 한다. 이것도 물리 전원 차단이나 본체 정지 거리 검증은 아니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서 STOP 전용 재동기화를 요청하세요. |"
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다."
+          ]
+        },
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "062",
+      "question": "Qt 화면은 어떤 기술로 만든 거야?",
+      "arm": "fts",
+      "core_marker_presence": {
+        "PySide6": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 11.406600009649992,
+      "evidence": [
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 17,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "파일 변경",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).",
+            "- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서.",
+            "이번 변경에서는 펌웨어·원본 ZIP·모델 파일을 수정하지 않았다. 기존 30개 테스트 파일의 검증 목적을 유지했다."
+          ]
+        },
+        {
+          "source_id": 28,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "현재 LLM 동작",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "2. **의도 분류**는 현재 메시지와 미실행 초안의 동작 목록으로 JSON 의도 객체 하나를 반환한다. Pydantic이 필드를 검사하며, 이동·편집 제안은 현재 사용자 원문과 대조해 방향, 수치, 단계와 버전을 확인한다.\n3. **대화 생성**은 일반 대화와 확인 질문에서 별도로 NVIDIA 응답 스트림을 연다. 모델이 보내는 텍스트 조각은 문장 중간부터 웹의 SSE 연결로 전달된다. Qt는 현재까지 받은 텍스트를 화면 갱신 주기에 표시한다. 완료된 답변을 대화 기록에 저장한다. 최근 사용자 입력과 읽기 전용 답변을 합쳐 최대 10개 메시지를 문맥으로 사용한다. 장치 응답, 실행 영수증과 검색 문서 발췌는 대화 생성 문맥에서 제외한다. 최근 답변을 반복하면 한 번 새 답을 요청한다.\n4. 상태 질문은 런타임 스냅숏을 조회하고, 기술·매뉴얼 질문은 로컬 SQLite FTS5 근거를 읽어 출처를 붙인다. 로컬 벡터 검색과 승인된 Git 문서의 클라우드 인용 선택은 별도 옵션이다. 알려진 문서 지시문 패턴을 발췌에서 걸러내고 클라우드 인용을 실제 원문에 대조한다. 문서 답변은 실행 경로와 분리된다.\n5. LangGraph는 분류, 읽기 전용 답변, 문서 검색과 버전이 고정된 검토를 처리한다. Qt 운영자 승인과 실제 이동은 서버의 기존 실행 경로를 거친다. 실행 중 새 이동은 별도 미래 초안에 저장할 수 있다.",
+            "제품 역할은 D.I.G. 로봇 관제 에이전트이며 모델 이름은 Python의 `NVIDIA_MODEL` 설정에서 읽는다. 공식 NVIDIA 엔드포인트와 사용자 지정 엔드포인트는 서버 답변에서 구별한다. 모델 연결에 문제가 생겨도 웹 블록 직접 편집과 로컬 처리 경로는 이용할 수 있다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+            "아래는 재사용한 1차 제어 기반이다."
+          ]
+        },
+        {
+          "source_id": 27,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "스키마 구현 현황",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "명시적인 긴급 정지는 로컬에서 먼저 처리한다. |\n| 실행 승인 | LangGraph 검토 상태와 서버의 `ApprovalTicket` | 카드와 승인에 미션 ID·버전·세션이 연결된다. 운영자 승인으로 발급된 티켓은 5초 동안 한 번 사용할 수 있다. 초안 편집은 새 검토를 요구한다. 회전이 포함된 계획은 실행을 차단하며 실물 실행 승인은 Qt 관제에서만 가능하다. |",
+            "Pydantic 검증은 스키마에 없는 필드, 잘못된 타입, 숫자 문자열을 거부한다. 별도의 계획 검증은 순서와 전체 이동 거리를 확인한다. 텍스트를 그대로 파싱해 공급되는 제안도 같은 실행 제한을 적용받는다."
+          ]
+        },
+        {
+          "source_id": 11,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실행",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`run_simulation.bat`도 같은 대시보드를 연다. Python 진입의 기본 OpenCV UI와 `--demo`는 기존 테스트와 사용법의 호환성을 위해 유지했다. Qt 설치는 `python -m pip install -r requirements.txt`로 준비하며, 현재 PC의 가상환경에는 설치를 완료했다. 새 PC 전체 부트스트랩은 검증하지 않았다.",
+            "카메라 없는 명확한 합성 미리보기:",
+            "SYNTHETIC_PREVIEW에서는 사람 박스와 손바닥 펼침 (Open Palm) 분류가 합성 입력이다. 성능 증거로 사용하지 않는다. 하드웨어 연결은 코드에서 거부한다. 정상 모드의 미수신 모터 값을 채우는 기능은 없다. `--smoke-seconds 30`은 지정 시간 뒤 정지·종료하는 검사용 옵션이다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "062",
+      "question": "Qt 화면은 어떤 기술로 만든 거야?",
+      "arm": "hybrid_unavailable",
+      "core_marker_presence": {
+        "PySide6": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 11.804400011897087,
+      "evidence": [
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 17,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "파일 변경",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).",
+            "- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서.",
+            "이번 변경에서는 펌웨어·원본 ZIP·모델 파일을 수정하지 않았다. 기존 30개 테스트 파일의 검증 목적을 유지했다."
+          ]
+        },
+        {
+          "source_id": 28,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "현재 LLM 동작",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "2. **의도 분류**는 현재 메시지와 미실행 초안의 동작 목록으로 JSON 의도 객체 하나를 반환한다. Pydantic이 필드를 검사하며, 이동·편집 제안은 현재 사용자 원문과 대조해 방향, 수치, 단계와 버전을 확인한다.\n3. **대화 생성**은 일반 대화와 확인 질문에서 별도로 NVIDIA 응답 스트림을 연다. 모델이 보내는 텍스트 조각은 문장 중간부터 웹의 SSE 연결로 전달된다. Qt는 현재까지 받은 텍스트를 화면 갱신 주기에 표시한다. 완료된 답변을 대화 기록에 저장한다. 최근 사용자 입력과 읽기 전용 답변을 합쳐 최대 10개 메시지를 문맥으로 사용한다. 장치 응답, 실행 영수증과 검색 문서 발췌는 대화 생성 문맥에서 제외한다. 최근 답변을 반복하면 한 번 새 답을 요청한다.\n4. 상태 질문은 런타임 스냅숏을 조회하고, 기술·매뉴얼 질문은 로컬 SQLite FTS5 근거를 읽어 출처를 붙인다. 로컬 벡터 검색과 승인된 Git 문서의 클라우드 인용 선택은 별도 옵션이다. 알려진 문서 지시문 패턴을 발췌에서 걸러내고 클라우드 인용을 실제 원문에 대조한다. 문서 답변은 실행 경로와 분리된다.\n5. LangGraph는 분류, 읽기 전용 답변, 문서 검색과 버전이 고정된 검토를 처리한다. Qt 운영자 승인과 실제 이동은 서버의 기존 실행 경로를 거친다. 실행 중 새 이동은 별도 미래 초안에 저장할 수 있다.",
+            "제품 역할은 D.I.G. 로봇 관제 에이전트이며 모델 이름은 Python의 `NVIDIA_MODEL` 설정에서 읽는다. 공식 NVIDIA 엔드포인트와 사용자 지정 엔드포인트는 서버 답변에서 구별한다. 모델 연결에 문제가 생겨도 웹 블록 직접 편집과 로컬 처리 경로는 이용할 수 있다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+            "아래는 재사용한 1차 제어 기반이다."
+          ]
+        },
+        {
+          "source_id": 27,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "스키마 구현 현황",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "명시적인 긴급 정지는 로컬에서 먼저 처리한다. |\n| 실행 승인 | LangGraph 검토 상태와 서버의 `ApprovalTicket` | 카드와 승인에 미션 ID·버전·세션이 연결된다. 운영자 승인으로 발급된 티켓은 5초 동안 한 번 사용할 수 있다. 초안 편집은 새 검토를 요구한다. 회전이 포함된 계획은 실행을 차단하며 실물 실행 승인은 Qt 관제에서만 가능하다. |",
+            "Pydantic 검증은 스키마에 없는 필드, 잘못된 타입, 숫자 문자열을 거부한다. 별도의 계획 검증은 순서와 전체 이동 거리를 확인한다. 텍스트를 그대로 파싱해 공급되는 제안도 같은 실행 제한을 적용받는다."
+          ]
+        },
+        {
+          "source_id": 11,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실행",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`run_simulation.bat`도 같은 대시보드를 연다. Python 진입의 기본 OpenCV UI와 `--demo`는 기존 테스트와 사용법의 호환성을 위해 유지했다. Qt 설치는 `python -m pip install -r requirements.txt`로 준비하며, 현재 PC의 가상환경에는 설치를 완료했다. 새 PC 전체 부트스트랩은 검증하지 않았다.",
+            "카메라 없는 명확한 합성 미리보기:",
+            "SYNTHETIC_PREVIEW에서는 사람 박스와 손바닥 펼침 (Open Palm) 분류가 합성 입력이다. 성능 증거로 사용하지 않는다. 하드웨어 연결은 코드에서 거부한다. 정상 모드의 미수신 모터 값을 채우는 기능은 없다. `--smoke-seconds 30`은 지정 시간 뒤 정지·종료하는 검사용 옵션이다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "062",
+      "question": "Qt 화면은 어떤 기술로 만든 거야?",
+      "arm": "dedup_only",
+      "core_marker_presence": {
+        "PySide6": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 114.16470003314316,
+      "evidence": [
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 17,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "파일 변경",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).",
+            "- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서.",
+            "이번 변경에서는 펌웨어·원본 ZIP·모델 파일을 수정하지 않았다. 기존 30개 테스트 파일의 검증 목적을 유지했다."
+          ]
+        },
+        {
+          "source_id": 28,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "현재 LLM 동작",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "2. **의도 분류**는 현재 메시지와 미실행 초안의 동작 목록으로 JSON 의도 객체 하나를 반환한다. Pydantic이 필드를 검사하며, 이동·편집 제안은 현재 사용자 원문과 대조해 방향, 수치, 단계와 버전을 확인한다.\n3. **대화 생성**은 일반 대화와 확인 질문에서 별도로 NVIDIA 응답 스트림을 연다. 모델이 보내는 텍스트 조각은 문장 중간부터 웹의 SSE 연결로 전달된다. Qt는 현재까지 받은 텍스트를 화면 갱신 주기에 표시한다. 완료된 답변을 대화 기록에 저장한다. 최근 사용자 입력과 읽기 전용 답변을 합쳐 최대 10개 메시지를 문맥으로 사용한다. 장치 응답, 실행 영수증과 검색 문서 발췌는 대화 생성 문맥에서 제외한다. 최근 답변을 반복하면 한 번 새 답을 요청한다.\n4. 상태 질문은 런타임 스냅숏을 조회하고, 기술·매뉴얼 질문은 로컬 SQLite FTS5 근거를 읽어 출처를 붙인다. 로컬 벡터 검색과 승인된 Git 문서의 클라우드 인용 선택은 별도 옵션이다. 알려진 문서 지시문 패턴을 발췌에서 걸러내고 클라우드 인용을 실제 원문에 대조한다. 문서 답변은 실행 경로와 분리된다.\n5. LangGraph는 분류, 읽기 전용 답변, 문서 검색과 버전이 고정된 검토를 처리한다. Qt 운영자 승인과 실제 이동은 서버의 기존 실행 경로를 거친다. 실행 중 새 이동은 별도 미래 초안에 저장할 수 있다.",
+            "제품 역할은 D.I.G. 로봇 관제 에이전트이며 모델 이름은 Python의 `NVIDIA_MODEL` 설정에서 읽는다. 공식 NVIDIA 엔드포인트와 사용자 지정 엔드포인트는 서버 답변에서 구별한다. 모델 연결에 문제가 생겨도 웹 블록 직접 편집과 로컬 처리 경로는 이용할 수 있다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+            "아래는 재사용한 1차 제어 기반이다."
+          ]
+        },
+        {
+          "source_id": 27,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "스키마 구현 현황",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "명시적인 긴급 정지는 로컬에서 먼저 처리한다. |\n| 실행 승인 | LangGraph 검토 상태와 서버의 `ApprovalTicket` | 카드와 승인에 미션 ID·버전·세션이 연결된다. 운영자 승인으로 발급된 티켓은 5초 동안 한 번 사용할 수 있다. 초안 편집은 새 검토를 요구한다. 회전이 포함된 계획은 실행을 차단하며 실물 실행 승인은 Qt 관제에서만 가능하다. |",
+            "Pydantic 검증은 스키마에 없는 필드, 잘못된 타입, 숫자 문자열을 거부한다. 별도의 계획 검증은 순서와 전체 이동 거리를 확인한다. 텍스트를 그대로 파싱해 공급되는 제안도 같은 실행 제한을 적용받는다."
+          ]
+        },
+        {
+          "source_id": 11,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실행",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`run_simulation.bat`도 같은 대시보드를 연다. Python 진입의 기본 OpenCV UI와 `--demo`는 기존 테스트와 사용법의 호환성을 위해 유지했다. Qt 설치는 `python -m pip install -r requirements.txt`로 준비하며, 현재 PC의 가상환경에는 설치를 완료했다. 새 PC 전체 부트스트랩은 검증하지 않았다.",
+            "카메라 없는 명확한 합성 미리보기:",
+            "SYNTHETIC_PREVIEW에서는 사람 박스와 손바닥 펼침 (Open Palm) 분류가 합성 입력이다. 성능 증거로 사용하지 않는다. 하드웨어 연결은 코드에서 거부한다. 정상 모드의 미수신 모터 값을 채우는 기능은 없다. `--smoke-seconds 30`은 지정 시간 뒤 정지·종료하는 검사용 옵션이다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "062",
+      "question": "Qt 화면은 어떤 기술로 만든 거야?",
+      "arm": "structure",
+      "core_marker_presence": {
+        "PySide6": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 17103.33879996324,
+      "evidence": [
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다."
+          ]
+        },
+        {
+          "source_id": 10,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "최신 진단과 현재 한국어 화면의 전체 안내는 [한국어 진단 사용 안내](KOREAN_DIAGNOSTICS_GUIDE.md)를 참조하세요. 아래 검증 수치가 있으면 이전 단계의 기록입니다."
+          ]
+        },
+        {
+          "source_id": 17,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 파일 변경",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview)."
+          ]
+        },
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+          ]
+        },
+        {
+          "source_id": 28,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "D.I.G. Agent 스키마와 대화 처리 / 현재 LLM 동작",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "2. **의도 분류**는 현재 메시지와 미실행 초안의 동작 목록으로 JSON 의도 객체 하나를 반환한다. Pydantic이 필드를 검사하며, 이동·편집 제안은 현재 사용자 원문과 대조해 방향, 수치, 단계와 버전을 확인한다.\n3. **대화 생성**은 일반 대화와 확인 질문에서 별도로 NVIDIA 응답 스트림을 연다. 모델이 보내는 텍스트 조각은 문장 중간부터 웹의 SSE 연결로 전달된다. Qt는 현재까지 받은 텍스트를 화면 갱신 주기에 표시한다. 완료된 답변을 대화 기록에 저장한다. 최근 사용자 입력과 읽기 전용 답변을 합쳐 최대 10개 메시지를 문맥으로 사용한다. 장치 응답, 실행 영수증과 검색 문서 발췌는 대화 생성 문맥에서 제외한다. 최근 답변을 반복하면 한 번 새 답을 요청한다.\n4. 상태 질문은 런타임 스냅숏을 조회하고, 기술·매뉴얼 질문은 로컬 SQLite FTS5 근거를 읽어 출처를 붙인다. 로컬 벡터 검색과 승인된 Git 문서의 클라우드 인용 선택은 별도 옵션이다. 알려진 문서 지시문 패턴을 발췌에서 걸러내고 클라우드 인용을 실제 원문에 대조한다. 문서 답변은 실행 경로와 분리된다.\n5. LangGraph는 분류, 읽기 전용 답변, 문서 검색과 버전이 고정된 검토를 처리한다. Qt 운영자 승인과 실제 이동은 서버의 기존 실행 경로를 거친다. 실행 중 새 이동은 별도 미래 초안에 저장할 수 있다."
+          ]
+        },
+        {
+          "source_id": 11,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 실행",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`run_simulation.bat`도 같은 대시보드를 연다. Python 진입의 기본 OpenCV UI와 `--demo`는 기존 테스트와 사용법의 호환성을 위해 유지했다. Qt 설치는 `python -m pip install -r requirements.txt`로 준비하며, 현재 PC의 가상환경에는 설치를 완료했다. 새 PC 전체 부트스트랩은 검증하지 않았다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "062",
+      "question": "Qt 화면은 어떤 기술로 만든 거야?",
+      "arm": "structure_diverse",
+      "core_marker_presence": {
+        "PySide6": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 4,
+      "local_retrieval_selection_ms": 19227.07280004397,
+      "evidence": [
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다."
+          ]
+        },
+        {
+          "source_id": 10,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "최신 진단과 현재 한국어 화면의 전체 안내는 [한국어 진단 사용 안내](KOREAN_DIAGNOSTICS_GUIDE.md)를 참조하세요. 아래 검증 수치가 있으면 이전 단계의 기록입니다."
+          ]
+        },
+        {
+          "source_id": 17,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 파일 변경",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview)."
+          ]
+        },
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+          ]
+        },
+        {
+          "source_id": 22,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 2. Pi에서 발행자 실행 / `29/30 bpmCfg`에서 멈출 때",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "테스트 장비에서 `Radar CLI did not acknowledge 29/30 bpmCfg (last reply b'mmwDemo:/>')`가 반복됐습니다. 이 경우 발행자가 다음 명령인 `sensorStart`를 보내기 전에 중단합니다. `bpmCfg -1 0 0 0`은 BPM을 끄는 명령이며, 일부 HWA 기반 데모에서는 이 명령이 필요하지 않습니다. [TI mmWave SDK 가이드](https://dr-download-cdn.ti.com/software-development/software-development-kit-sdk/MD-PIrUeCYr3X/03.06.00.00-LTS/mmwave_sdk_user_guide.pdf#page=32)"
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 3 | `control/hand_drive.py` 및 매핑 UI. MediaPipe Victory를 직접 손동작 후진으로 사용 | 기존 매핑 호환, 정지 및 오래된 프레임 차단, 추종 후진 금지 유지 |"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "063",
+      "question": "레이더가 UNKNOWN이면 무슨 뜻이야?",
+      "arm": "fts",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 172.1350000007078,
+      "evidence": [
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다.",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 25,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "[레이더 송신 규격과 검증 범위](RADAR_LLM_INTEGRATION.md)",
+            "STOP 전용 재동기화를 요청하세요. |"
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "063",
+      "question": "레이더가 UNKNOWN이면 무슨 뜻이야?",
+      "arm": "hybrid_unavailable",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 58.112300001084805,
+      "evidence": [
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다.",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 25,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "[레이더 송신 규격과 검증 범위](RADAR_LLM_INTEGRATION.md)",
+            "STOP 전용 재동기화를 요청하세요. |"
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "063",
+      "question": "레이더가 UNKNOWN이면 무슨 뜻이야?",
+      "arm": "dedup_only",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 7.918599992990494,
+      "evidence": [
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다.",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 25,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "[레이더 송신 규격과 검증 범위](RADAR_LLM_INTEGRATION.md)",
+            "STOP 전용 재동기화를 요청하세요. |"
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "063",
+      "question": "레이더가 UNKNOWN이면 무슨 뜻이야?",
+      "arm": "structure",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 4,
+      "local_retrieval_selection_ms": 18807.794300024398,
+      "evidence": [
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "D.I.G. Agent 스키마와 대화 처리 / 대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |"
+          ]
+        },
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "1. Requested는 방향·상대 크기 제어의 제한 전 요구다. 상태가 PAUSED여도 진단용 요청이 보일 수 있다.\n2. Safe는 상태·속도·가속도·후진 제한을 적용한 실제 상위 출력이다. 항상 최대 5cm/s·0.5rad/s이며 vy=0이다.\n3. Last successful UDP send는 sendto가 반환한 실제 wire 패킷이다. 모터 수신·동작 성공의 증거가 아니다.\n4. Matched ack command는 유효 텔레메트리의 last_seq에 대응하는 송신 이력이다. `host_sent_at`/`perception_frame_at`는 호스트 부가 정보이며 wire에 넣지 않는다.\n5. ESP32 reported desired cmd는 `cmd_vx/cmd_vy/cmd_w`다. 펌웨어 내부의 desired 값이므로 가속도 제한 이후 본체 적용 속도로 부르지 않는다. 해당 본체 속도 필드는 NOT REPORTED로 표시한다.\n6. wheel_target/wheel_speed는 cm/s, wheel_pwm은 PWM, encoder_count는 누적 count다. RPM은 `cm/s * 60 / (2*pi*wheel_radius_cm)`으로 환산한다. 설정 기본 반지름 2.9cm는 기존 firmware config에서 확인했다."
+          ]
+        },
+        {
+          "source_id": 12,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 화면과 조작",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`UNKNOWN`/null은 값을 받지 못했거나 검증할 수 없다는 뜻이다. stale 텔레메트리는 마지막 값이 남을 수 있으므로 RX 유효성·나이를 함께 확인한다. 그래프는 유효 수신에만 새 점을 추가하며 과거 곡선이 남았다고 현재 정상이라는 뜻은 아니다. FPS는 완료된 추론 사이의 간격으로 계산한다. 최초 모델 초기화에는 오래 걸릴 수 있고 단계가 UI와 로그에 표시된다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을 표시한다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 카메라 | `dashboard_runtime.py`, `config/default.json`, `visualization/korean.py`를 수정했다. YOLO 준비 뒤 최신 프레임을 다시 읽고, 추론 전에 기한이 지난 캡처는 건너뛴다. 추론 완료 시 지연 상태를 표시한다. 기본 유효시간 350 ms는 시험값이다. 캡처 시각 기반 만료와 동일 프레임 반복의 제스처 누적 금지를 유지한다. | 같은 카메라·CPU 조건에서 전후 지연과 인물 ID·손 귀속 정확도 재측정 |"
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "현재 거리 대용값 계산은 `control/distance_estimator.py`의 `relative_height_ratio`로 분리했다. FollowController는 이 함수와 같은 `(target, frame_height) -> dimensionless proxy` callable을 주입받을 수 있다. 실제 거리 센서를 연결할 때에는 새 관측값의 유효성·단위와 목표값 의미도 함께 검증해야 한다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "063",
+      "question": "레이더가 UNKNOWN이면 무슨 뜻이야?",
+      "arm": "structure_diverse",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 21234.38509996049,
+      "evidence": [
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "1. Requested는 방향·상대 크기 제어의 제한 전 요구다. 상태가 PAUSED여도 진단용 요청이 보일 수 있다.\n2. Safe는 상태·속도·가속도·후진 제한을 적용한 실제 상위 출력이다. 항상 최대 5cm/s·0.5rad/s이며 vy=0이다.\n3. Last successful UDP send는 sendto가 반환한 실제 wire 패킷이다. 모터 수신·동작 성공의 증거가 아니다.\n4. Matched ack command는 유효 텔레메트리의 last_seq에 대응하는 송신 이력이다. `host_sent_at`/`perception_frame_at`는 호스트 부가 정보이며 wire에 넣지 않는다.\n5. ESP32 reported desired cmd는 `cmd_vx/cmd_vy/cmd_w`다. 펌웨어 내부의 desired 값이므로 가속도 제한 이후 본체 적용 속도로 부르지 않는다. 해당 본체 속도 필드는 NOT REPORTED로 표시한다.\n6. wheel_target/wheel_speed는 cm/s, wheel_pwm은 PWM, encoder_count는 누적 count다. RPM은 `cm/s * 60 / (2*pi*wheel_radius_cm)`으로 환산한다. 설정 기본 반지름 2.9cm는 기존 firmware config에서 확인했다."
+          ]
+        },
+        {
+          "source_id": 12,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 화면과 조작",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`UNKNOWN`/null은 값을 받지 못했거나 검증할 수 없다는 뜻이다. stale 텔레메트리는 마지막 값이 남을 수 있으므로 RX 유효성·나이를 함께 확인한다. 그래프는 유효 수신에만 새 점을 추가하며 과거 곡선이 남았다고 현재 정상이라는 뜻은 아니다. FPS는 완료된 추론 사이의 간격으로 계산한다. 최초 모델 초기화에는 오래 걸릴 수 있고 단계가 UI와 로그에 표시된다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을 표시한다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 카메라 | `dashboard_runtime.py`, `config/default.json`, `visualization/korean.py`를 수정했다. YOLO 준비 뒤 최신 프레임을 다시 읽고, 추론 전에 기한이 지난 캡처는 건너뛴다. 추론 완료 시 지연 상태를 표시한다. 기본 유효시간 350 ms는 시험값이다. 캡처 시각 기반 만료와 동일 프레임 반복의 제스처 누적 금지를 유지한다. | 같은 카메라·CPU 조건에서 전후 지연과 인물 ID·손 귀속 정확도 재측정 |"
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "현재 거리 대용값 계산은 `control/distance_estimator.py`의 `relative_height_ratio`로 분리했다. FollowController는 이 함수와 같은 `(target, frame_height) -> dimensionless proxy` callable을 주입받을 수 있다. 실제 거리 센서를 연결할 때에는 새 관측값의 유효성·단위와 목표값 의미도 함께 검증해야 한다."
+          ]
+        },
+        {
+          "source_id": 33,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 좌·우 RPM 비교",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "같은 세션과 부하에서 본체 각속도 크기를 맞춰 좌우 회전 로그를 수집한다. 아래 도구는 UDP를 사용하지 않고 JSONL을 읽는다. 각 방향의 시작 600 ms와 Fault·엔코더 경고·고정 PWM 시험을 제외한다. 양쪽에 유효 샘플이 3건 이상이면 세 모터의 목표 RPM, 실측 RPM, 오차, 실제 PWM, FF 및 PI 값의 중앙값을 출력한다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_transport",
+      "question": "PC에서 ESP32로 제어 메시지를 어떤 프로토콜로 전송해?",
+      "arm": "fts",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 168.79450000124052,
+      "evidence": [
+        {
+          "source_id": 22,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "`29/30 bpmCfg`에서 멈출 때",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "테스트 장비에서 `Radar CLI did not acknowledge 29/30 bpmCfg (last reply b'mmwDemo:/>')`가 반복됐습니다. 이 경우 발행자가 다음 명령인 `sensorStart`를 보내기 전에 중단합니다. `bpmCfg -1 0 0 0`은 BPM을 끄는 명령이며, 일부 HWA 기반 데모에서는 이 명령이 필요하지 않습니다. [TI mmWave SDK 가이드](https://dr-download-cdn.ti.com/software-development/software-development-kit-sdk/MD-PIrUeCYr3X/03.06.00.00-LTS/mmwave_sdk_user_guide.pdf#page=32)",
+            "이 오류가 재현된 프로파일에서만 아래 복사본을 시험합니다. `Ctrl+C`로 발행자를 종료한 다음, Pi 터미널에서 실행합니다.",
+            "`diff`에서 `bpmCfg -1 0 0 0`이 `% bpmCfg -1 0 0 0`으로 바뀐 한 줄을 확인합니다. `sensorStart`는 남겨둡니다. `--profile`에 **`_no_bpm.cfg`로 끝나는 파일**을 지정합니다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "ESP32 연결 후 보드 프로필 일치와 STOP 확인을 기다립니다. **수동 제어 → 바퀴를 띄워 고정했습니다 · 벤치 시험 허용**을 선택하고 방향 버튼을 누릅니다. 입력 명령은 최대 `1.0 cm/s`, `0.10 rad/s`이며 한 번에 최대 2초입니다. 버튼을 놓거나 창에서 벗어나면 STOP을 요청합니다. 레이더가 수신되기 시작하면 벤치 허용을 해제합니다. 같은 연결에서 레이더가 다시 끊겨도 벤치로 전환하지 않습니다.",
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_NOT_CONFIGURED` | 레이더 Pi 주소를 저장합니다. |\n| `RADAR_NO_DATA` | 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했습니다. `publisher.py` 실행 여부, `--pc`의 PC 주소, Pi 출발지 IPv4, PC의 UDP `8891` 수신 허용 여부를 확인합니다. |\n| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |\n| `RADAR_TIMEOUT` | 수신 지연 경고입니다. 마지막 상태와 경과 시간을 유지하며 계속 수신합니다. 시간 초과만으로 새 차단은 만들지 않고 이전 차단은 유지합니다. 발행자와 네트워크를 확인합니다. |\n| `EVADE` | 장애물이 감지되어 이동이 차단되고 현재 동작과 남은 LLM 계획이 취소됩니다. |\n| `CLEAR` | 유효한 레이더 프레임에서 장애물 없음이 확인됐습니다. 수신 사유와 ESP32 STOP 응답을 확인합니다. |\n| `SESSION_SYNC_WAITING_STOP` | 이전 세션의 정지 응답이 지연되고 있습니다. 현재 세션의 새 STOP 응답을 기다리는 동안 이동은 차단됩니다. |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서",
+            "세 바퀴를 바닥에서 띄워 고정한 경우에만 Qt의 벤치 옵션을 사용합니다. 다음은 브레드보드 펌웨어를 탑재한 장치의 실행 예시입니다. PCB V19 장치는 `PCB_V19`를 지정합니다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| 모터 제어 | 하나의 Feedforward+PI에서 속도·거리 명령 처리. 동일 방향 PWM 갱신에 0 펄스를 삽입하지 않음 | 모듈로 분리한 바퀴 PID와 급변 정책 |\n| 출력축 1회전 계수 | 설정 823.13 | 설정 898 |\n| 엔코더 | 급변 샘플 거부. 거리 이동 중 무효 지속 시 현재 목표 중단 | FILTERED_TEST 창에서 허용 횟수 초과 시 중단 |\n| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |\n| 좌우 회전 진단 | 목표·실측 RPM, Feedforward PWM, PI 보정 PWM을 함께 보고 | 속도 기반 RPM과 PWM |",
+            "GitHub `main`의 공식 기준선 등록 커밋은 `abf466a`다. 제공 원본은 로컬 `.tmp/control-simple-v2-original/`에 보관했다. Wi-Fi 선언을 되돌려 넣으면 원본 바이트와 일치하는 것을 확인했다. 공식 등록본의 ESP32 Dev Module 컴파일 결과는 플래시 956,779바이트, 정적 RAM 49,132바이트다. 기준 스케치는 모터 제어를 수정하지 않았다.",
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 자연어 | `planning/`, `llm/prompt.py`, `llm/central_control.py`, `llm_cli.py`, `visualization/natural_control.py`, `execution/motion_executor.py`를 수정했다. 두 복합 이동은 입력 순서 유지와 모델의 순서 변경 거부를 확인했다. 방향 없는 한 바퀴는 방향 미지정 360도 계획으로 표시하고 실행 전체를 차단한다. 거리 구간별 종료와 STOP 확인 테스트를 통과했다. | 실제 NVIDIA 응답과 두 구간의 주행 거리 확인. 회전은 외부 실측으로 각도 제어를 검증한 뒤 별도 연결 |\n| 손동작 | `control/hand_drive.py`의 기본 직접 구동 매핑에 Victory → BACKWARD를 추가했다. 기존 매핑을 명시해 사용하는 설정은 Victory를 정지로 유지한다. 기본 매핑의 서로 다른 프레임 조건과 손 소실 시 정지를 검사했다. | 카메라에서 Victory 연속 인식과 실제 후진"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_transport",
+      "question": "PC에서 ESP32로 제어 메시지를 어떤 프로토콜로 전송해?",
+      "arm": "hybrid_unavailable",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 19.05309996800497,
+      "evidence": [
+        {
+          "source_id": 22,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "`29/30 bpmCfg`에서 멈출 때",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "테스트 장비에서 `Radar CLI did not acknowledge 29/30 bpmCfg (last reply b'mmwDemo:/>')`가 반복됐습니다. 이 경우 발행자가 다음 명령인 `sensorStart`를 보내기 전에 중단합니다. `bpmCfg -1 0 0 0`은 BPM을 끄는 명령이며, 일부 HWA 기반 데모에서는 이 명령이 필요하지 않습니다. [TI mmWave SDK 가이드](https://dr-download-cdn.ti.com/software-development/software-development-kit-sdk/MD-PIrUeCYr3X/03.06.00.00-LTS/mmwave_sdk_user_guide.pdf#page=32)",
+            "이 오류가 재현된 프로파일에서만 아래 복사본을 시험합니다. `Ctrl+C`로 발행자를 종료한 다음, Pi 터미널에서 실행합니다.",
+            "`diff`에서 `bpmCfg -1 0 0 0`이 `% bpmCfg -1 0 0 0`으로 바뀐 한 줄을 확인합니다. `sensorStart`는 남겨둡니다. `--profile`에 **`_no_bpm.cfg`로 끝나는 파일**을 지정합니다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "ESP32 연결 후 보드 프로필 일치와 STOP 확인을 기다립니다. **수동 제어 → 바퀴를 띄워 고정했습니다 · 벤치 시험 허용**을 선택하고 방향 버튼을 누릅니다. 입력 명령은 최대 `1.0 cm/s`, `0.10 rad/s`이며 한 번에 최대 2초입니다. 버튼을 놓거나 창에서 벗어나면 STOP을 요청합니다. 레이더가 수신되기 시작하면 벤치 허용을 해제합니다. 같은 연결에서 레이더가 다시 끊겨도 벤치로 전환하지 않습니다.",
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_NOT_CONFIGURED` | 레이더 Pi 주소를 저장합니다. |\n| `RADAR_NO_DATA` | 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했습니다. `publisher.py` 실행 여부, `--pc`의 PC 주소, Pi 출발지 IPv4, PC의 UDP `8891` 수신 허용 여부를 확인합니다. |\n| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |\n| `RADAR_TIMEOUT` | 수신 지연 경고입니다. 마지막 상태와 경과 시간을 유지하며 계속 수신합니다. 시간 초과만으로 새 차단은 만들지 않고 이전 차단은 유지합니다. 발행자와 네트워크를 확인합니다. |\n| `EVADE` | 장애물이 감지되어 이동이 차단되고 현재 동작과 남은 LLM 계획이 취소됩니다. |\n| `CLEAR` | 유효한 레이더 프레임에서 장애물 없음이 확인됐습니다. 수신 사유와 ESP32 STOP 응답을 확인합니다. |\n| `SESSION_SYNC_WAITING_STOP` | 이전 세션의 정지 응답이 지연되고 있습니다. 현재 세션의 새 STOP 응답을 기다리는 동안 이동은 차단됩니다. |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서",
+            "세 바퀴를 바닥에서 띄워 고정한 경우에만 Qt의 벤치 옵션을 사용합니다. 다음은 브레드보드 펌웨어를 탑재한 장치의 실행 예시입니다. PCB V19 장치는 `PCB_V19`를 지정합니다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| 모터 제어 | 하나의 Feedforward+PI에서 속도·거리 명령 처리. 동일 방향 PWM 갱신에 0 펄스를 삽입하지 않음 | 모듈로 분리한 바퀴 PID와 급변 정책 |\n| 출력축 1회전 계수 | 설정 823.13 | 설정 898 |\n| 엔코더 | 급변 샘플 거부. 거리 이동 중 무효 지속 시 현재 목표 중단 | FILTERED_TEST 창에서 허용 횟수 초과 시 중단 |\n| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |\n| 좌우 회전 진단 | 목표·실측 RPM, Feedforward PWM, PI 보정 PWM을 함께 보고 | 속도 기반 RPM과 PWM |",
+            "GitHub `main`의 공식 기준선 등록 커밋은 `abf466a`다. 제공 원본은 로컬 `.tmp/control-simple-v2-original/`에 보관했다. Wi-Fi 선언을 되돌려 넣으면 원본 바이트와 일치하는 것을 확인했다. 공식 등록본의 ESP32 Dev Module 컴파일 결과는 플래시 956,779바이트, 정적 RAM 49,132바이트다. 기준 스케치는 모터 제어를 수정하지 않았다.",
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 자연어 | `planning/`, `llm/prompt.py`, `llm/central_control.py`, `llm_cli.py`, `visualization/natural_control.py`, `execution/motion_executor.py`를 수정했다. 두 복합 이동은 입력 순서 유지와 모델의 순서 변경 거부를 확인했다. 방향 없는 한 바퀴는 방향 미지정 360도 계획으로 표시하고 실행 전체를 차단한다. 거리 구간별 종료와 STOP 확인 테스트를 통과했다. | 실제 NVIDIA 응답과 두 구간의 주행 거리 확인. 회전은 외부 실측으로 각도 제어를 검증한 뒤 별도 연결 |\n| 손동작 | `control/hand_drive.py`의 기본 직접 구동 매핑에 Victory → BACKWARD를 추가했다. 기존 매핑을 명시해 사용하는 설정은 Victory를 정지로 유지한다. 기본 매핑의 서로 다른 프레임 조건과 손 소실 시 정지를 검사했다. | 카메라에서 Victory 연속 인식과 실제 후진"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_transport",
+      "question": "PC에서 ESP32로 제어 메시지를 어떤 프로토콜로 전송해?",
+      "arm": "dedup_only",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 11.107400001492351,
+      "evidence": [
+        {
+          "source_id": 22,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "`29/30 bpmCfg`에서 멈출 때",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "테스트 장비에서 `Radar CLI did not acknowledge 29/30 bpmCfg (last reply b'mmwDemo:/>')`가 반복됐습니다. 이 경우 발행자가 다음 명령인 `sensorStart`를 보내기 전에 중단합니다. `bpmCfg -1 0 0 0`은 BPM을 끄는 명령이며, 일부 HWA 기반 데모에서는 이 명령이 필요하지 않습니다. [TI mmWave SDK 가이드](https://dr-download-cdn.ti.com/software-development/software-development-kit-sdk/MD-PIrUeCYr3X/03.06.00.00-LTS/mmwave_sdk_user_guide.pdf#page=32)",
+            "이 오류가 재현된 프로파일에서만 아래 복사본을 시험합니다. `Ctrl+C`로 발행자를 종료한 다음, Pi 터미널에서 실행합니다.",
+            "`diff`에서 `bpmCfg -1 0 0 0`이 `% bpmCfg -1 0 0 0`으로 바뀐 한 줄을 확인합니다. `sensorStart`는 남겨둡니다. `--profile`에 **`_no_bpm.cfg`로 끝나는 파일**을 지정합니다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "ESP32 연결 후 보드 프로필 일치와 STOP 확인을 기다립니다. **수동 제어 → 바퀴를 띄워 고정했습니다 · 벤치 시험 허용**을 선택하고 방향 버튼을 누릅니다. 입력 명령은 최대 `1.0 cm/s`, `0.10 rad/s`이며 한 번에 최대 2초입니다. 버튼을 놓거나 창에서 벗어나면 STOP을 요청합니다. 레이더가 수신되기 시작하면 벤치 허용을 해제합니다. 같은 연결에서 레이더가 다시 끊겨도 벤치로 전환하지 않습니다.",
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_NOT_CONFIGURED` | 레이더 Pi 주소를 저장합니다. |\n| `RADAR_NO_DATA` | 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했습니다. `publisher.py` 실행 여부, `--pc`의 PC 주소, Pi 출발지 IPv4, PC의 UDP `8891` 수신 허용 여부를 확인합니다. |\n| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |\n| `RADAR_TIMEOUT` | 수신 지연 경고입니다. 마지막 상태와 경과 시간을 유지하며 계속 수신합니다. 시간 초과만으로 새 차단은 만들지 않고 이전 차단은 유지합니다. 발행자와 네트워크를 확인합니다. |\n| `EVADE` | 장애물이 감지되어 이동이 차단되고 현재 동작과 남은 LLM 계획이 취소됩니다. |\n| `CLEAR` | 유효한 레이더 프레임에서 장애물 없음이 확인됐습니다. 수신 사유와 ESP32 STOP 응답을 확인합니다. |\n| `SESSION_SYNC_WAITING_STOP` | 이전 세션의 정지 응답이 지연되고 있습니다. 현재 세션의 새 STOP 응답을 기다리는 동안 이동은 차단됩니다. |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서",
+            "세 바퀴를 바닥에서 띄워 고정한 경우에만 Qt의 벤치 옵션을 사용합니다. 다음은 브레드보드 펌웨어를 탑재한 장치의 실행 예시입니다. PCB V19 장치는 `PCB_V19`를 지정합니다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| 모터 제어 | 하나의 Feedforward+PI에서 속도·거리 명령 처리. 동일 방향 PWM 갱신에 0 펄스를 삽입하지 않음 | 모듈로 분리한 바퀴 PID와 급변 정책 |\n| 출력축 1회전 계수 | 설정 823.13 | 설정 898 |\n| 엔코더 | 급변 샘플 거부. 거리 이동 중 무효 지속 시 현재 목표 중단 | FILTERED_TEST 창에서 허용 횟수 초과 시 중단 |\n| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |\n| 좌우 회전 진단 | 목표·실측 RPM, Feedforward PWM, PI 보정 PWM을 함께 보고 | 속도 기반 RPM과 PWM |",
+            "GitHub `main`의 공식 기준선 등록 커밋은 `abf466a`다. 제공 원본은 로컬 `.tmp/control-simple-v2-original/`에 보관했다. Wi-Fi 선언을 되돌려 넣으면 원본 바이트와 일치하는 것을 확인했다. 공식 등록본의 ESP32 Dev Module 컴파일 결과는 플래시 956,779바이트, 정적 RAM 49,132바이트다. 기준 스케치는 모터 제어를 수정하지 않았다.",
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 자연어 | `planning/`, `llm/prompt.py`, `llm/central_control.py`, `llm_cli.py`, `visualization/natural_control.py`, `execution/motion_executor.py`를 수정했다. 두 복합 이동은 입력 순서 유지와 모델의 순서 변경 거부를 확인했다. 방향 없는 한 바퀴는 방향 미지정 360도 계획으로 표시하고 실행 전체를 차단한다. 거리 구간별 종료와 STOP 확인 테스트를 통과했다. | 실제 NVIDIA 응답과 두 구간의 주행 거리 확인. 회전은 외부 실측으로 각도 제어를 검증한 뒤 별도 연결 |\n| 손동작 | `control/hand_drive.py`의 기본 직접 구동 매핑에 Victory → BACKWARD를 추가했다. 기존 매핑을 명시해 사용하는 설정은 Victory를 정지로 유지한다. 기본 매핑의 서로 다른 프레임 조건과 손 소실 시 정지를 검사했다. | 카메라에서 Victory 연속 인식과 실제 후진"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_transport",
+      "question": "PC에서 ESP32로 제어 메시지를 어떤 프로토콜로 전송해?",
+      "arm": "structure",
+      "core_marker_presence": {
+        "UDP": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 1,
+      "local_retrieval_selection_ms": 34980.275099980645,
+      "evidence": [
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |"
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| 모터 제어 | 하나의 Feedforward+PI에서 속도·거리 명령 처리. 동일 방향 PWM 갱신에 0 펄스를 삽입하지 않음 | 모듈로 분리한 바퀴 PID와 급변 정책 |"
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "2026-11-18에 GitHub main의 46b6969와 로컬에서 제공된 control_simple_v2.ino를 대조했다. GitHub에는 단일 파일이 없었다. 제공 원본 SHA-256은 `04361d704319f67cefee757444693c84fec0a7b142ae7b13d0efaecb80872b45`다. 수동 및 자연어 이동의 부드러운 모터 회전과 중앙제어 UDP 연결은 사용자가 확인한 실물 기준선이다."
+          ]
+        },
+        {
+          "source_id": 33,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 좌·우 RPM 비교",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "같은 세션과 부하에서 본체 각속도 크기를 맞춰 좌우 회전 로그를 수집한다. 아래 도구는 UDP를 사용하지 않고 JSONL을 읽는다. 각 방향의 시작 600 ms와 Fault·엔코더 경고·고정 PWM 시험을 제외한다. 양쪽에 유효 샘플이 3건 이상이면 세 모터의 목표 RPM, 실측 RPM, 오차, 실제 PWM, FF 및 PI 값의 중앙값을 출력한다."
+          ]
+        },
+        {
+          "source_id": 33,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 좌·우 RPM 비교",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "회귀 테스트 166개가 통과했다. 자격 증명을 제외한 격리 사본을 사용했고 UDP 독점 검사는 다른 루프백 포트에 바인딩했다. 원시 결과는 `.tmp/simple-v2-baseline/regression.txt`에 있다. 기준선 이후 Python 변경은 로컬에 있다. 이번 작업에서 새 NVIDIA 호출, 펌웨어 업로드 및 모터 구동은 수행하지 않았다."
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 2 | `planning/`, `llm/prompt.py`, CLI·대시보드·실행기. 명시된 순서와 정규화된 단위를 검증. 회전은 방향/각도를 표현하며 전체 계획을 미리 보여줌 | 복합 이동 순서 및 승인, 상대 좌우/전후 보존, 회전 포함 계획의 UDP 실행 차단 |"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_transport",
+      "question": "PC에서 ESP32로 제어 메시지를 어떤 프로토콜로 전송해?",
+      "arm": "structure_diverse",
+      "core_marker_presence": {
+        "UDP": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 0,
+      "unique_paths": 0,
+      "local_retrieval_selection_ms": 32633.650599978864,
+      "evidence": []
+    },
+    {
+      "case_id": "new_ui",
+      "question": "대시보드 GUI는 어떤 라이브러리로 구현했어?",
+      "arm": "fts",
+      "core_marker_presence": {
+        "PySide6": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 530.7361999875866,
+      "evidence": [
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "로그는 10Hz 상태와 사용자 입력·상태 전이·적용 제스처 사건을 기록한다. queue가 가득 차거나 writer 오류가 보고되면 긴급 정지를 latch한다. 송신 성공이나 정지 텔레메트리 확인을 물리 주행 성공으로 승격하지 않는다. 테스트 결과는 기본 NOT TESTED, 사용자 수행 확인과 관찰 메모가 있어야 PASS/FAIL을 저장한다. 자세한 스키마·제한은 [대시보드 안내](DASHBOARD_GUIDE.md), 실제 증거는 [최신 검증](verification/DASHBOARD_VALIDATION.md)에",
+            "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 17,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "파일 변경",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).",
+            "- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서.",
+            "이번 변경에서는 펌웨어·원본 ZIP·모델 파일을 수정하지 않았다. 기존 30개 테스트 파일의 검증 목적을 유지했다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "아래는 재사용한 1차 제어 기반이다.",
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다."
+          ]
+        },
+        {
+          "source_id": 1,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 수동 시험 정책",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "현재 대시보드의 실제 하드웨어 연결은 `communication/motor_test.py`의 MotorTestClient만 사용한다. 공통 UdpClient의 session/seq/수신 검증/socket/스레드를 재사용하며 패킷 선택과 관측 기록만 분리했다. 기존 자동 추종·제스처 제어기는 SIMULATION에서 유지하되 하드웨어 시험 중 submit을 무시하고 A/R 경로를 차단한다. OpenCV 하드웨어 진입도 거부한다.",
+            "무구동 연결은 STOP → 해당 STOP 이후의 새 정지 텔레메트리 증명 → stationary heartbeat 순서다. 모터 시험은 바퀴 띄움 확인과 별도 승인, 완전한 휠·엔코더 정보, fresh STOPPED가 필요하다. 기본 2.5cm/s·0.2rad/s, 0.8초, 10Hz이며 최대 시간은 2초다. 독립 스레드가 deadline, 250ms GUI 생존 lease, 500ms telemetry 나이, fault를 감시하고 STOP 후 비활성화한다. 카메라가 없는 벤치 시험도 가능하며 카메라 timestamp로 GUI 생존을 위장하지 않는다.",
+            "Heartbeat는 이동 중·정지 확인 대기·안전 latch 중에는 사용하지 않는다. 실제 회전은 명령 처리 증명(session/seq/state/echo), 엔코더 변화·부호, 수동 육안 관찰로 구분한다. 별도 ACK 패킷은 없으며 `acknowledged_command`는 이전 코드와 테스트를 보존하기 위한 seq 매칭 별칭일 뿐이다. 현재 UI는 ACK 성공이라고 표시하지 않는다. 자세한 계약과 기록은 [MOTOR_TEST_GUIDE.md](MOTOR_TEST_GUIDE.md), 현재 검증은 [MOTOR_TEST_VALIDATION.md](verification/MOTOR_TEST_VALIDATION.md)를 참조한다. 아래 내용은 이전 단계 기반과 함께 읽어야 한다."
+          ]
+        },
+        {
+          "source_id": 10,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "최신 진단과 현재 한국어 화면의 전체 안내는 [한국어 진단 사용 안내](KOREAN_DIAGNOSTICS_GUIDE.md)를 참조하세요. 아래 검증 수치가 있으면 이전 단계의 기록입니다.",
+            "현재 하드웨어 정책은 [MOTOR_TEST_GUIDE.md](MOTOR_TEST_GUIDE.md)가 우선한다. 모터 동작 시험 탭이 추가되었고, 무구동 연결과 이동 승인을 분리했다. 아래의 하드웨어 A/R·자동 추종 연결 및 ACK 용어는 이전 단계 설명이다. 현재 하드웨어 자동 추종은 차단되며 별도 ACK 패킷도 없다. SIMULATION 인식·추종과 기본 4탭 설명은 유지된다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_ui",
+      "question": "대시보드 GUI는 어떤 라이브러리로 구현했어?",
+      "arm": "hybrid_unavailable",
+      "core_marker_presence": {
+        "PySide6": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 50.44580000685528,
+      "evidence": [
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "로그는 10Hz 상태와 사용자 입력·상태 전이·적용 제스처 사건을 기록한다. queue가 가득 차거나 writer 오류가 보고되면 긴급 정지를 latch한다. 송신 성공이나 정지 텔레메트리 확인을 물리 주행 성공으로 승격하지 않는다. 테스트 결과는 기본 NOT TESTED, 사용자 수행 확인과 관찰 메모가 있어야 PASS/FAIL을 저장한다. 자세한 스키마·제한은 [대시보드 안내](DASHBOARD_GUIDE.md), 실제 증거는 [최신 검증](verification/DASHBOARD_VALIDATION.md)에",
+            "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 17,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "파일 변경",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).",
+            "- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서.",
+            "이번 변경에서는 펌웨어·원본 ZIP·모델 파일을 수정하지 않았다. 기존 30개 테스트 파일의 검증 목적을 유지했다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "아래는 재사용한 1차 제어 기반이다.",
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다."
+          ]
+        },
+        {
+          "source_id": 1,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 수동 시험 정책",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "현재 대시보드의 실제 하드웨어 연결은 `communication/motor_test.py`의 MotorTestClient만 사용한다. 공통 UdpClient의 session/seq/수신 검증/socket/스레드를 재사용하며 패킷 선택과 관측 기록만 분리했다. 기존 자동 추종·제스처 제어기는 SIMULATION에서 유지하되 하드웨어 시험 중 submit을 무시하고 A/R 경로를 차단한다. OpenCV 하드웨어 진입도 거부한다.",
+            "무구동 연결은 STOP → 해당 STOP 이후의 새 정지 텔레메트리 증명 → stationary heartbeat 순서다. 모터 시험은 바퀴 띄움 확인과 별도 승인, 완전한 휠·엔코더 정보, fresh STOPPED가 필요하다. 기본 2.5cm/s·0.2rad/s, 0.8초, 10Hz이며 최대 시간은 2초다. 독립 스레드가 deadline, 250ms GUI 생존 lease, 500ms telemetry 나이, fault를 감시하고 STOP 후 비활성화한다. 카메라가 없는 벤치 시험도 가능하며 카메라 timestamp로 GUI 생존을 위장하지 않는다.",
+            "Heartbeat는 이동 중·정지 확인 대기·안전 latch 중에는 사용하지 않는다. 실제 회전은 명령 처리 증명(session/seq/state/echo), 엔코더 변화·부호, 수동 육안 관찰로 구분한다. 별도 ACK 패킷은 없으며 `acknowledged_command`는 이전 코드와 테스트를 보존하기 위한 seq 매칭 별칭일 뿐이다. 현재 UI는 ACK 성공이라고 표시하지 않는다. 자세한 계약과 기록은 [MOTOR_TEST_GUIDE.md](MOTOR_TEST_GUIDE.md), 현재 검증은 [MOTOR_TEST_VALIDATION.md](verification/MOTOR_TEST_VALIDATION.md)를 참조한다. 아래 내용은 이전 단계 기반과 함께 읽어야 한다."
+          ]
+        },
+        {
+          "source_id": 10,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "최신 진단과 현재 한국어 화면의 전체 안내는 [한국어 진단 사용 안내](KOREAN_DIAGNOSTICS_GUIDE.md)를 참조하세요. 아래 검증 수치가 있으면 이전 단계의 기록입니다.",
+            "현재 하드웨어 정책은 [MOTOR_TEST_GUIDE.md](MOTOR_TEST_GUIDE.md)가 우선한다. 모터 동작 시험 탭이 추가되었고, 무구동 연결과 이동 승인을 분리했다. 아래의 하드웨어 A/R·자동 추종 연결 및 ACK 용어는 이전 단계 설명이다. 현재 하드웨어 자동 추종은 차단되며 별도 ACK 패킷도 없다. SIMULATION 인식·추종과 기본 4탭 설명은 유지된다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_ui",
+      "question": "대시보드 GUI는 어떤 라이브러리로 구현했어?",
+      "arm": "dedup_only",
+      "core_marker_presence": {
+        "PySide6": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 12.675400008447468,
+      "evidence": [
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "로그는 10Hz 상태와 사용자 입력·상태 전이·적용 제스처 사건을 기록한다. queue가 가득 차거나 writer 오류가 보고되면 긴급 정지를 latch한다. 송신 성공이나 정지 텔레메트리 확인을 물리 주행 성공으로 승격하지 않는다. 테스트 결과는 기본 NOT TESTED, 사용자 수행 확인과 관찰 메모가 있어야 PASS/FAIL을 저장한다. 자세한 스키마·제한은 [대시보드 안내](DASHBOARD_GUIDE.md), 실제 증거는 [최신 검증](verification/DASHBOARD_VALIDATION.md)에",
+            "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+            "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+            "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+          ]
+        },
+        {
+          "source_id": 17,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "파일 변경",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).",
+            "- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서.",
+            "이번 변경에서는 펌웨어·원본 ZIP·모델 파일을 수정하지 않았다. 기존 30개 테스트 파일의 검증 목적을 유지했다."
+          ]
+        },
+        {
+          "source_id": 3,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "아래는 재사용한 1차 제어 기반이다.",
+            "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다."
+          ]
+        },
+        {
+          "source_id": 1,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "현재 수동 시험 정책",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "현재 대시보드의 실제 하드웨어 연결은 `communication/motor_test.py`의 MotorTestClient만 사용한다. 공통 UdpClient의 session/seq/수신 검증/socket/스레드를 재사용하며 패킷 선택과 관측 기록만 분리했다. 기존 자동 추종·제스처 제어기는 SIMULATION에서 유지하되 하드웨어 시험 중 submit을 무시하고 A/R 경로를 차단한다. OpenCV 하드웨어 진입도 거부한다.",
+            "무구동 연결은 STOP → 해당 STOP 이후의 새 정지 텔레메트리 증명 → stationary heartbeat 순서다. 모터 시험은 바퀴 띄움 확인과 별도 승인, 완전한 휠·엔코더 정보, fresh STOPPED가 필요하다. 기본 2.5cm/s·0.2rad/s, 0.8초, 10Hz이며 최대 시간은 2초다. 독립 스레드가 deadline, 250ms GUI 생존 lease, 500ms telemetry 나이, fault를 감시하고 STOP 후 비활성화한다. 카메라가 없는 벤치 시험도 가능하며 카메라 timestamp로 GUI 생존을 위장하지 않는다.",
+            "Heartbeat는 이동 중·정지 확인 대기·안전 latch 중에는 사용하지 않는다. 실제 회전은 명령 처리 증명(session/seq/state/echo), 엔코더 변화·부호, 수동 육안 관찰로 구분한다. 별도 ACK 패킷은 없으며 `acknowledged_command`는 이전 코드와 테스트를 보존하기 위한 seq 매칭 별칭일 뿐이다. 현재 UI는 ACK 성공이라고 표시하지 않는다. 자세한 계약과 기록은 [MOTOR_TEST_GUIDE.md](MOTOR_TEST_GUIDE.md), 현재 검증은 [MOTOR_TEST_VALIDATION.md](verification/MOTOR_TEST_VALIDATION.md)를 참조한다. 아래 내용은 이전 단계 기반과 함께 읽어야 한다."
+          ]
+        },
+        {
+          "source_id": 10,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "최신 진단과 현재 한국어 화면의 전체 안내는 [한국어 진단 사용 안내](KOREAN_DIAGNOSTICS_GUIDE.md)를 참조하세요. 아래 검증 수치가 있으면 이전 단계의 기록입니다.",
+            "현재 하드웨어 정책은 [MOTOR_TEST_GUIDE.md](MOTOR_TEST_GUIDE.md)가 우선한다. 모터 동작 시험 탭이 추가되었고, 무구동 연결과 이동 승인을 분리했다. 아래의 하드웨어 A/R·자동 추종 연결 및 ACK 용어는 이전 단계 설명이다. 현재 하드웨어 자동 추종은 차단되며 별도 ACK 패킷도 없다. SIMULATION 인식·추종과 기본 4탭 설명은 유지된다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_ui",
+      "question": "대시보드 GUI는 어떤 라이브러리로 구현했어?",
+      "arm": "structure",
+      "core_marker_presence": {
+        "PySide6": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 6,
+      "unique_paths": 1,
+      "local_retrieval_selection_ms": 28911.957099975552,
+      "evidence": [
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 3 | `control/hand_drive.py` 및 매핑 UI. MediaPipe Victory를 직접 손동작 후진으로 사용 | 기존 매핑 호환, 정지 및 오래된 프레임 차단, 추종 후진 금지 유지 |"
+          ]
+        },
+        {
+          "source_id": 33,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 좌·우 RPM 비교",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "회귀 테스트 166개가 통과했다. 자격 증명을 제외한 격리 사본을 사용했고 UDP 독점 검사는 다른 루프백 포트에 바인딩했다. 원시 결과는 `.tmp/simple-v2-baseline/regression.txt`에 있다. 기준선 이후 Python 변경은 로컬에 있다. 이번 작업에서 새 NVIDIA 호출, 펌웨어 업로드 및 모터 구동은 수행하지 않았다."
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 4 | `dashboard_runtime.py`와 영상 진단. 모델 준비 직후 최신 프레임 사용. 캡처 시각 기준 유효시간을 정하고 지연 원인을 표시 | 큐·추론·캡처 지연 확인, 오래된 같은 프레임으로 새 이동 금지 |"
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 2 | `planning/`, `llm/prompt.py`, CLI·대시보드·실행기. 명시된 순서와 정규화된 단위를 검증. 회전은 방향/각도를 표현하며 전체 계획을 미리 보여줌 | 복합 이동 순서 및 승인, 상대 좌우/전후 보존, 회전 포함 계획의 UDP 실행 차단 |"
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| RPM | `diagnostics.py`, `monitoring.py`, `visualization/dashboard.py`, `scripts/compare_turn_rpm.py`를 수정했다. ESP32 RPM 우선 표시와 좌우 시험값을 모터별로 비교하는 오프라인 도구를 모의 로그로 확인했다. | 동일 속도와 부하에서 세 모터의 목표·실측 RPM 및 FF/PI 보정값을 수집 |"
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 카메라 | `dashboard_runtime.py`, `config/default.json`, `visualization/korean.py`를 수정했다. YOLO 준비 뒤 최신 프레임을 다시 읽고, 추론 전에 기한이 지난 캡처는 건너뛴다. 추론 완료 시 지연 상태를 표시한다. 기본 유효시간 350 ms는 시험값이다. 캡처 시각 기반 만료와 동일 프레임 반복의 제스처 누적 금지를 유지한다. | 같은 카메라·CPU 조건에서 전후 지연과 인물 ID·손 귀속 정확도 재측정 |"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_ui",
+      "question": "대시보드 GUI는 어떤 라이브러리로 구현했어?",
+      "arm": "structure_diverse",
+      "core_marker_presence": {
+        "PySide6": false
+      },
+      "all_markers_present": false,
+      "evidence_count": 6,
+      "unique_paths": 1,
+      "local_retrieval_selection_ms": 28027.047199953813,
+      "evidence": [
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 3 | `control/hand_drive.py` 및 매핑 UI. MediaPipe Victory를 직접 손동작 후진으로 사용 | 기존 매핑 호환, 정지 및 오래된 프레임 차단, 추종 후진 금지 유지 |"
+          ]
+        },
+        {
+          "source_id": 33,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 좌·우 RPM 비교",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "회귀 테스트 166개가 통과했다. 자격 증명을 제외한 격리 사본을 사용했고 UDP 독점 검사는 다른 루프백 포트에 바인딩했다. 원시 결과는 `.tmp/simple-v2-baseline/regression.txt`에 있다. 기준선 이후 Python 변경은 로컬에 있다. 이번 작업에서 새 NVIDIA 호출, 펌웨어 업로드 및 모터 구동은 수행하지 않았다."
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 4 | `dashboard_runtime.py`와 영상 진단. 모델 준비 직후 최신 프레임 사용. 캡처 시각 기준 유효시간을 정하고 지연 원인을 표시 | 큐·추론·캡처 지연 확인, 오래된 같은 프레임으로 새 이동 금지 |"
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 2 | `planning/`, `llm/prompt.py`, CLI·대시보드·실행기. 명시된 순서와 정규화된 단위를 검증. 회전은 방향/각도를 표현하며 전체 계획을 미리 보여줌 | 복합 이동 순서 및 승인, 상대 좌우/전후 보존, 회전 포함 계획의 UDP 실행 차단 |"
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| RPM | `diagnostics.py`, `monitoring.py`, `visualization/dashboard.py`, `scripts/compare_turn_rpm.py`를 수정했다. ESP32 RPM 우선 표시와 좌우 시험값을 모터별로 비교하는 오프라인 도구를 모의 로그로 확인했다. | 동일 속도와 부하에서 세 모터의 목표·실측 RPM 및 FF/PI 보정값을 수집 |"
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 카메라 | `dashboard_runtime.py`, `config/default.json`, `visualization/korean.py`를 수정했다. YOLO 준비 뒤 최신 프레임을 다시 읽고, 추론 전에 기한이 지난 캡처는 건너뛴다. 추론 완료 시 지연 상태를 표시한다. 기본 유효시간 350 ms는 시험값이다. 캡처 시각 기반 만료와 동일 프레임 반복의 제스처 누적 금지를 유지한다. | 같은 카메라·CPU 조건에서 전후 지연과 인물 ID·손 귀속 정확도 재측정 |"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_state",
+      "question": "UNKNOWN 상태는 센서 값이 유효하다는 뜻인가요?",
+      "arm": "fts",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 9.720500034745783,
+      "evidence": [
+        {
+          "source_id": 12,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "화면과 조작",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`UNKNOWN`/null은 값을 받지 못했거나 검증할 수 없다는 뜻이다. stale 텔레메트리는 마지막 값이 남을 수 있으므로 RX 유효성·나이를 함께 확인한다. 그래프는 유효 수신에만 새 점을 추가하며 과거 곡선이 남았다고 현재 정상이라는 뜻은 아니다. FPS는 완료된 추론 사이의 간격으로 계산한다. 최초 모델 초기화에는 오래 걸릴 수 있고 단계가 UI와 로그에 표시된다.",
+            "목표를 클릭하거나 단일 인물 후보를 확인한 뒤 Enter로 확정하고 A → R 순서로 진행한다. 버튼도 동일하다. 손바닥 펼침 (Open Palm)은 승인 후 재개, 주먹 (Closed Fist)는 일시 정지, 엄지 올림 (Thumb Up)/Down은 상대 크기 목표값을 한 단계 변경한다. 가림·ID 변경·다인·손 소유권 제한은 기존과 같다. 목표 거리 설정은 실거리 cm가 아니라 사람 박스 높이 비율이며 교정된 값이 아니다.",
+            "상단에는 SIMULATION/HARDWARE, 상태, ARMED/DISARMED, 항상 접근 가능한 긴급 정지 버튼이 있다. Space는 이 창의 어디에서나 긴급 정지한다. 메모 입력 중 Space도 정지시키지만 입력 자체는 보존한다. A/R/P/C/E/Q/Enter는 텍스트·선택 입력에 초점이 있을 때 실행되지 않는다. 일반 화면에서 E는 긴급 정지, Q/Esc는 종료다. Ctrl+C/V 등의 편집 키는 제어 명령으로 처리하지 않는다. 긴급 정지 latch는 성공한 명시 ARM 전까지 유지된다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 16,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "테스트 기록과 로그",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "JSONL에는 로컬 timezone 포함 timestamp, monotonic_s, mode/source, 상태/목표/confidence, Raw/Confirmed/Applied/거부 이유, 수평 오차/상대 크기, requested/safe, transmitted packet·TX 시각/연결된 frame 시각, ESP32 reported state/fault, motor values, STOP 이유를 기록한다. 캡처 읽기 시작·제스처 추론 시작/완료·승인·적용·송신·수신의 호스트 단조 시간을 구분한다. source의 frame timestamp는 센서 촬영시각은 아니다.",
+            "1 카메라 → 2 추적 → 3 네 제스처 → 4 추종 명령 → 5 실제 ESP32 통신 → 6 띄운 바퀴 → 7 별도 승인된 통제 공간 주행 순서다. 기록 버튼은 모터 시험을 실행하지 않는다. 후방 센서·전방 충돌 회피는 준비되지 않았으므로 일반 장애물 환경에서 자동 주행하지 않는다.",
+            "평상시 상태는 최대 10Hz로 샘플링하므로 모든 20Hz wire 패킷을 개별 보존하는 트레이스가 아니다. 사용자 제어·상태 변화·제스처 적용 사건은 강제로 기록한다. 매칭 seq와 프레임 부가 정보 없이 서로 다른 행의 시간을 단순히 빼서 정확한 제스처→모터 지연으로 주장하지 않는다. 이미지나 Wi-Fi 설정을 기록하지 않는다. queue/disk 오류는 긴급 정지를 요청한다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다."
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        },
+        {
+          "source_id": 7,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "상태와 재개",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "| 조건 | 상태 | 이동 허용 |\n|---|---|---|\n| 선택 없음 | SEARCHING | 아니오 |\n| 한 사람 후보 또는 클릭 선택 | TARGET_SELECTED | 아니오 |\n| Enter 확정 | TRACKING | 아니오 |\n| A 활성화 후 R 또는 승인된 Open Palm | FOLLOWING | 예 |\n| 승인된 Thumb Up/Down | GESTURE_OVERRIDE | 상대 크기 목표값을 한 단계 변경 |\n| P, 승인된 정지 제스처, 긴급 정지 | PAUSED | 아니오 |\n| 목표 누락·박스 오류·겹침·급변 | TARGET_LOST | 아니오 |\n| 레이더 위험·입력 이상·필수 센서 부재 | OBSTACLE_STOP | 아니오 |\n| 카메라 오류·오래된 인식·통신·ESP32 fault | FAULT | 아니오 |",
+            "안전 정지는 속도를 즉시 0으로 만든다. 조건이 정상으로 돌아와도 이전 이동 상태로 자동 복귀하지 않는다. FAULT·긴급 정지는 활성화도 해제하므로 A와 새 재개가 필요하다. TARGET_LOST·OBSTACLE_STOP은 새 R 또는 손을 내렸다가 다시 유지한 재개 제스처가 필요하다. 위험 중부터 계속 들고 있던 Open Palm으로 재출발하지 않는다. 정지 제스처가 승인되어 유지되는 동안 재개 키보다 우선한다.",
+            "제스처는 기본 0.75 이상, 0.6초 이상, 최소 3개 프레임, 프레임 간격 0.25초 이하가 모두 필요하다. 같은 제스처 유지로 거리 설정을 반복 변경하지 않는다. 인식 없음은 기존 상태를 유지하며, PAUSED는 계속 PAUSED다. 손 검출 실패는 사람 검출 실패와 구분한다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_state",
+      "question": "UNKNOWN 상태는 센서 값이 유효하다는 뜻인가요?",
+      "arm": "hybrid_unavailable",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 13.980800053104758,
+      "evidence": [
+        {
+          "source_id": 12,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "화면과 조작",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`UNKNOWN`/null은 값을 받지 못했거나 검증할 수 없다는 뜻이다. stale 텔레메트리는 마지막 값이 남을 수 있으므로 RX 유효성·나이를 함께 확인한다. 그래프는 유효 수신에만 새 점을 추가하며 과거 곡선이 남았다고 현재 정상이라는 뜻은 아니다. FPS는 완료된 추론 사이의 간격으로 계산한다. 최초 모델 초기화에는 오래 걸릴 수 있고 단계가 UI와 로그에 표시된다.",
+            "목표를 클릭하거나 단일 인물 후보를 확인한 뒤 Enter로 확정하고 A → R 순서로 진행한다. 버튼도 동일하다. 손바닥 펼침 (Open Palm)은 승인 후 재개, 주먹 (Closed Fist)는 일시 정지, 엄지 올림 (Thumb Up)/Down은 상대 크기 목표값을 한 단계 변경한다. 가림·ID 변경·다인·손 소유권 제한은 기존과 같다. 목표 거리 설정은 실거리 cm가 아니라 사람 박스 높이 비율이며 교정된 값이 아니다.",
+            "상단에는 SIMULATION/HARDWARE, 상태, ARMED/DISARMED, 항상 접근 가능한 긴급 정지 버튼이 있다. Space는 이 창의 어디에서나 긴급 정지한다. 메모 입력 중 Space도 정지시키지만 입력 자체는 보존한다. A/R/P/C/E/Q/Enter는 텍스트·선택 입력에 초점이 있을 때 실행되지 않는다. 일반 화면에서 E는 긴급 정지, Q/Esc는 종료다. Ctrl+C/V 등의 편집 키는 제어 명령으로 처리하지 않는다. 긴급 정지 latch는 성공한 명시 ARM 전까지 유지된다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 16,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "테스트 기록과 로그",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "JSONL에는 로컬 timezone 포함 timestamp, monotonic_s, mode/source, 상태/목표/confidence, Raw/Confirmed/Applied/거부 이유, 수평 오차/상대 크기, requested/safe, transmitted packet·TX 시각/연결된 frame 시각, ESP32 reported state/fault, motor values, STOP 이유를 기록한다. 캡처 읽기 시작·제스처 추론 시작/완료·승인·적용·송신·수신의 호스트 단조 시간을 구분한다. source의 frame timestamp는 센서 촬영시각은 아니다.",
+            "1 카메라 → 2 추적 → 3 네 제스처 → 4 추종 명령 → 5 실제 ESP32 통신 → 6 띄운 바퀴 → 7 별도 승인된 통제 공간 주행 순서다. 기록 버튼은 모터 시험을 실행하지 않는다. 후방 센서·전방 충돌 회피는 준비되지 않았으므로 일반 장애물 환경에서 자동 주행하지 않는다.",
+            "평상시 상태는 최대 10Hz로 샘플링하므로 모든 20Hz wire 패킷을 개별 보존하는 트레이스가 아니다. 사용자 제어·상태 변화·제스처 적용 사건은 강제로 기록한다. 매칭 seq와 프레임 부가 정보 없이 서로 다른 행의 시간을 단순히 빼서 정확한 제스처→모터 지연으로 주장하지 않는다. 이미지나 Wi-Fi 설정을 기록하지 않는다. queue/disk 오류는 긴급 정지를 요청한다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다."
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        },
+        {
+          "source_id": 7,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "상태와 재개",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "| 조건 | 상태 | 이동 허용 |\n|---|---|---|\n| 선택 없음 | SEARCHING | 아니오 |\n| 한 사람 후보 또는 클릭 선택 | TARGET_SELECTED | 아니오 |\n| Enter 확정 | TRACKING | 아니오 |\n| A 활성화 후 R 또는 승인된 Open Palm | FOLLOWING | 예 |\n| 승인된 Thumb Up/Down | GESTURE_OVERRIDE | 상대 크기 목표값을 한 단계 변경 |\n| P, 승인된 정지 제스처, 긴급 정지 | PAUSED | 아니오 |\n| 목표 누락·박스 오류·겹침·급변 | TARGET_LOST | 아니오 |\n| 레이더 위험·입력 이상·필수 센서 부재 | OBSTACLE_STOP | 아니오 |\n| 카메라 오류·오래된 인식·통신·ESP32 fault | FAULT | 아니오 |",
+            "안전 정지는 속도를 즉시 0으로 만든다. 조건이 정상으로 돌아와도 이전 이동 상태로 자동 복귀하지 않는다. FAULT·긴급 정지는 활성화도 해제하므로 A와 새 재개가 필요하다. TARGET_LOST·OBSTACLE_STOP은 새 R 또는 손을 내렸다가 다시 유지한 재개 제스처가 필요하다. 위험 중부터 계속 들고 있던 Open Palm으로 재출발하지 않는다. 정지 제스처가 승인되어 유지되는 동안 재개 키보다 우선한다.",
+            "제스처는 기본 0.75 이상, 0.6초 이상, 최소 3개 프레임, 프레임 간격 0.25초 이하가 모두 필요하다. 같은 제스처 유지로 거리 설정을 반복 변경하지 않는다. 인식 없음은 기존 상태를 유지하며, PAUSED는 계속 PAUSED다. 손 검출 실패는 사람 검출 실패와 구분한다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_state",
+      "question": "UNKNOWN 상태는 센서 값이 유효하다는 뜻인가요?",
+      "arm": "dedup_only",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 14.112399949226528,
+      "evidence": [
+        {
+          "source_id": 12,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "화면과 조작",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`UNKNOWN`/null은 값을 받지 못했거나 검증할 수 없다는 뜻이다. stale 텔레메트리는 마지막 값이 남을 수 있으므로 RX 유효성·나이를 함께 확인한다. 그래프는 유효 수신에만 새 점을 추가하며 과거 곡선이 남았다고 현재 정상이라는 뜻은 아니다. FPS는 완료된 추론 사이의 간격으로 계산한다. 최초 모델 초기화에는 오래 걸릴 수 있고 단계가 UI와 로그에 표시된다.",
+            "목표를 클릭하거나 단일 인물 후보를 확인한 뒤 Enter로 확정하고 A → R 순서로 진행한다. 버튼도 동일하다. 손바닥 펼침 (Open Palm)은 승인 후 재개, 주먹 (Closed Fist)는 일시 정지, 엄지 올림 (Thumb Up)/Down은 상대 크기 목표값을 한 단계 변경한다. 가림·ID 변경·다인·손 소유권 제한은 기존과 같다. 목표 거리 설정은 실거리 cm가 아니라 사람 박스 높이 비율이며 교정된 값이 아니다.",
+            "상단에는 SIMULATION/HARDWARE, 상태, ARMED/DISARMED, 항상 접근 가능한 긴급 정지 버튼이 있다. Space는 이 창의 어디에서나 긴급 정지한다. 메모 입력 중 Space도 정지시키지만 입력 자체는 보존한다. A/R/P/C/E/Q/Enter는 텍스트·선택 입력에 초점이 있을 때 실행되지 않는다. 일반 화면에서 E는 긴급 정지, Q/Esc는 종료다. Ctrl+C/V 등의 편집 키는 제어 명령으로 처리하지 않는다. 긴급 정지 latch는 성공한 명시 ARM 전까지 유지된다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 16,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "테스트 기록과 로그",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "JSONL에는 로컬 timezone 포함 timestamp, monotonic_s, mode/source, 상태/목표/confidence, Raw/Confirmed/Applied/거부 이유, 수평 오차/상대 크기, requested/safe, transmitted packet·TX 시각/연결된 frame 시각, ESP32 reported state/fault, motor values, STOP 이유를 기록한다. 캡처 읽기 시작·제스처 추론 시작/완료·승인·적용·송신·수신의 호스트 단조 시간을 구분한다. source의 frame timestamp는 센서 촬영시각은 아니다.",
+            "1 카메라 → 2 추적 → 3 네 제스처 → 4 추종 명령 → 5 실제 ESP32 통신 → 6 띄운 바퀴 → 7 별도 승인된 통제 공간 주행 순서다. 기록 버튼은 모터 시험을 실행하지 않는다. 후방 센서·전방 충돌 회피는 준비되지 않았으므로 일반 장애물 환경에서 자동 주행하지 않는다.",
+            "평상시 상태는 최대 10Hz로 샘플링하므로 모든 20Hz wire 패킷을 개별 보존하는 트레이스가 아니다. 사용자 제어·상태 변화·제스처 적용 사건은 강제로 기록한다. 매칭 seq와 프레임 부가 정보 없이 서로 다른 행의 시간을 단순히 빼서 정확한 제스처→모터 지연으로 주장하지 않는다. 이미지나 Wi-Fi 설정을 기록하지 않는다. queue/disk 오류는 긴급 정지를 요청한다."
+          ]
+        },
+        {
+          "source_id": 5,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "데이터 흐름과 파일 책임",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+            "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.",
+            "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다."
+          ]
+        },
+        {
+          "source_id": 9,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "2차 범위",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+          ]
+        },
+        {
+          "source_id": 7,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "상태와 재개",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "| 조건 | 상태 | 이동 허용 |\n|---|---|---|\n| 선택 없음 | SEARCHING | 아니오 |\n| 한 사람 후보 또는 클릭 선택 | TARGET_SELECTED | 아니오 |\n| Enter 확정 | TRACKING | 아니오 |\n| A 활성화 후 R 또는 승인된 Open Palm | FOLLOWING | 예 |\n| 승인된 Thumb Up/Down | GESTURE_OVERRIDE | 상대 크기 목표값을 한 단계 변경 |\n| P, 승인된 정지 제스처, 긴급 정지 | PAUSED | 아니오 |\n| 목표 누락·박스 오류·겹침·급변 | TARGET_LOST | 아니오 |\n| 레이더 위험·입력 이상·필수 센서 부재 | OBSTACLE_STOP | 아니오 |\n| 카메라 오류·오래된 인식·통신·ESP32 fault | FAULT | 아니오 |",
+            "안전 정지는 속도를 즉시 0으로 만든다. 조건이 정상으로 돌아와도 이전 이동 상태로 자동 복귀하지 않는다. FAULT·긴급 정지는 활성화도 해제하므로 A와 새 재개가 필요하다. TARGET_LOST·OBSTACLE_STOP은 새 R 또는 손을 내렸다가 다시 유지한 재개 제스처가 필요하다. 위험 중부터 계속 들고 있던 Open Palm으로 재출발하지 않는다. 정지 제스처가 승인되어 유지되는 동안 재개 키보다 우선한다.",
+            "제스처는 기본 0.75 이상, 0.6초 이상, 최소 3개 프레임, 프레임 간격 0.25초 이하가 모두 필요하다. 같은 제스처 유지로 거리 설정을 반복 변경하지 않는다. 인식 없음은 기존 상태를 유지하며, PAUSED는 계속 PAUSED다. 손 검출 실패는 사람 검출 실패와 구분한다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_state",
+      "question": "UNKNOWN 상태는 센서 값이 유효하다는 뜻인가요?",
+      "arm": "structure",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 2,
+      "local_retrieval_selection_ms": 18705.508999992162,
+      "evidence": [
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |"
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `CLEAR` | 유효한 레이더 프레임에서 장애물 없음이 확인됐습니다. 수신 사유와 ESP32 STOP 응답을 확인합니다. |"
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_NO_DATA` | 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했습니다. `publisher.py` 실행 여부, `--pc`의 PC 주소, Pi 출발지 IPv4, PC의 UDP `8891` 수신 허용 여부를 확인합니다. |"
+          ]
+        },
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "1. Requested는 방향·상대 크기 제어의 제한 전 요구다. 상태가 PAUSED여도 진단용 요청이 보일 수 있다.\n2. Safe는 상태·속도·가속도·후진 제한을 적용한 실제 상위 출력이다. 항상 최대 5cm/s·0.5rad/s이며 vy=0이다.\n3. Last successful UDP send는 sendto가 반환한 실제 wire 패킷이다. 모터 수신·동작 성공의 증거가 아니다.\n4. Matched ack command는 유효 텔레메트리의 last_seq에 대응하는 송신 이력이다. `host_sent_at`/`perception_frame_at`는 호스트 부가 정보이며 wire에 넣지 않는다.\n5. ESP32 reported desired cmd는 `cmd_vx/cmd_vy/cmd_w`다. 펌웨어 내부의 desired 값이므로 가속도 제한 이후 본체 적용 속도로 부르지 않는다. 해당 본체 속도 필드는 NOT REPORTED로 표시한다.\n6. wheel_target/wheel_speed는 cm/s, wheel_pwm은 PWM, encoder_count는 누적 count다. RPM은 `cm/s * 60 / (2*pi*wheel_radius_cm)`으로 환산한다. 설정 기본 반지름 2.9cm는 기존 firmware config에서 확인했다."
+          ]
+        },
+        {
+          "source_id": 12,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 화면과 조작",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`UNKNOWN`/null은 값을 받지 못했거나 검증할 수 없다는 뜻이다. stale 텔레메트리는 마지막 값이 남을 수 있으므로 RX 유효성·나이를 함께 확인한다. 그래프는 유효 수신에만 새 점을 추가하며 과거 곡선이 남았다고 현재 정상이라는 뜻은 아니다. FPS는 완료된 추론 사이의 간격으로 계산한다. 최초 모델 초기화에는 오래 걸릴 수 있고 단계가 UI와 로그에 표시된다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_TIMEOUT` | 수신 지연 경고입니다. 마지막 상태와 경과 시간을 유지하며 계속 수신합니다. 시간 초과만으로 새 차단은 만들지 않고 이전 차단은 유지합니다. 발행자와 네트워크를 확인합니다. |"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_state",
+      "question": "UNKNOWN 상태는 센서 값이 유효하다는 뜻인가요?",
+      "arm": "structure_diverse",
+      "core_marker_presence": {
+        "UNKNOWN": true,
+        "유효": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 21465.46799998032,
+      "evidence": [
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "1. Requested는 방향·상대 크기 제어의 제한 전 요구다. 상태가 PAUSED여도 진단용 요청이 보일 수 있다.\n2. Safe는 상태·속도·가속도·후진 제한을 적용한 실제 상위 출력이다. 항상 최대 5cm/s·0.5rad/s이며 vy=0이다.\n3. Last successful UDP send는 sendto가 반환한 실제 wire 패킷이다. 모터 수신·동작 성공의 증거가 아니다.\n4. Matched ack command는 유효 텔레메트리의 last_seq에 대응하는 송신 이력이다. `host_sent_at`/`perception_frame_at`는 호스트 부가 정보이며 wire에 넣지 않는다.\n5. ESP32 reported desired cmd는 `cmd_vx/cmd_vy/cmd_w`다. 펌웨어 내부의 desired 값이므로 가속도 제한 이후 본체 적용 속도로 부르지 않는다. 해당 본체 속도 필드는 NOT REPORTED로 표시한다.\n6. wheel_target/wheel_speed는 cm/s, wheel_pwm은 PWM, encoder_count는 누적 count다. RPM은 `cm/s * 60 / (2*pi*wheel_radius_cm)`으로 환산한다. 설정 기본 반지름 2.9cm는 기존 firmware config에서 확인했다."
+          ]
+        },
+        {
+          "source_id": 12,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 화면과 조작",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "`UNKNOWN`/null은 값을 받지 못했거나 검증할 수 없다는 뜻이다. stale 텔레메트리는 마지막 값이 남을 수 있으므로 RX 유효성·나이를 함께 확인한다. 그래프는 유효 수신에만 새 점을 추가하며 과거 곡선이 남았다고 현재 정상이라는 뜻은 아니다. FPS는 완료된 추론 사이의 간격으로 계산한다. 최초 모델 초기화에는 오래 걸릴 수 있고 단계가 UI와 로그에 표시된다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 카메라 | `dashboard_runtime.py`, `config/default.json`, `visualization/korean.py`를 수정했다. YOLO 준비 뒤 최신 프레임을 다시 읽고, 추론 전에 기한이 지난 캡처는 건너뛴다. 추론 완료 시 지연 상태를 표시한다. 기본 유효시간 350 ms는 시험값이다. 캡처 시각 기반 만료와 동일 프레임 반복의 제스처 누적 금지를 유지한다. | 같은 카메라·CPU 조건에서 전후 지연과 인물 ID·손 귀속 정확도 재측정 |"
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "D.I.G. Agent 스키마와 대화 처리 / 대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |"
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "D.I.G. Agent 스키마와 대화 처리 / 대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |"
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 순서 | 범위와 파일 | 확인 |\n| --- | --- | --- |\n| 4 | `dashboard_runtime.py`와 영상 진단. 모델 준비 직후 최신 프레임 사용. 캡처 시각 기준 유효시간을 정하고 지연 원인을 표시 | 큐·추론·캡처 지연 확인, 오래된 같은 프레임으로 새 이동 금지 |"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_table",
+      "question": "PC 통신 포트 설정을 알려줘",
+      "arm": "fts",
+      "core_marker_presence": {
+        "8888": true,
+        "8889": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 139.6756999893114,
+      "evidence": [
+        {
+          "source_id": 15,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "하드웨어 모드",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "SIMULATION에서는 ESP32 소켓을 만들지 않는다. 시험 및 기록에서 주소·명시 승인 후 Connect hardware를 누르거나 기존 CLI 승인을 사용한다. 검증된 설정 파일의 `communication.signs_verified=true`도 필요하다. 연결은 STOP만 송신하며 연결 자체로 ARM/RESUME하지 않는다. Fresh matching STOPPED, fault 없음, 실제 perception 갱신이 있어야 A와 새 재개를 진행할 수 있다.",
+            "프로젝트의 false를 단순히 true로 바꾸는 행위는 물리 교정의 증거가 아니다. 이번 개발 중에는 실제 ESP32 연결·모터 구동을 하지 않았다. 자동 후진은 차단 상태로 유지한다. STOP + return to SIMULATION은 먼저 전송부를 정지·닫고 모드를 전환한다. 다시 하드웨어에 연결해도 unarmed다.",
+            "GUI가 멈추거나 새 인식이 오지 않아도 UDP worker가 원래 프레임 timestamp를 감시한다. 250ms lease 만료/700ms 텔레메트리 지연/고장에서는 STOP과 해제가 필요하다. heartbeat는 사용하지 않는다. 실제 OS·전원·UDP 장애에 대한 정지 보장은 없으며 기존 ESP32 워치독과 물리 차단 수단을 함께 사용한다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| 모터 제어 | 하나의 Feedforward+PI에서 속도·거리 명령 처리. 동일 방향 PWM 갱신에 0 펄스를 삽입하지 않음 | 모듈로 분리한 바퀴 PID와 급변 정책 |\n| 출력축 1회전 계수 | 설정 823.13 | 설정 898 |\n| 엔코더 | 급변 샘플 거부. 거리 이동 중 무효 지속 시 현재 목표 중단 | FILTERED_TEST 창에서 허용 횟수 초과 시 중단 |\n| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |\n| 좌우 회전 진단 | 목표·실측 RPM, Feedforward PWM, PI 보정 PWM을 함께 보고 | 속도 기반 RPM과 PWM |",
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 자연어 | `planning/`, `llm/prompt.py`, `llm/central_control.py`, `llm_cli.py`, `visualization/natural_control.py`, `execution/motion_executor.py`를 수정했다. 두 복합 이동은 입력 순서 유지와 모델의 순서 변경 거부를 확인했다. 방향 없는 한 바퀴는 방향 미지정 360도 계획으로 표시하고 실행 전체를 차단한다. 거리 구간별 종료와 STOP 확인 테스트를 통과했다. | 실제 NVIDIA 응답과 두 구간의 주행 거리 확인. 회전은 외부 실측으로 각도 제어를 검증한 뒤 별도 연결 |\n| 손동작 | `control/hand_drive.py`의 기본 직접 구동 매핑에 Victory → BACKWARD를 추가했다. 기존 매핑을 명시해 사용하는 설정은 Victory를 정지로 유지한다. 기본 매핑의 서로 다른 프레임 조건과 손 소실 시 정지를 검사했다. | 카메라에서 Victory 연속 인식과 실제 후진",
+            "GitHub `main`의 공식 기준선 등록 커밋은 `abf466a`다. 제공 원본은 로컬 `.tmp/control-simple-v2-original/`에 보관했다. Wi-Fi 선언을 되돌려 넣으면 원본 바이트와 일치하는 것을 확인했다. 공식 등록본의 ESP32 Dev Module 컴파일 결과는 플래시 956,779바이트, 정적 RAM 49,132바이트다. 기준 스케치는 모터 제어를 수정하지 않았다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_NOT_CONFIGURED` | 레이더 Pi 주소를 저장합니다. |\n| `RADAR_NO_DATA` | 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했습니다. `publisher.py` 실행 여부, `--pc`의 PC 주소, Pi 출발지 IPv4, PC의 UDP `8891` 수신 허용 여부를 확인합니다. |\n| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |\n| `RADAR_TIMEOUT` | 수신 지연 경고입니다. 마지막 상태와 경과 시간을 유지하며 계속 수신합니다. 시간 초과만으로 새 차단은 만들지 않고 이전 차단은 유지합니다. 발행자와 네트워크를 확인합니다. |\n| `EVADE` | 장애물이 감지되어 이동이 차단되고 현재 동작과 남은 LLM 계획이 취소됩니다. |\n| `CLEAR` | 유효한 레이더 프레임에서 장애물 없음이 확인됐습니다. 수신 사유와 ESP32 STOP 응답을 확인합니다. |\n| `SESSION_SYNC_WAITING_STOP` | 이전 세션의 정지 응답이 지연되고 있습니다. 현재 세션의 새 STOP 응답을 기다리는 동안 이동은 차단됩니다. |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서",
+            "세 바퀴를 바닥에서 띄워 고정한 경우에만 Qt의 벤치 옵션을 사용합니다. 다음은 브레드보드 펌웨어를 탑재한 장치의 실행 예시입니다. PCB V19 장치는 `PCB_V19`를 지정합니다.",
+            "ESP32 연결 후 보드 프로필 일치와 STOP 확인을 기다립니다. **수동 제어 → 바퀴를 띄워 고정했습니다 · 벤치 시험 허용**을 선택하고 방향 버튼을 누릅니다. 입력 명령은 최대 `1.0 cm/s`, `0.10 rad/s`이며 한 번에 최대 2초입니다. 버튼을 놓거나 창에서 벗어나면 STOP을 요청합니다. 레이더가 수신되기 시작하면 벤치 허용을 해제합니다. 같은 연결에서 레이더가 다시 끊겨도 벤치로 전환하지 않습니다."
+          ]
+        },
+        {
+          "source_id": 18,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "남은 실물 검증",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "실제 4종 제스처를 반복 제시하며 Raw confidence, 승인 시간, 거부 사유, 설정 변화와 pause/resume을 기록해야 한다. 그 뒤 다인·가림·ID 변화를 검증한다. ESP32 연결 이후에는 STOP handshake·단절·fault·띄운 바퀴 엔코더·방향·RPM·정지 반응을 검사한다. 본체 방향·거리·제동은 지상에서 별도 승인 후 확인한다. 후방 레이더 실제 통합·Pi 카메라/성능은 이번 범위 밖이다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_table",
+      "question": "PC 통신 포트 설정을 알려줘",
+      "arm": "hybrid_unavailable",
+      "core_marker_presence": {
+        "8888": true,
+        "8889": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 11.325099971145391,
+      "evidence": [
+        {
+          "source_id": 15,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "하드웨어 모드",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "SIMULATION에서는 ESP32 소켓을 만들지 않는다. 시험 및 기록에서 주소·명시 승인 후 Connect hardware를 누르거나 기존 CLI 승인을 사용한다. 검증된 설정 파일의 `communication.signs_verified=true`도 필요하다. 연결은 STOP만 송신하며 연결 자체로 ARM/RESUME하지 않는다. Fresh matching STOPPED, fault 없음, 실제 perception 갱신이 있어야 A와 새 재개를 진행할 수 있다.",
+            "프로젝트의 false를 단순히 true로 바꾸는 행위는 물리 교정의 증거가 아니다. 이번 개발 중에는 실제 ESP32 연결·모터 구동을 하지 않았다. 자동 후진은 차단 상태로 유지한다. STOP + return to SIMULATION은 먼저 전송부를 정지·닫고 모드를 전환한다. 다시 하드웨어에 연결해도 unarmed다.",
+            "GUI가 멈추거나 새 인식이 오지 않아도 UDP worker가 원래 프레임 timestamp를 감시한다. 250ms lease 만료/700ms 텔레메트리 지연/고장에서는 STOP과 해제가 필요하다. heartbeat는 사용하지 않는다. 실제 OS·전원·UDP 장애에 대한 정지 보장은 없으며 기존 ESP32 워치독과 물리 차단 수단을 함께 사용한다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| 모터 제어 | 하나의 Feedforward+PI에서 속도·거리 명령 처리. 동일 방향 PWM 갱신에 0 펄스를 삽입하지 않음 | 모듈로 분리한 바퀴 PID와 급변 정책 |\n| 출력축 1회전 계수 | 설정 823.13 | 설정 898 |\n| 엔코더 | 급변 샘플 거부. 거리 이동 중 무효 지속 시 현재 목표 중단 | FILTERED_TEST 창에서 허용 횟수 초과 시 중단 |\n| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |\n| 좌우 회전 진단 | 목표·실측 RPM, Feedforward PWM, PI 보정 PWM을 함께 보고 | 속도 기반 RPM과 PWM |",
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 자연어 | `planning/`, `llm/prompt.py`, `llm/central_control.py`, `llm_cli.py`, `visualization/natural_control.py`, `execution/motion_executor.py`를 수정했다. 두 복합 이동은 입력 순서 유지와 모델의 순서 변경 거부를 확인했다. 방향 없는 한 바퀴는 방향 미지정 360도 계획으로 표시하고 실행 전체를 차단한다. 거리 구간별 종료와 STOP 확인 테스트를 통과했다. | 실제 NVIDIA 응답과 두 구간의 주행 거리 확인. 회전은 외부 실측으로 각도 제어를 검증한 뒤 별도 연결 |\n| 손동작 | `control/hand_drive.py`의 기본 직접 구동 매핑에 Victory → BACKWARD를 추가했다. 기존 매핑을 명시해 사용하는 설정은 Victory를 정지로 유지한다. 기본 매핑의 서로 다른 프레임 조건과 손 소실 시 정지를 검사했다. | 카메라에서 Victory 연속 인식과 실제 후진",
+            "GitHub `main`의 공식 기준선 등록 커밋은 `abf466a`다. 제공 원본은 로컬 `.tmp/control-simple-v2-original/`에 보관했다. Wi-Fi 선언을 되돌려 넣으면 원본 바이트와 일치하는 것을 확인했다. 공식 등록본의 ESP32 Dev Module 컴파일 결과는 플래시 956,779바이트, 정적 RAM 49,132바이트다. 기준 스케치는 모터 제어를 수정하지 않았다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_NOT_CONFIGURED` | 레이더 Pi 주소를 저장합니다. |\n| `RADAR_NO_DATA` | 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했습니다. `publisher.py` 실행 여부, `--pc`의 PC 주소, Pi 출발지 IPv4, PC의 UDP `8891` 수신 허용 여부를 확인합니다. |\n| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |\n| `RADAR_TIMEOUT` | 수신 지연 경고입니다. 마지막 상태와 경과 시간을 유지하며 계속 수신합니다. 시간 초과만으로 새 차단은 만들지 않고 이전 차단은 유지합니다. 발행자와 네트워크를 확인합니다. |\n| `EVADE` | 장애물이 감지되어 이동이 차단되고 현재 동작과 남은 LLM 계획이 취소됩니다. |\n| `CLEAR` | 유효한 레이더 프레임에서 장애물 없음이 확인됐습니다. 수신 사유와 ESP32 STOP 응답을 확인합니다. |\n| `SESSION_SYNC_WAITING_STOP` | 이전 세션의 정지 응답이 지연되고 있습니다. 현재 세션의 새 STOP 응답을 기다리는 동안 이동은 차단됩니다. |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서",
+            "세 바퀴를 바닥에서 띄워 고정한 경우에만 Qt의 벤치 옵션을 사용합니다. 다음은 브레드보드 펌웨어를 탑재한 장치의 실행 예시입니다. PCB V19 장치는 `PCB_V19`를 지정합니다.",
+            "ESP32 연결 후 보드 프로필 일치와 STOP 확인을 기다립니다. **수동 제어 → 바퀴를 띄워 고정했습니다 · 벤치 시험 허용**을 선택하고 방향 버튼을 누릅니다. 입력 명령은 최대 `1.0 cm/s`, `0.10 rad/s`이며 한 번에 최대 2초입니다. 버튼을 놓거나 창에서 벗어나면 STOP을 요청합니다. 레이더가 수신되기 시작하면 벤치 허용을 해제합니다. 같은 연결에서 레이더가 다시 끊겨도 벤치로 전환하지 않습니다."
+          ]
+        },
+        {
+          "source_id": 18,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "남은 실물 검증",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "실제 4종 제스처를 반복 제시하며 Raw confidence, 승인 시간, 거부 사유, 설정 변화와 pause/resume을 기록해야 한다. 그 뒤 다인·가림·ID 변화를 검증한다. ESP32 연결 이후에는 STOP handshake·단절·fault·띄운 바퀴 엔코더·방향·RPM·정지 반응을 검사한다. 본체 방향·거리·제동은 지상에서 별도 승인 후 확인한다. 후방 레이더 실제 통합·Pi 카메라/성능은 이번 범위 밖이다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_table",
+      "question": "PC 통신 포트 설정을 알려줘",
+      "arm": "dedup_only",
+      "core_marker_presence": {
+        "8888": true,
+        "8889": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 10.98760002059862,
+      "evidence": [
+        {
+          "source_id": 15,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "하드웨어 모드",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "SIMULATION에서는 ESP32 소켓을 만들지 않는다. 시험 및 기록에서 주소·명시 승인 후 Connect hardware를 누르거나 기존 CLI 승인을 사용한다. 검증된 설정 파일의 `communication.signs_verified=true`도 필요하다. 연결은 STOP만 송신하며 연결 자체로 ARM/RESUME하지 않는다. Fresh matching STOPPED, fault 없음, 실제 perception 갱신이 있어야 A와 새 재개를 진행할 수 있다.",
+            "프로젝트의 false를 단순히 true로 바꾸는 행위는 물리 교정의 증거가 아니다. 이번 개발 중에는 실제 ESP32 연결·모터 구동을 하지 않았다. 자동 후진은 차단 상태로 유지한다. STOP + return to SIMULATION은 먼저 전송부를 정지·닫고 모드를 전환한다. 다시 하드웨어에 연결해도 unarmed다.",
+            "GUI가 멈추거나 새 인식이 오지 않아도 UDP worker가 원래 프레임 timestamp를 감시한다. 250ms lease 만료/700ms 텔레메트리 지연/고장에서는 STOP과 해제가 필요하다. heartbeat는 사용하지 않는다. 실제 OS·전원·UDP 장애에 대한 정지 보장은 없으며 기존 ESP32 워치독과 물리 차단 수단을 함께 사용한다."
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| 모터 제어 | 하나의 Feedforward+PI에서 속도·거리 명령 처리. 동일 방향 PWM 갱신에 0 펄스를 삽입하지 않음 | 모듈로 분리한 바퀴 PID와 급변 정책 |\n| 출력축 1회전 계수 | 설정 823.13 | 설정 898 |\n| 엔코더 | 급변 샘플 거부. 거리 이동 중 무효 지속 시 현재 목표 중단 | FILTERED_TEST 창에서 허용 횟수 초과 시 중단 |\n| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |\n| 좌우 회전 진단 | 목표·실측 RPM, Feedforward PWM, PI 보정 PWM을 함께 보고 | 속도 기반 RPM과 PWM |",
+            "| 단계 | 변경과 확인 결과 | 실물에서 확인할 항목 |\n| --- | --- | --- |\n| 자연어 | `planning/`, `llm/prompt.py`, `llm/central_control.py`, `llm_cli.py`, `visualization/natural_control.py`, `execution/motion_executor.py`를 수정했다. 두 복합 이동은 입력 순서 유지와 모델의 순서 변경 거부를 확인했다. 방향 없는 한 바퀴는 방향 미지정 360도 계획으로 표시하고 실행 전체를 차단한다. 거리 구간별 종료와 STOP 확인 테스트를 통과했다. | 실제 NVIDIA 응답과 두 구간의 주행 거리 확인. 회전은 외부 실측으로 각도 제어를 검증한 뒤 별도 연결 |\n| 손동작 | `control/hand_drive.py`의 기본 직접 구동 매핑에 Victory → BACKWARD를 추가했다. 기존 매핑을 명시해 사용하는 설정은 Victory를 정지로 유지한다. 기본 매핑의 서로 다른 프레임 조건과 손 소실 시 정지를 검사했다. | 카메라에서 Victory 연속 인식과 실제 후진",
+            "GitHub `main`의 공식 기준선 등록 커밋은 `abf466a`다. 제공 원본은 로컬 `.tmp/control-simple-v2-original/`에 보관했다. Wi-Fi 선언을 되돌려 넣으면 원본 바이트와 일치하는 것을 확인했다. 공식 등록본의 ESP32 Dev Module 컴파일 결과는 플래시 956,779바이트, 정적 RAM 49,132바이트다. 기준 스케치는 모터 제어를 수정하지 않았다."
+          ]
+        },
+        {
+          "source_id": 19,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+            "저장소 루트에서 대시보드를 엽니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_NOT_CONFIGURED` | 레이더 Pi 주소를 저장합니다. |\n| `RADAR_NO_DATA` | 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했습니다. `publisher.py` 실행 여부, `--pc`의 PC 주소, Pi 출발지 IPv4, PC의 UDP `8891` 수신 허용 여부를 확인합니다. |\n| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |\n| `RADAR_TIMEOUT` | 수신 지연 경고입니다. 마지막 상태와 경과 시간을 유지하며 계속 수신합니다. 시간 초과만으로 새 차단은 만들지 않고 이전 차단은 유지합니다. 발행자와 네트워크를 확인합니다. |\n| `EVADE` | 장애물이 감지되어 이동이 차단되고 현재 동작과 남은 LLM 계획이 취소됩니다. |\n| `CLEAR` | 유효한 레이더 프레임에서 장애물 없음이 확인됐습니다. 수신 사유와 ESP32 STOP 응답을 확인합니다. |\n| `SESSION_SYNC_WAITING_STOP` | 이전 세션의 정지 응답이 지연되고 있습니다. 현재 세션의 새 STOP 응답을 기다리는 동안 이동은 차단됩니다. |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서",
+            "세 바퀴를 바닥에서 띄워 고정한 경우에만 Qt의 벤치 옵션을 사용합니다. 다음은 브레드보드 펌웨어를 탑재한 장치의 실행 예시입니다. PCB V19 장치는 `PCB_V19`를 지정합니다.",
+            "ESP32 연결 후 보드 프로필 일치와 STOP 확인을 기다립니다. **수동 제어 → 바퀴를 띄워 고정했습니다 · 벤치 시험 허용**을 선택하고 방향 버튼을 누릅니다. 입력 명령은 최대 `1.0 cm/s`, `0.10 rad/s`이며 한 번에 최대 2초입니다. 버튼을 놓거나 창에서 벗어나면 STOP을 요청합니다. 레이더가 수신되기 시작하면 벤치 허용을 해제합니다. 같은 연결에서 레이더가 다시 끊겨도 벤치로 전환하지 않습니다."
+          ]
+        },
+        {
+          "source_id": 18,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "남은 실물 검증",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "실제 4종 제스처를 반복 제시하며 Raw confidence, 승인 시간, 거부 사유, 설정 변화와 pause/resume을 기록해야 한다. 그 뒤 다인·가림·ID 변화를 검증한다. ESP32 연결 이후에는 STOP handshake·단절·fault·띄운 바퀴 엔코더·방향·RPM·정지 반응을 검사한다. 본체 방향·거리·제동은 지상에서 별도 승인 후 확인한다. 후방 레이더 실제 통합·Pi 카메라/성능은 이번 범위 밖이다."
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_table",
+      "question": "PC 통신 포트 설정을 알려줘",
+      "arm": "structure",
+      "core_marker_presence": {
+        "8888": true,
+        "8889": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 3,
+      "local_retrieval_selection_ms": 21828.59250000911,
+      "evidence": [
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "1. Requested는 방향·상대 크기 제어의 제한 전 요구다. 상태가 PAUSED여도 진단용 요청이 보일 수 있다.\n2. Safe는 상태·속도·가속도·후진 제한을 적용한 실제 상위 출력이다. 항상 최대 5cm/s·0.5rad/s이며 vy=0이다.\n3. Last successful UDP send는 sendto가 반환한 실제 wire 패킷이다. 모터 수신·동작 성공의 증거가 아니다.\n4. Matched ack command는 유효 텔레메트리의 last_seq에 대응하는 송신 이력이다. `host_sent_at`/`perception_frame_at`는 호스트 부가 정보이며 wire에 넣지 않는다.\n5. ESP32 reported desired cmd는 `cmd_vx/cmd_vy/cmd_w`다. 펌웨어 내부의 desired 값이므로 가속도 제한 이후 본체 적용 속도로 부르지 않는다. 해당 본체 속도 필드는 NOT REPORTED로 표시한다.\n6. wheel_target/wheel_speed는 cm/s, wheel_pwm은 PWM, encoder_count는 누적 count다. RPM은 `cm/s * 60 / (2*pi*wheel_radius_cm)`으로 환산한다. 설정 기본 반지름 2.9cm는 기존 firmware config에서 확인했다."
+          ]
+        },
+        {
+          "source_id": 2,
+          "path": "docs/ARCHITECTURE.md",
+          "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+          "revision": "8861848",
+          "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+          "quotes": [
+            "UDP snapshot은 성공한 sendto 패킷, 수신 나이·유효성, ACK seq에 매칭된 송신 패킷, STOP 이후 확인 여부를 구분한다. `cmd_vx/cmd_vy/cmd_w`는 펌웨어가 보고한 희망 명령이며 제한 이후 본체 속도는 현재 펌웨어에 없다. `wheel_target/wheel_speed`가 실제 바퀴 목표/측정 피드백이다. cm/s를 설정 반지름 2.9cm로 환산한 RPM에는 환산 표시를 붙인다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `SESSION_CONFLICT` | 현재 세션과 충돌하는 새 텔레메트리가 감지됐습니다. 다른 송신기를 종료한 뒤 진단에서 STOP 전용 재동기화를 요청하세요. |"
+          ]
+        },
+        {
+          "source_id": 14,
+          "path": "docs/DASHBOARD_GUIDE.md",
+          "heading": "실시간 검증 대시보드 사용 및 구현 안내 / 명령·텔레메트리의 의미",
+          "revision": "8861848",
+          "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+          "quotes": [
+            "UDP 8888/8889, 텔레메트리 200ms, SLOW와 300ms 워치독을 펌웨어에서 재확인했다. source IP:8888, session, seq, boot, uptime, 숫자/배열을 검증한다. STOP 검증은 STOP 송신 이후에 해당 seq 이상을 보고한 fresh STOPPED·fault NONE·0 명령/PWM·낮은 wheel_speed가 있어야 한다. 이것도 물리 전원 차단이나 본체 정지 거리 검증은 아니다."
+          ]
+        },
+        {
+          "source_id": 23,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다."
+          ]
+        },
+        {
+          "source_id": 24,
+          "path": "docs/RADAR_OPERATION_GUIDE.md",
+          "heading": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+          "revision": "8861848",
+          "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+          "quotes": [
+            "| 표시 | 의미와 확인할 사항 |\n| --- | --- |\n| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "new_table",
+      "question": "PC 통신 포트 설정을 알려줘",
+      "arm": "structure_diverse",
+      "core_marker_presence": {
+        "8888": true,
+        "8889": true
+      },
+      "all_markers_present": true,
+      "evidence_count": 6,
+      "unique_paths": 2,
+      "local_retrieval_selection_ms": 26769.571300013922,
+      "evidence": [
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |"
+          ]
+        },
+        {
+          "source_id": 31,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 기준선 차이와 구현 결과",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "| 항목 | 공식 `control_simple_v2` | 이전 `control_v2` 후보 |\n| --- | --- | --- |\n| 모터 제어 | 하나의 Feedforward+PI에서 속도·거리 명령 처리. 동일 방향 PWM 갱신에 0 펄스를 삽입하지 않음 | 모듈로 분리한 바퀴 PID와 급변 정책 |"
+          ]
+        },
+        {
+          "source_id": 29,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "D.I.G. Agent 스키마와 대화 처리 / 대화 예시",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |"
+          ]
+        },
+        {
+          "source_id": 28,
+          "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+          "heading": "D.I.G. Agent 스키마와 대화 처리 / 현재 LLM 동작",
+          "revision": "8861848",
+          "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+          "quotes": [
+            "제품 역할은 D.I.G. 로봇 관제 에이전트이며 모델 이름은 Python의 `NVIDIA_MODEL` 설정에서 읽는다. 공식 NVIDIA 엔드포인트와 사용자 지정 엔드포인트는 서버 답변에서 구별한다. 모델 연결에 문제가 생겨도 웹 블록 직접 편집과 로컬 처리 경로는 이용할 수 있다."
+          ]
+        },
+        {
+          "source_id": 33,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서 / 좌·우 RPM 비교",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "회귀 테스트 166개가 통과했다. 자격 증명을 제외한 격리 사본을 사용했고 UDP 독점 검사는 다른 루프백 포트에 바인딩했다. 원시 결과는 `.tmp/simple-v2-baseline/regression.txt`에 있다. 기준선 이후 Python 변경은 로컬에 있다. 이번 작업에서 새 NVIDIA 호출, 펌웨어 업로드 및 모터 구동은 수행하지 않았다."
+          ]
+        },
+        {
+          "source_id": 30,
+          "path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+          "heading": "control_simple_v2 기준선과 작업 순서",
+          "revision": "8861848",
+          "sha": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+          "quotes": [
+            "2026-11-18에 GitHub main의 46b6969와 로컬에서 제공된 control_simple_v2.ino를 대조했다. GitHub에는 단일 파일이 없었다. 제공 원본 SHA-256은 `04361d704319f67cefee757444693c84fec0a7b142ae7b13d0efaecb80872b45`다. 수동 및 자연어 이동의 부드러운 모터 회전과 중앙제어 UDP 연결은 사용자가 확인한 실물 기준선이다."
+          ]
+        }
+      ]
+    }
+  ]
+}

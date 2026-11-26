@@ -1,0 +1,48 @@
+{
+  "n": 30,
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "class_metrics": {
+    "ENTAILMENT": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "n": 10
+    },
+    "CONTRADICTION": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "n": 10
+    },
+    "NEUTRAL": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "n": 10
+    }
+  },
+  "confusion_matrix": {
+    "ENTAILMENT": {
+      "ENTAILMENT": 10,
+      "CONTRADICTION": 0,
+      "NEUTRAL": 0,
+      "UNAVAILABLE": 0
+    },
+    "CONTRADICTION": {
+      "ENTAILMENT": 0,
+      "CONTRADICTION": 10,
+      "NEUTRAL": 0,
+      "UNAVAILABLE": 0
+    },
+    "NEUTRAL": {
+      "ENTAILMENT": 0,
+      "CONTRADICTION": 0,
+      "NEUTRAL": 10,
+      "UNAVAILABLE": 0
+    }
+  },
+  "false_acceptance_rate": 0.0,
+  "false_rejection_rate": 0.0,
+  "unavailable_rate": 0.0
+}

@@ -1,0 +1,15 @@
+{
+  "version": "ko-phase2-provisional-1",
+  "case_count": 120,
+  "semantic_pair_count": 180,
+  "gold_sha256": "22f431e76d068091d9e5eee88f6765fd592e6afca4e082bdfd8e21d0dd32c577",
+  "semantic_sha256": "f7daf7feb48a1db212fd577e2a10b02a6e187b522843a41d381f1dd339439fa6",
+  "revision": "8861848",
+  "splits": {
+    "development": 33,
+    "validation": 44,
+    "test": 43
+  },
+  "review_status": "human_review_pending",
+  "paraphrase_leakage_review": "document-family grouped; cross-document semantic equivalence requires human audit"
+}

@@ -1,0 +1,9 @@
+{
+  "checked_artifacts": 102,
+  "changed_artifacts": [],
+  "old_api_budget": "12/12",
+  "new_external_ai_requests": 0,
+  "production_8766_environment": "UNKNOWN_NOT_ASSUMED",
+  "preview_8771_environment": "explicit_process_local_cloud0_vector0_outbound_AI_disabled",
+  "robot_motion_tested": false
+}

@@ -19,4 +19,8 @@
 
 ## 시험과 구현 기록
 
+[Grounded Conversational RAG v3](ROBOT_KNOWLEDGE_RAG_V3.md) · [Phase 1 검증](verification/RAG_V3_VALIDATION.md)
+
+[RAG Phase 2 구현·재현](ROBOT_KNOWLEDGE_RAG_V3_PHASE2.md) · [실제 표본 평가 보고서](verification/RAG_V3_PHASE2_REPORT.md)
+
 날짜별 실험 보고서, 모의 캡처, 테스트 출력은 [검증 기록](verification/README.md)에 모았다. 로컬에서 생성하는 주행 로그, SQLite 데이터, 운영자 측정 원본은 기존 `logs/`에 보관한다.

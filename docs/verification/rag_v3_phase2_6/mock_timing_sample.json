@@ -1,0 +1,120 @@
+{
+  "evidence_type": "MOCK_ONLY_NOT_API_PERFORMANCE",
+  "counters": {
+    "mock_reservations": 2,
+    "mock_initializations": 1,
+    "mock_closes": 1
+  },
+  "result": {
+    "reply": "Qt 화면은 PySide6로 구현해요.",
+    "speech_text": "Qt 화면은 PySide6로 구현해요.",
+    "claims": [
+      {
+        "claim_id": "c1",
+        "text": "Qt 화면은 PySide6로 구현해요.",
+        "evidence_ids": [
+          2
+        ],
+        "supports": [
+          {
+            "evidence_id": 2,
+            "quote_index": 0
+          }
+        ],
+        "verification_status": "supported",
+        "verification_method": "candidate_rules_and_semantic",
+        "candidate_supports": [
+          {
+            "evidence_id": 1,
+            "quote_index": 0
+          }
+        ]
+      }
+    ],
+    "citations": [
+      {
+        "id": 2,
+        "document_id": 1,
+        "path": "docs/ARCHITECTURE.md",
+        "heading": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+        "title": "현재 대시보드 확장",
+        "section": "현재 대시보드 확장",
+        "page": null,
+        "line": 12,
+        "version": "8861848",
+        "revision": "8861848",
+        "sha": "50a03f98254dc2f3c64a234f5e344fa99dc1624ccbae0e335607f1ccc024499f",
+        "source_sha256": "50a03f98254dc2f3c64a234f5e344fa99dc1624ccbae0e335607f1ccc024499f",
+        "trust": "project_doc",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+        "chunk_hash": "8e66ef9f5b590fbc290fde316d5911b69cc869615825c08fd48e5e41ee175a5c",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "excerpts": [
+          "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다."
+        ],
+        "related_claims": [
+          "c1"
+        ],
+        "candidate_unit_id": 1
+      }
+    ],
+    "answer_mode": "grounded",
+    "verification_status": "verified",
+    "insufficient_evidence": false,
+    "verification_failures": [],
+    "unanswered_aspects": [],
+    "timings_ms": {
+      "retrieval_ms": 427.9971999931149,
+      "evidence_selection_ms": 14.834500034339726,
+      "request_construction_ms": 0.1537000061944127,
+      "sdk_initialization_ms": 0.008400005754083395,
+      "sdk_create_ms": 0.37519994657486677,
+      "response_parsing_ms": 0.08180004078894854,
+      "generation_wrapper_ms": 0.575200014282018,
+      "deterministic_validation_ms": 63.71469999430701,
+      "semantic_validation_ms": 0.21519995061680675,
+      "answer_assembly_ms": 0.24850002955645323,
+      "total_ms": 530.2733999560587
+    }
+  },
+  "stage_totals_including_explicit_close_ms": {
+    "retrieval_ms": 427.9971999931149,
+    "evidence_selection_ms": 14.834500034339726,
+    "request_construction_ms": 0.1537000061944127,
+    "sdk_initialization_ms": 0.008400005754083395,
+    "sdk_create_ms": 0.37519994657486677,
+    "response_parsing_ms": 0.08180004078894854,
+    "generation_wrapper_ms": 0.575200014282018,
+    "deterministic_validation_ms": 63.71469999430701,
+    "semantic_validation_ms": 0.21519995061680675,
+    "answer_assembly_ms": 0.24850002955645323,
+    "total_ms": 530.2733999560587,
+    "client_close_ms": 0.005599984433501959
+  },
+  "sdk_request_timings": [
+    {
+      "call_in_diagnostic": 1,
+      "sdk_initialization_ms": 0.008400005754083395,
+      "sdk_create_ms": 0.2992999507114291,
+      "response_parsing_ms": 0.05490001058205962,
+      "client_close_ms": 0,
+      "request_after_reservation_ms": 0.38519996451213956
+    },
+    {
+      "call_in_diagnostic": 2,
+      "sdk_initialization_ms": 0.0,
+      "sdk_create_ms": 0.07589999586343765,
+      "response_parsing_ms": 0.026900030206888914,
+      "client_close_ms": 0,
+      "request_after_reservation_ms": 0.11769996490329504
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+# Frozen evidence keeps original CRLF and test-output whitespace, not code style.
+docs/verification/rag_v3/** -text -whitespace
+docs/verification/rag_v3_phase2/** -text -whitespace
+docs/verification/rag_v3_phase2_5/** -text -whitespace
+docs/verification/rag_v3_phase2_6/** -text -whitespace
+docs/verification/conversational_rag_recovery/** -text -whitespace
+docs/verification/RAG_V3*.md -text -whitespace
+docs/verification/RAG_ANSWER_UX_RECOVERY_PLAN.md -text -whitespace
+docs/verification/CONVERSATIONAL_RAG_RECOVERY_REPORT.md -text -whitespace
+docs/ROBOT_KNOWLEDGE_RAG_V3*.md -text -whitespace
+docs/knowledge/PROGRAM_KNOWLEDGE.md -text
+docs/verification/DELIVERY_2026-11-27* -text -whitespace

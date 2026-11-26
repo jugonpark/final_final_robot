@@ -1,0 +1,293 @@
+{
+  "conditions": "Synthetic local SQLite/FTS, warm 10 samples per path, generation and semantic judge mocked only for grounded example. No actual Korean model measurement.",
+  "scenarios": {
+    "template": {
+      "sample_count": 10,
+      "p50_ms": 11.405000000000001,
+      "p95_ms": 154.79,
+      "result": {
+        "reply": "사용자가 제공한 소개에서 테스트인물의 직업: 연구원.\n\n사용자가 제공한 소개에서 테스트인물의 전공: 전기전자.\n\n사용자가 제공한 소개에서 테스트인물의 역할: 문서 정리.",
+        "speech_text": "사용자가 제공한 소개에서 테스트인물의 직업: 연구원.\n\n사용자가 제공한 소개에서 테스트인물의 전공: 전기전자.\n\n사용자가 제공한 소개에서 테스트인물의 역할: 문서 정리.",
+        "answer_mode": "template",
+        "verification_status": "structured",
+        "insufficient_evidence": false,
+        "claims": [
+          {
+            "claim_id": "c1",
+            "text": "사용자가 제공한 소개에서 테스트인물의 직업: 연구원.",
+            "evidence_ids": [
+              1
+            ],
+            "supports": [
+              {
+                "evidence_id": 1,
+                "quote_index": 0
+              }
+            ],
+            "verification_status": "supported",
+            "verification_method": "structured_template"
+          },
+          {
+            "claim_id": "c2",
+            "text": "사용자가 제공한 소개에서 테스트인물의 전공: 전기전자.",
+            "evidence_ids": [
+              1
+            ],
+            "supports": [
+              {
+                "evidence_id": 1,
+                "quote_index": 0
+              }
+            ],
+            "verification_status": "supported",
+            "verification_method": "structured_template"
+          },
+          {
+            "claim_id": "c3",
+            "text": "사용자가 제공한 소개에서 테스트인물의 역할: 문서 정리.",
+            "evidence_ids": [
+              1
+            ],
+            "supports": [
+              {
+                "evidence_id": 1,
+                "quote_index": 0
+              }
+            ],
+            "verification_status": "supported",
+            "verification_method": "structured_template"
+          }
+        ],
+        "citations": [
+          {
+            "id": 1,
+            "document_id": 1,
+            "path": "profile.md",
+            "heading": "테스트인물",
+            "title": "테스트인물",
+            "section": "테스트인물",
+            "page": null,
+            "line": 2,
+            "version": "de767091200bcbe6556dbe7d735cd17740574794947a2688442cdb1577c5f452",
+            "revision": "de767091200bcbe6556dbe7d735cd17740574794947a2688442cdb1577c5f452",
+            "sha": "de767091200bcbe6556dbe7d735cd17740574794947a2688442cdb1577c5f452",
+            "source_sha256": "de767091200bcbe6556dbe7d735cd17740574794947a2688442cdb1577c5f452",
+            "trust": "user_reference",
+            "variant_id": "UNCLASSIFIED",
+            "source_kind": "USER_UPLOAD",
+            "evidence_status": "UNVERIFIED",
+            "source_path": "profile.md",
+            "effective_date": null,
+            "reviewed_by_user": 0,
+            "index_version": "legacy-tokenizer-unavailable",
+            "heading_path": "테스트인물",
+            "chunk_hash": "f5047949eef83d7a3965d4cad53c18ba3f3b0aa9dab3f2e5c43aa07f8588e331",
+            "token_count": null,
+            "split_warning": "tokenizer_unavailable",
+            "excerpts": [
+              "테스트인물 / 직업: 연구원 / 전공: 전기전자 / 역할: 문서 정리"
+            ],
+            "related_claims": [
+              "c1",
+              "c2",
+              "c3"
+            ]
+          }
+        ],
+        "unanswered_aspects": [],
+        "verification_failures": [],
+        "latency_ms": 8.98
+      },
+      "before_v2": {
+        "reply": "문서에서 찾은 관련 원문입니다. 현재 장치 상태는 관제 상태에서 확인하세요.\n\n[1] 테스트인물 / 직업: 연구원 / 전공: 전기전자 / 역할: 문서 정리",
+        "citations": [
+          {
+            "id": 1,
+            "document_id": 1,
+            "path": "profile.md",
+            "heading": "테스트인물",
+            "title": "테스트인물",
+            "section": "테스트인물",
+            "page": null,
+            "line": 2,
+            "version": "de767091200bcbe6556dbe7d735cd17740574794947a2688442cdb1577c5f452",
+            "revision": "de767091200bcbe6556dbe7d735cd17740574794947a2688442cdb1577c5f452",
+            "sha": "de767091200bcbe6556dbe7d735cd17740574794947a2688442cdb1577c5f452",
+            "source_sha256": "de767091200bcbe6556dbe7d735cd17740574794947a2688442cdb1577c5f452",
+            "trust": "user_reference",
+            "variant_id": "UNCLASSIFIED",
+            "source_kind": "USER_UPLOAD",
+            "evidence_status": "UNVERIFIED",
+            "source_path": "profile.md",
+            "effective_date": null,
+            "reviewed_by_user": 0,
+            "index_version": "legacy-tokenizer-unavailable",
+            "heading_path": "테스트인물",
+            "chunk_hash": "f5047949eef83d7a3965d4cad53c18ba3f3b0aa9dab3f2e5c43aa07f8588e331",
+            "token_count": null,
+            "split_warning": "tokenizer_unavailable"
+          }
+        ],
+        "insufficient_evidence": false
+      }
+    },
+    "abstained": {
+      "sample_count": 10,
+      "p50_ms": 14.705,
+      "p95_ms": 94.19,
+      "result": {
+        "reply": "관련 문서는 있지만 질문에 답할 직접 근거와 설명을 검증하지 못했어요. 확인할 항목이나 문서 범위를 더 구체적으로 알려 주세요.",
+        "speech_text": "관련 문서는 있지만 질문에 답할 직접 근거와 설명을 검증하지 못했어요. 확인할 항목이나 문서 범위를 더 구체적으로 알려 주세요.",
+        "answer_mode": "abstained",
+        "verification_status": "not_verified",
+        "insufficient_evidence": true,
+        "claims": [],
+        "citations": [
+          {
+            "id": 2,
+            "document_id": 2,
+            "path": "docs/test.md",
+            "heading": "TESTLINK",
+            "title": "TESTLINK",
+            "section": "TESTLINK",
+            "page": null,
+            "line": 2,
+            "version": "synthetic-r1",
+            "revision": "synthetic-r1",
+            "sha": "09e6897f803b821e2d3f4365670cd4956f8edb102663703fcd85a9f549acdac1",
+            "source_sha256": "09e6897f803b821e2d3f4365670cd4956f8edb102663703fcd85a9f549acdac1",
+            "trust": "project_doc",
+            "variant_id": "SOFTWARE_COMMON",
+            "source_kind": "GIT_DOCUMENT",
+            "evidence_status": "SOFTWARE_IMPLEMENTATION",
+            "source_path": "docs/test.md",
+            "effective_date": null,
+            "reviewed_by_user": 0,
+            "index_version": "legacy-tokenizer-unavailable",
+            "heading_path": "TESTLINK",
+            "chunk_hash": "abb9eb0691e94f6769dbf674f8ad61e386cb7b2fe12e5603dfaba116f8aa8e67",
+            "token_count": null,
+            "split_warning": "tokenizer_unavailable",
+            "excerpts": [],
+            "related_claims": []
+          }
+        ],
+        "unanswered_aspects": [
+          "직접 근거 또는 검증 가능한 설명"
+        ],
+        "verification_failures": [],
+        "latency_ms": 8.32
+      },
+      "before_v2": {
+        "reply": "관련 문서는 있지만 질문에 답할 직접 근거를 확인하지 못했습니다. 아래 출처의 버전과 범위를 확인하세요.",
+        "citations": [
+          {
+            "id": 2,
+            "document_id": 2,
+            "path": "docs/test.md",
+            "heading": "TESTLINK",
+            "title": "TESTLINK",
+            "section": "TESTLINK",
+            "page": null,
+            "line": 2,
+            "version": "synthetic-r1",
+            "revision": "synthetic-r1",
+            "sha": "09e6897f803b821e2d3f4365670cd4956f8edb102663703fcd85a9f549acdac1",
+            "source_sha256": "09e6897f803b821e2d3f4365670cd4956f8edb102663703fcd85a9f549acdac1",
+            "trust": "project_doc",
+            "variant_id": "SOFTWARE_COMMON",
+            "source_kind": "GIT_DOCUMENT",
+            "evidence_status": "SOFTWARE_IMPLEMENTATION",
+            "source_path": "docs/test.md",
+            "effective_date": null,
+            "reviewed_by_user": 0,
+            "index_version": "legacy-tokenizer-unavailable",
+            "heading_path": "TESTLINK",
+            "chunk_hash": "abb9eb0691e94f6769dbf674f8ad61e386cb7b2fe12e5603dfaba116f8aa8e67",
+            "token_count": null,
+            "split_warning": "tokenizer_unavailable"
+          }
+        ],
+        "insufficient_evidence": true
+      }
+    }
+  },
+  "mock_grounded": {
+    "reply": "ESP32는 관제에서 UDP 명령을 받아요.",
+    "speech_text": "ESP32는 관제에서 UDP 명령을 받아요.",
+    "answer_mode": "grounded",
+    "verification_status": "verified",
+    "insufficient_evidence": false,
+    "claims": [
+      {
+        "claim_id": "c1",
+        "text": "ESP32는 관제에서 UDP 명령을 받아요.",
+        "evidence_ids": [
+          2
+        ],
+        "supports": [
+          {
+            "evidence_id": 2,
+            "quote_index": 0
+          }
+        ],
+        "verification_status": "supported",
+        "verification_method": "nemotron_semantic_and_rules"
+      }
+    ],
+    "citations": [
+      {
+        "id": 2,
+        "document_id": 2,
+        "path": "docs/test.md",
+        "heading": "TESTLINK",
+        "title": "TESTLINK",
+        "section": "TESTLINK",
+        "page": null,
+        "line": 2,
+        "version": "synthetic-r1",
+        "revision": "synthetic-r1",
+        "sha": "09e6897f803b821e2d3f4365670cd4956f8edb102663703fcd85a9f549acdac1",
+        "source_sha256": "09e6897f803b821e2d3f4365670cd4956f8edb102663703fcd85a9f549acdac1",
+        "trust": "project_doc",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/test.md",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "TESTLINK",
+        "chunk_hash": "abb9eb0691e94f6769dbf674f8ad61e386cb7b2fe12e5603dfaba116f8aa8e67",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "excerpts": [
+          "ESP32 receives UDP commands from the controller."
+        ],
+        "related_claims": [
+          "c1"
+        ]
+      }
+    ],
+    "unanswered_aspects": [],
+    "verification_failures": [],
+    "latency_ms": 16.91
+  },
+  "unannotated_metrics": {
+    "answer_faithfulness": null,
+    "answer_relevance": null,
+    "citation_correctness": null,
+    "citation_completeness": 1.0,
+    "numerical_accuracy": null,
+    "entity_accuracy": null,
+    "version_consistency": null,
+    "answer_naturalness": null,
+    "raw_copy_rate": 0.0,
+    "longest_copy_chars": 5,
+    "abstention_accuracy": null,
+    "answer_coverage": null,
+    "latency_ms": 16.91,
+    "token_usage": null,
+    "verification_failure_rate": 0.0
+  }
+}

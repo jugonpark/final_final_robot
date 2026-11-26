@@ -262,7 +262,7 @@ class AgentIntegrationTests(unittest.TestCase):
         return agent
 
     def drain(self, agent):
-        deadline = monotonic()+4
+        deadline = monotonic()+10  # Model-free integration also waits for local indexing on loaded Windows hosts.
         while agent.busy and monotonic()<deadline:
             agent.poll()
             sleep(.005)
@@ -297,7 +297,9 @@ class AgentIntegrationTests(unittest.TestCase):
                 response=agent.view()['messages'][-1]
                 self.assertTrue(response.get('citations'))
                 answers.append(response['content'])
-            self.assertNotEqual(answers[0],answers[1])
+            self.assertIn('D.I.G.',answers[0])
+            self.assertIn('PySide6',answers[1])
+            self.assertTrue(all('설명을 검증하지 못' not in answer for answer in answers))
             start.assert_not_called()
             mode.assert_not_called()
         self.assertFalse(self.interpreter.contexts)
@@ -467,7 +469,7 @@ class AgentIntegrationTests(unittest.TestCase):
             agent.submit('RELAY887은 무슨 뜻이야?')
             self.drain(agent)
             entry = agent.view()['messages'][-1]
-            self.assertIn('panel indicator', entry['content'])
+            self.assertEqual(entry['answer_mode'],'abstained')
             self.assertNotIn('ignore previous', entry['content'])
             self.assertEqual(entry['citations'][0]['path'], 'check.txt')
             agent.submit('예를 들어 줄래?')
@@ -600,7 +602,7 @@ class AgentIntegrationTests(unittest.TestCase):
             agent.submit('이서연은 누구예요?')
             self.drain(agent)
             other = agent.view()['messages'][-1]
-            self.assertIn('이서연은 별빛 공방에서 도자기를 만드는 사람입니다.', other['content'])
+            self.assertEqual(other['answer_mode'],'abstained')
             self.assertEqual(other['citations'][0]['path'], 'ANOTHER_PERSON.md')
             self.assertEqual(other['citations'][0]['trust'], 'user_reference')
             interpret.assert_not_called()
@@ -622,7 +624,7 @@ class AgentIntegrationTests(unittest.TestCase):
             mode.assert_not_called()
             request.assert_not_called()
         reply = agent.view()['messages'][-1]
-        self.assertIn('CONTACTOR44 is shown', reply['content'])
+        self.assertEqual(reply['answer_mode'],'abstained')
         self.assertEqual(reply['citations'][0]['path'], 'contactor.txt')
         self.assertEqual(self.interpreter.contexts, [])
         self.assertIsNone(agent.view()['card'])
@@ -654,10 +656,54 @@ class AgentIntegrationTests(unittest.TestCase):
         agent.submit('아니 지금 우리 프로그램을 좀 설명해줄래?')
         self.drain(agent)
         response=agent.view()['messages'][-1]
-        self.assertIn('3WD',response['content'])
+        self.assertEqual(response['answer_mode'],'template')
+        self.assertIn('Python',response['content'])
         self.assertTrue(response.get('citations'))
         self.assertEqual(self.interpreter.contexts,[])
         self.assertIsNone(agent.view()['card'])
+
+    def test_v3_T23_T24_T29_rag_worker_never_streams_or_blocks_stop_and_discards_late_reply(self):
+        entered,release=Event(),Event()
+        self.addCleanup(release.set)
+        agent=self.agent()
+        def delayed(*args,**kwargs):
+            entered.set()
+            release.wait(8)
+            return {'reply':'늦은 검증 답변','citations':[],'speech_text':'늦은 검증 답변',
+                    'answer_mode':'grounded','verification_status':'verified','claims':[]}
+        with patch('python_controller.llm.agent_graph.answer_documents',side_effect=delayed), \
+             patch.object(self.engine,'start_natural_motion') as run:
+            agent.submit('문서: 시스템 구조')
+            self.assertTrue(entered.wait(5))
+            self.assertEqual(agent.view()['partial_reply'],'')
+            self.assertTrue(self.engine.control_lock.acquire(timeout=1))
+            self.engine.control_lock.release()
+            agent.emergency()
+            self.assertTrue(self.engine.c.estop_latched)
+            self.assertFalse(agent.view()['can_approve'])
+            release.set()
+            self.drain(agent)
+            self.assertNotIn('늦은 검증 답변',[m['content'] for m in agent.view()['messages']])
+            run.assert_not_called()
+
+    @unittest.skipUnless(importlib.util.find_spec('PySide6'),'PySide6 missing')
+    def test_v3_T25_qt_evidence_collapsed_status_and_source_opening(self):
+        from PySide6.QtWidgets import QApplication
+        from python_controller.visualization.agent_panel import AgentPanel
+        app=QApplication.instance() or QApplication([])
+        agent=self.agent()
+        agent.knowledge.register('person.md','# 이서연\n이서연 / 직업: 도예가 / 역할: 작품 제작'.encode())
+        agent.submit('이서연은 누구예요?')
+        self.drain(agent)
+        panel=AgentPanel(agent,lambda *_:None)
+        self.addCleanup(panel.close)
+        self.assertFalse(panel.sources_toggle.isChecked())
+        self.assertTrue(panel.sources_box.isHidden())
+        self.assertIn('구조화 자료 기준',panel.history.toPlainText())
+        panel.sources_toggle.click()
+        app.processEvents()
+        self.assertIn('person.md',panel.source_text.toPlainText())
+        self.assertIn('관련 주장:',panel.source_text.toPlainText())
 
     def test_clear_preserves_saved_draft_and_discards_late_worker_without_changing_execution(self):
         entered, release = Event(), Event()

@@ -1,0 +1,826 @@
+{
+  "url": "http://127.0.0.1:8771",
+  "browser": "Installed Microsoft Edge, headless actual HTML/JS rendering",
+  "external_requests_blocked": [],
+  "results": [
+    {
+      "question": "홍승조가 누구야?",
+      "reply": "등록된 소개에 따르면 홍승조의 직업은 ‘뮤즈 장로드래곤’, 전공은 ‘20학번 전전’이라고 적혀 있어요. 역할은 ‘넘어지기’로 적어 주셨어요.\n\n좋아하는 것은 ‘자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬’이라고 적혀 있어요.",
+      "speech_text": "등록된 소개에 따르면 홍승조의 직업은 ‘뮤즈 장로드래곤’, 전공은 ‘20학번 전전’이라고 적혀 있어요. 역할은 ‘넘어지기’로 적어 주셨어요.\n\n좋아하는 것은 ‘자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬’이라고 적혀 있어요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 78,
+          "document_id": 7,
+          "path": "HONG_SEUNGJO.md",
+          "heading": "홍승조",
+          "title": "홍승조",
+          "section": "홍승조",
+          "page": null,
+          "line": 3,
+          "version": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+          "revision": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+          "sha": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+          "source_sha256": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+          "trust": "user_reference",
+          "variant_id": "UNCLASSIFIED",
+          "source_kind": "USER_UPLOAD",
+          "evidence_status": "UNVERIFIED",
+          "source_path": "HONG_SEUNGJO.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "홍승조",
+          "chunk_hash": "dca62cb5b1a3092a61914b10ec034f719022b3c31ffcd7a8503625d272baa190",
+          "token_count": 63,
+          "split_warning": null,
+          "excerpts": [
+            "홍승조 / 직업: 뮤즈 장로드래곤 / 전공: 20학번 전전 / 역할: 넘어지기 / 좋아하는 것: 자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬."
+          ],
+          "related_claims": [
+            "c1",
+            "c2",
+            "c3",
+            "c4"
+          ]
+        }
+      ],
+      "latency_ms": 1867.771100020036,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "원피스 애니를 좋아한다는 뜻이야?",
+      "reply": "등록된 소개에 따르면 홍승조의 직업은 ‘뮤즈 장로드래곤’, 전공은 ‘20학번 전전’이라고 적혀 있어요. 역할은 ‘넘어지기’로 적어 주셨어요.\n\n좋아하는 것은 ‘자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬’이라고 적혀 있어요.",
+      "speech_text": "등록된 소개에 따르면 홍승조의 직업은 ‘뮤즈 장로드래곤’, 전공은 ‘20학번 전전’이라고 적혀 있어요. 역할은 ‘넘어지기’로 적어 주셨어요.\n\n좋아하는 것은 ‘자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬’이라고 적혀 있어요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 78,
+          "document_id": 7,
+          "path": "HONG_SEUNGJO.md",
+          "heading": "홍승조",
+          "title": "홍승조",
+          "section": "홍승조",
+          "page": null,
+          "line": 3,
+          "version": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+          "revision": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+          "sha": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+          "source_sha256": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+          "trust": "user_reference",
+          "variant_id": "UNCLASSIFIED",
+          "source_kind": "USER_UPLOAD",
+          "evidence_status": "UNVERIFIED",
+          "source_path": "HONG_SEUNGJO.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "홍승조",
+          "chunk_hash": "dca62cb5b1a3092a61914b10ec034f719022b3c31ffcd7a8503625d272baa190",
+          "token_count": 63,
+          "split_warning": null,
+          "excerpts": [
+            "홍승조 / 직업: 뮤즈 장로드래곤 / 전공: 20학번 전전 / 역할: 넘어지기 / 좋아하는 것: 자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬."
+          ],
+          "related_claims": [
+            "c1",
+            "c2",
+            "c3",
+            "c4"
+          ]
+        }
+      ],
+      "latency_ms": 249.18879999313504,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "김연구가 누구야?",
+      "reply": "등록된 소개에 따르면 김연구의 직업은 ‘연구원’, 소속은 ‘로봇 연구실’이라고 적혀 있어요.\n\n좋아하는 것은 ‘커피, 산책(등산 아님)’이라고 적혀 있어요.",
+      "speech_text": "등록된 소개에 따르면 김연구의 직업은 ‘연구원’, 소속은 ‘로봇 연구실’이라고 적혀 있어요.\n\n좋아하는 것은 ‘커피, 산책(등산 아님)’이라고 적혀 있어요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 108,
+          "document_id": 13,
+          "path": "preview-person.md",
+          "heading": "김연구",
+          "title": "김연구",
+          "section": "김연구",
+          "page": null,
+          "line": 2,
+          "version": "776639617323ad2e82e07cdf95d258597c7ae03f0588cebd245f86be404b5825",
+          "revision": "776639617323ad2e82e07cdf95d258597c7ae03f0588cebd245f86be404b5825",
+          "sha": "776639617323ad2e82e07cdf95d258597c7ae03f0588cebd245f86be404b5825",
+          "source_sha256": "776639617323ad2e82e07cdf95d258597c7ae03f0588cebd245f86be404b5825",
+          "trust": "user_reference",
+          "variant_id": "UNCLASSIFIED",
+          "source_kind": "USER_UPLOAD",
+          "evidence_status": "UNVERIFIED",
+          "source_path": "preview-person.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "김연구",
+          "chunk_hash": "9bdf93db2d80b748c5b1c3af6ba60bb783451921907936456f7d081004da5ae3",
+          "token_count": 28,
+          "split_warning": null,
+          "excerpts": [
+            "직업: 연구원\n소속: 로봇 연구실\n좋아하는 것: 커피, 산책(등산 아님)"
+          ],
+          "related_claims": [
+            "c1",
+            "c2",
+            "c3"
+          ]
+        }
+      ],
+      "latency_ms": 255.98000001627952,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "우리 프로그램 설명해 줘",
+      "reply": "D.I.G.는 3륜 로봇의 상태를 확인하고 이동 계획을 대화로 만드는 관제 프로그램이에요. 현재 브라우저 관제는 HTML·CSS·JavaScript 화면과 Python 백엔드로 구성돼요. Qt 현장 관제도 별도 실행 경로로 남아 있어요. 손동작 직접 제어와 AI 이동 계획을 함께 사용할 수 있고, 계획을 작성하거나 블록을 편집할 수 있어요. 실제 이동 제어권은 한 번에 하나만 가져요. Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요.",
+      "speech_text": "D.I.G.는 3륜 로봇의 상태를 확인하고 이동 계획을 대화로 만드는 관제 프로그램이에요. 현재 브라우저 관제는 HTML·CSS·JavaScript 화면과 Python 백엔드로 구성돼요. Qt 현장 관제도 별도 실행 경로로 남아 있어요. 손동작 직접 제어와 AI 이동 계획을 함께 사용할 수 있고, 계획을 작성하거나 블록을 편집할 수 있어요. 실제 이동 제어권은 한 번에 하나만 가져요. Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 109,
+          "document_id": 14,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "purpose",
+          "title": "purpose",
+          "section": "purpose",
+          "page": null,
+          "line": 2,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "e2560ecd09850eeeba3bd9cb651dcec94097459c6d7d1bbce661b251a1826a7f",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "purpose",
+          "chunk_hash": "8f70efab09701e8b29ef14ec056dd2d02615ae8923f892a179d0bace28ae4dc0",
+          "token_count": 51,
+          "split_warning": null,
+          "excerpts": [
+            "D.I.G.는 3륜 로봇의 상태를 확인하고 이동 계획을 대화로 만드는 관제 프로그램이에요."
+          ],
+          "related_claims": [
+            "c1"
+          ]
+        },
+        {
+          "id": 110,
+          "document_id": 14,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "interfaces",
+          "title": "interfaces",
+          "section": "interfaces",
+          "page": null,
+          "line": 7,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "e2560ecd09850eeeba3bd9cb651dcec94097459c6d7d1bbce661b251a1826a7f",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "interfaces",
+          "chunk_hash": "79eb79c3cc893f3078e362985899a2df1fbfadbbab0964b914e756e6f7970e26",
+          "token_count": 64,
+          "split_warning": null,
+          "excerpts": [
+            "현재 브라우저 관제는 HTML·CSS·JavaScript 화면과 Python 백엔드로 구성돼요. Qt 현장 관제도 별도 실행 경로로 남아 있어요."
+          ],
+          "related_claims": [
+            "c2"
+          ]
+        },
+        {
+          "id": 111,
+          "document_id": 14,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "features",
+          "title": "features",
+          "section": "features",
+          "page": null,
+          "line": 12,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "e2560ecd09850eeeba3bd9cb651dcec94097459c6d7d1bbce661b251a1826a7f",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "features",
+          "chunk_hash": "1ced9bc51a445cf2b99523df516f895e7b307db531e7d2b288454f816e420490",
+          "token_count": 81,
+          "split_warning": null,
+          "excerpts": [
+            "손동작 직접 제어와 AI 이동 계획을 함께 사용할 수 있고, 계획을 작성하거나 블록을 편집할 수 있어요. 실제 이동 제어권은 한 번에 하나만 가져요."
+          ],
+          "related_claims": [
+            "c3"
+          ]
+        },
+        {
+          "id": 112,
+          "document_id": 14,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "ai",
+          "title": "ai",
+          "section": "ai",
+          "page": null,
+          "line": 17,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "e2560ecd09850eeeba3bd9cb651dcec94097459c6d7d1bbce661b251a1826a7f",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "ai",
+          "chunk_hash": "78481643e0a1e83a165ccdac3cc80cdb7b4b15963adccab6313792939d1e7d5b",
+          "token_count": 85,
+          "split_warning": null,
+          "excerpts": [
+            "Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요."
+          ],
+          "related_claims": [
+            "c4"
+          ]
+        }
+      ],
+      "latency_ms": 2292.431999987457,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "어떤 기능이 있어?",
+      "reply": "D.I.G.는 3륜 로봇의 상태를 확인하고 이동 계획을 대화로 만드는 관제 프로그램이에요. 손동작 직접 제어와 AI 이동 계획을 함께 사용할 수 있고, 계획을 작성하거나 블록을 편집할 수 있어요. 실제 이동 제어권은 한 번에 하나만 가져요. Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요.",
+      "speech_text": "D.I.G.는 3륜 로봇의 상태를 확인하고 이동 계획을 대화로 만드는 관제 프로그램이에요. 손동작 직접 제어와 AI 이동 계획을 함께 사용할 수 있고, 계획을 작성하거나 블록을 편집할 수 있어요. 실제 이동 제어권은 한 번에 하나만 가져요. Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 113,
+          "document_id": 15,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "purpose",
+          "title": "purpose",
+          "section": "purpose",
+          "page": null,
+          "line": 2,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "b96f35e8270f67c37f1509f298dfc9d0d55b49abb0ad985c578b59c8bf0f8712",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "purpose",
+          "chunk_hash": "8f70efab09701e8b29ef14ec056dd2d02615ae8923f892a179d0bace28ae4dc0",
+          "token_count": 51,
+          "split_warning": null,
+          "excerpts": [
+            "D.I.G.는 3륜 로봇의 상태를 확인하고 이동 계획을 대화로 만드는 관제 프로그램이에요."
+          ],
+          "related_claims": [
+            "c1"
+          ]
+        },
+        {
+          "id": 114,
+          "document_id": 15,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "features",
+          "title": "features",
+          "section": "features",
+          "page": null,
+          "line": 7,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "b96f35e8270f67c37f1509f298dfc9d0d55b49abb0ad985c578b59c8bf0f8712",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "features",
+          "chunk_hash": "1ced9bc51a445cf2b99523df516f895e7b307db531e7d2b288454f816e420490",
+          "token_count": 81,
+          "split_warning": null,
+          "excerpts": [
+            "손동작 직접 제어와 AI 이동 계획을 함께 사용할 수 있고, 계획을 작성하거나 블록을 편집할 수 있어요. 실제 이동 제어권은 한 번에 하나만 가져요."
+          ],
+          "related_claims": [
+            "c2"
+          ]
+        },
+        {
+          "id": 115,
+          "document_id": 15,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "ai",
+          "title": "ai",
+          "section": "ai",
+          "page": null,
+          "line": 12,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "b96f35e8270f67c37f1509f298dfc9d0d55b49abb0ad985c578b59c8bf0f8712",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "ai",
+          "chunk_hash": "78481643e0a1e83a165ccdac3cc80cdb7b4b15963adccab6313792939d1e7d5b",
+          "token_count": 85,
+          "split_warning": null,
+          "excerpts": [
+            "Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요."
+          ],
+          "related_claims": [
+            "c3"
+          ]
+        }
+      ],
+      "latency_ms": 705.0485000363551,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "AI랑 ESP32는 어떻게 연결돼?",
+      "reply": "Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요. AI가 제안한 계획과 실제 로봇 실행은 분리돼 있어요. Python 관제가 ESP32와 UDP로 통신하고, ESP32의 상태 응답을 확인해요. 실물 AI 계획 실행에는 현재 계획 버전에 대한 운영자 승인과 장치의 안전 조건 확인이 필요해요. 계획을 설명하거나 편집하는 것만으로 이동을 실행하지는 않아요.",
+      "speech_text": "Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요. AI가 제안한 계획과 실제 로봇 실행은 분리돼 있어요. Python 관제가 ESP32와 UDP로 통신하고, ESP32의 상태 응답을 확인해요. 실물 AI 계획 실행에는 현재 계획 버전에 대한 운영자 승인과 장치의 안전 조건 확인이 필요해요. 계획을 설명하거나 편집하는 것만으로 이동을 실행하지는 않아요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 116,
+          "document_id": 16,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "ai",
+          "title": "ai",
+          "section": "ai",
+          "page": null,
+          "line": 2,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "f25a980a58c6c234270196f40bbea1d0eac587bd62d5cdebefa21ddd27ef9785",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "ai",
+          "chunk_hash": "78481643e0a1e83a165ccdac3cc80cdb7b4b15963adccab6313792939d1e7d5b",
+          "token_count": 85,
+          "split_warning": null,
+          "excerpts": [
+            "Agent는 일반 대화와 문서 설명, 이동 계획을 구분해 처리해요. 등록된 지식은 로컬에서 조회하고, 복잡한 문서 해석은 클라우드 설정과 근거 검증 조건을 충족할 때 사용해요."
+          ],
+          "related_claims": [
+            "c1"
+          ]
+        },
+        {
+          "id": 117,
+          "document_id": 16,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "communication",
+          "title": "communication",
+          "section": "communication",
+          "page": null,
+          "line": 7,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "f25a980a58c6c234270196f40bbea1d0eac587bd62d5cdebefa21ddd27ef9785",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "communication",
+          "chunk_hash": "367f636e1dcd2084ed1abfc61f132ce04728213b6c6de71598acd4a63555c598",
+          "token_count": 73,
+          "split_warning": null,
+          "excerpts": [
+            "AI가 제안한 계획과 실제 로봇 실행은 분리돼 있어요. Python 관제가 ESP32와 UDP로 통신하고, ESP32의 상태 응답을 확인해요."
+          ],
+          "related_claims": [
+            "c2"
+          ]
+        },
+        {
+          "id": 118,
+          "document_id": 16,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "approval",
+          "title": "approval",
+          "section": "approval",
+          "page": null,
+          "line": 12,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "f25a980a58c6c234270196f40bbea1d0eac587bd62d5cdebefa21ddd27ef9785",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "approval",
+          "chunk_hash": "b9c1d1209b9a32d9b4ecfed59e51672173a6472fccd5a372e4e04a95926d176f",
+          "token_count": 70,
+          "split_warning": null,
+          "excerpts": [
+            "실물 AI 계획 실행에는 현재 계획 버전에 대한 운영자 승인과 장치의 안전 조건 확인이 필요해요. 계획을 설명하거나 편집하는 것만으로 이동을 실행하지는 않아요."
+          ],
+          "related_claims": [
+            "c3"
+          ]
+        }
+      ],
+      "latency_ms": 4838.376400002744,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "좀 더 쉽게 설명해 줘",
+      "reply": "AI는 대화를 나누고 자료를 찾거나 이동 계획을 만드는 역할을 해요. 로컬 지식 조회와 외부 AI 해석은 별도 경로예요. AI가 만든 계획을 바로 모터에 보내는 구조는 아니에요. Python 관제가 ESP32에 요청을 보내고 상태 응답을 확인해요. 계획을 만드는 것과 실제로 움직이는 것은 달라요. 실물 실행은 승인과 장치 상태 확인을 거쳐요.",
+      "speech_text": "AI는 대화를 나누고 자료를 찾거나 이동 계획을 만드는 역할을 해요. 로컬 지식 조회와 외부 AI 해석은 별도 경로예요. AI가 만든 계획을 바로 모터에 보내는 구조는 아니에요. Python 관제가 ESP32에 요청을 보내고 상태 응답을 확인해요. 계획을 만드는 것과 실제로 움직이는 것은 달라요. 실물 실행은 승인과 장치 상태 확인을 거쳐요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 116,
+          "document_id": 16,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "ai",
+          "title": "ai",
+          "section": "ai",
+          "page": null,
+          "line": 2,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "f25a980a58c6c234270196f40bbea1d0eac587bd62d5cdebefa21ddd27ef9785",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "ai",
+          "chunk_hash": "78481643e0a1e83a165ccdac3cc80cdb7b4b15963adccab6313792939d1e7d5b",
+          "token_count": 85,
+          "split_warning": null,
+          "excerpts": [
+            "AI는 대화를 나누고 자료를 찾거나 이동 계획을 만드는 역할을 해요. 로컬 지식 조회와 외부 AI 해석은 별도 경로예요."
+          ],
+          "related_claims": [
+            "c1"
+          ]
+        },
+        {
+          "id": 117,
+          "document_id": 16,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "communication",
+          "title": "communication",
+          "section": "communication",
+          "page": null,
+          "line": 7,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "f25a980a58c6c234270196f40bbea1d0eac587bd62d5cdebefa21ddd27ef9785",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "communication",
+          "chunk_hash": "367f636e1dcd2084ed1abfc61f132ce04728213b6c6de71598acd4a63555c598",
+          "token_count": 73,
+          "split_warning": null,
+          "excerpts": [
+            "AI가 만든 계획을 바로 모터에 보내는 구조는 아니에요. Python 관제가 ESP32에 요청을 보내고 상태 응답을 확인해요."
+          ],
+          "related_claims": [
+            "c2"
+          ]
+        },
+        {
+          "id": 118,
+          "document_id": 16,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "approval",
+          "title": "approval",
+          "section": "approval",
+          "page": null,
+          "line": 12,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "f25a980a58c6c234270196f40bbea1d0eac587bd62d5cdebefa21ddd27ef9785",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "approval",
+          "chunk_hash": "b9c1d1209b9a32d9b4ecfed59e51672173a6472fccd5a372e4e04a95926d176f",
+          "token_count": 70,
+          "split_warning": null,
+          "excerpts": [
+            "계획을 만드는 것과 실제로 움직이는 것은 달라요. 실물 실행은 승인과 장치 상태 확인을 거쳐요."
+          ],
+          "related_claims": [
+            "c3"
+          ]
+        }
+      ],
+      "latency_ms": 1504.5084999874234,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "PCB V18과 V19 차이가 뭐야?",
+      "reply": "PCB V18은 HW166 형상의 TB6612FNG 모듈용 소켓을 기준으로 한 설계예요. V19 문서에는 모터 제어·엔코더·STBY GPIO 16개가 V18과 회로도 기준으로 같다고 명시돼 있어요. 두 설계 자료만으로 실제 모듈의 교체 호환성이나 실물 장착 상태까지 확정할 수는 없어요. 비교할 때는 핀맵과 모듈 형상·실장 조건을 따로 확인해야 해요.",
+      "speech_text": "PCB V18은 HW166 형상의 TB6612FNG 모듈용 소켓을 기준으로 한 설계예요. V19 문서에는 모터 제어·엔코더·STBY GPIO 16개가 V18과 회로도 기준으로 같다고 명시돼 있어요. 두 설계 자료만으로 실제 모듈의 교체 호환성이나 실물 장착 상태까지 확정할 수는 없어요. 비교할 때는 핀맵과 모듈 형상·실장 조건을 따로 확인해야 해요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 119,
+          "document_id": 17,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.PCB_V18_DESIGN.md",
+          "heading": "pcb_v18_driver",
+          "title": "pcb_v18_driver",
+          "section": "pcb_v18_driver",
+          "page": null,
+          "line": 2,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "6adf81fed73e4ff2550cded6ca03d7e5f0f6d3ea819b9d6149c322b8f648522e",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "PCB_V18_DESIGN",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "CAD_DESIGN",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "pcb_v18_driver",
+          "chunk_hash": "71627eddb5c02e5dcf935354394a1d55710e6cf30f0e9531f6b1a02c9415efd8",
+          "token_count": 63,
+          "split_warning": null,
+          "excerpts": [
+            "PCB V18은 HW166 형상의 TB6612FNG 모듈용 소켓을 기준으로 한 설계예요."
+          ],
+          "related_claims": [
+            "c1"
+          ]
+        },
+        {
+          "id": 120,
+          "document_id": 18,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.PCB_V19_DESIGN.md",
+          "heading": "pcb_v19_relation",
+          "title": "pcb_v19_relation",
+          "section": "pcb_v19_relation",
+          "page": null,
+          "line": 2,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "184365146f58776eea84be7f7c54743cc20c80d9933bba98b57b9b75551062c1",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "PCB_V19_DESIGN",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "CAD_DESIGN",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "pcb_v19_relation",
+          "chunk_hash": "d62f36a36b25c42b86ac33ba1b4237bc51a94c8eb732714a99055c14cac80d21",
+          "token_count": 73,
+          "split_warning": null,
+          "excerpts": [
+            "V19 문서에는 모터 제어·엔코더·STBY GPIO 16개가 V18과 회로도 기준으로 같다고 명시돼 있어요."
+          ],
+          "related_claims": [
+            "c2"
+          ]
+        },
+        {
+          "id": 121,
+          "document_id": 19,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "pcb_comparison_limits",
+          "title": "pcb_comparison_limits",
+          "section": "pcb_comparison_limits",
+          "page": null,
+          "line": 2,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "174189e269f05d9c5168bdbf530eee54c269e7797595af595623bdb2b0ee0b3e",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "pcb_comparison_limits",
+          "chunk_hash": "ab73d3901a1dd5514b5137ed301a034e86f53d5dbe64f42d5b1851f13acf84a4",
+          "token_count": 86,
+          "split_warning": null,
+          "excerpts": [
+            "두 설계 자료만으로 실제 모듈의 교체 호환성이나 실물 장착 상태까지 확정할 수는 없어요. 비교할 때는 핀맵과 모듈 형상·실장 조건을 따로 확인해야 해요."
+          ],
+          "related_claims": [
+            "c3"
+          ]
+        }
+      ],
+      "latency_ms": 1628.561699995771,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "지금 로봇은 움직이고 있어?",
+      "reply": "제어 모드 SIMULATION · ESP32 미연결 · STOP 미확인\n레이더 UNKNOWN · 이동 차단 · 레이더 첫 응답 대기 (RADAR_NO_DATA)\n카메라 합성 영상 · 인식 미확인\n실행 상태 IDLE · 정지/보류 미수신·미확인",
+      "speech_text": "제어 모드 SIMULATION · ESP32 미연결 · STOP 미확인\n레이더 UNKNOWN · 이동 차단 · 레이더 첫 응답 대기 (RADAR_NO_DATA)\n카메라 합성 영상 · 인식 미확인\n실행 상태 IDLE · 정지/보류 미수신·미확인",
+      "answer_mode": "runtime",
+      "status": "runtime_snapshot",
+      "reason_code": null,
+      "citations": [],
+      "latency_ms": 34.54699995927513,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    },
+    {
+      "question": "100cm 이동해도 무조건 안전해?",
+      "reply": "실물 AI 계획 실행에는 현재 계획 버전에 대한 운영자 승인과 장치의 안전 조건 확인이 필요해요. 계획을 설명하거나 편집하는 것만으로 이동을 실행하지는 않아요. 문서나 이동 거리만으로 실제 주행의 안전을 보장할 수는 없어요. STOP 응답 같은 통신 확인과 물리적인 정지·주행 검증도 구분해야 해요.",
+      "speech_text": "실물 AI 계획 실행에는 현재 계획 버전에 대한 운영자 승인과 장치의 안전 조건 확인이 필요해요. 계획을 설명하거나 편집하는 것만으로 이동을 실행하지는 않아요. 문서나 이동 거리만으로 실제 주행의 안전을 보장할 수는 없어요. STOP 응답 같은 통신 확인과 물리적인 정지·주행 검증도 구분해야 해요.",
+      "answer_mode": "template",
+      "status": "structured",
+      "reason_code": null,
+      "citations": [
+        {
+          "id": 122,
+          "document_id": 20,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "approval",
+          "title": "approval",
+          "section": "approval",
+          "page": null,
+          "line": 2,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "a4caf603daba4f8790a4a781bb4766be1dcd8d8b7b813288a0c964a9479ea824",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "approval",
+          "chunk_hash": "b9c1d1209b9a32d9b4ecfed59e51672173a6472fccd5a372e4e04a95926d176f",
+          "token_count": 70,
+          "split_warning": null,
+          "excerpts": [
+            "실물 AI 계획 실행에는 현재 계획 버전에 대한 운영자 승인과 장치의 안전 조건 확인이 필요해요. 계획을 설명하거나 편집하는 것만으로 이동을 실행하지는 않아요."
+          ],
+          "related_claims": [
+            "c1"
+          ]
+        },
+        {
+          "id": 123,
+          "document_id": 20,
+          "path": "docs/knowledge/PROGRAM_KNOWLEDGE.md.SOFTWARE_COMMON.md",
+          "heading": "safety",
+          "title": "safety",
+          "section": "safety",
+          "page": null,
+          "line": 7,
+          "version": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "revision": "worktree:4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "sha": "a4caf603daba4f8790a4a781bb4766be1dcd8d8b7b813288a0c964a9479ea824",
+          "source_sha256": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+          "trust": "project_doc",
+          "variant_id": "SOFTWARE_COMMON",
+          "source_kind": "LOCAL_CURATED_FACT",
+          "evidence_status": "DOCUMENTED_IMPLEMENTATION",
+          "source_path": "docs/knowledge/PROGRAM_KNOWLEDGE.md",
+          "effective_date": null,
+          "reviewed_by_user": 0,
+          "index_version": "structure-e5-v2.1",
+          "heading_path": "safety",
+          "chunk_hash": "4189489a84861a668185b121160122db0a9d462857a9469dbac3215be474402c",
+          "token_count": 71,
+          "split_warning": null,
+          "excerpts": [
+            "문서나 이동 거리만으로 실제 주행의 안전을 보장할 수는 없어요. STOP 응답 같은 통신 확인과 물리적인 정지·주행 검증도 구분해야 해요."
+          ],
+          "related_claims": [
+            "c2"
+          ]
+        }
+      ],
+      "latency_ms": 2330.3890000097454,
+      "abstained": false,
+      "evidence_type": "ACTUAL_LOCAL_AGENT_UI_NO_NVIDIA_CALLS",
+      "rendered_in_browser": true
+    }
+  ]
+}

@@ -666,11 +666,34 @@ function chatMessage(row) {
   bubble.className = 'bubble';
   bubble.textContent = row.content;
   content.append(author, bubble);
+  if (row.answer_mode) {
+    const verification = document.createElement('small');
+    verification.className = 'rag-verification';
+    const labels = {verified: '근거 검증 통과', partial: '일부만 확인', structured: '구조화 자료 기준',
+      citation_only: '요청한 원문', conflicting: '자료 간 충돌', unavailable: '검증 사용 불가',
+      failed: '검증 실패 · 답변 보류', not_verified: '설명 확인 안 됨',
+      policy_disabled: '현재 설정에서 AI 해석 미사용', restricted: '문서 외부 전송 제한', runtime_snapshot: '현재 관제 스냅숏'};
+    verification.textContent = labels[row.verification_status] ?? '검증 상태 확인 필요';
+    content.append(verification);
+  }
   if (row.citations?.length) {
-    const sources = document.createElement('div');
+    const sources = document.createElement('details');
     sources.className = 'chat-citations';
+    const summary = document.createElement('summary');
+    summary.textContent = '관련 근거 보기';
+    sources.append(summary);
     for (const [index, citation] of row.citations.entries()) {
       sources.append(citationButton(citation, `${index + 1}. ${citation.path.split('/').at(-1)}`));
+      if (row.claims?.length) {
+        const related = document.createElement('small');
+        related.textContent = row.claims.filter(claim => claim.evidence_ids.includes(citation.id)).map(claim => claim.text).join(' / ');
+        sources.append(related);
+      }
+      for (const excerpt of citation.excerpts ?? []) {
+        const quote = document.createElement('blockquote');
+        quote.textContent = excerpt;
+        sources.append(quote);
+      }
     }
     content.append(sources);
   }

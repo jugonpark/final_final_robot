@@ -1,0 +1,53 @@
+{
+  "cap": 12,
+  "requests": [
+    {
+      "number": 1,
+      "purpose": "metadata_models_preflight"
+    },
+    {
+      "number": 2,
+      "purpose": "metadata_models_preflight"
+    },
+    {
+      "number": 3,
+      "purpose": "RAG-KO-061:A"
+    },
+    {
+      "number": 4,
+      "purpose": "RAG-KO-061:C_generator"
+    },
+    {
+      "number": 5,
+      "purpose": "RAG-KO-061:C_judge"
+    },
+    {
+      "number": 6,
+      "purpose": "RAG-KO-062:A"
+    },
+    {
+      "number": 7,
+      "purpose": "RAG-KO-062:C_generator"
+    },
+    {
+      "number": 8,
+      "purpose": "RAG-KO-063:A"
+    },
+    {
+      "number": 9,
+      "purpose": "RAG-KO-063:C_generator"
+    },
+    {
+      "number": 10,
+      "purpose": "RAG-KO-063:C_judge"
+    },
+    {
+      "number": 11,
+      "purpose": "semantic_verifier_balanced_batch"
+    },
+    {
+      "number": 12,
+      "purpose": "development_target_design_candidate_judge"
+    }
+  ]
+}

@@ -7,11 +7,13 @@ import statistics
 from time import perf_counter, process_time
 from python_controller.knowledge.library import KnowledgeLibrary, KnowledgeError
 from python_controller.knowledge.vector import VectorRanker
+from python_controller.knowledge.answer_metrics import score_answer, summarize_answers
 
 
 def evaluate(library, cases, mode, candidates=20):
     from python_controller.knowledge.answer import answer_documents
     records=[]
+    answer_records=[]
     citation_checked=citation_valid=abstain_checked=abstain_valid=0
     cpu=process_time()
     for case in cases:
@@ -23,6 +25,8 @@ def evaluate(library, cases, mode, candidates=20):
             rows=[]
             error=str(exc)
         answer=answer_documents(library,case['question'],use_nemotron=False)
+        answer_records.append(score_answer(answer,[r['body'] for r in rows],case.get('answer_annotation'),
+                                           direct_quote=case.get('direct_quote',False)))
         for citation in answer.get('citations',[]):
             citation_checked+=1
             source=library.get_document_chunk(citation['id'])
@@ -60,7 +64,8 @@ def evaluate(library, cases, mode, candidates=20):
         p95_ms=latency[math.ceil(len(latency)*.95)-1],cpu_seconds=process_time()-cpu,rss_bytes=rss,
         citation_accuracy=citation_valid/citation_checked if citation_checked else None,citations_checked=citation_checked,
         abstention_accuracy=abstain_valid/abstain_checked if abstain_checked else None,answer_faithfulness=None,
-        notes='Citation accuracy verifies source ID/path/hash, not semantic entailment. Generated-answer faithfulness is not scored. Reranker candidate measurements are reported separately.',results=records)
+        answer_metrics=summarize_answers(answer_records),
+        notes='Citation accuracy verifies source ID/path/hash, not semantic entailment. Semantic metrics require answer_annotation; unmeasured metrics remain null. Reranker measurements are separate.',results=records)
 
 
 def main():

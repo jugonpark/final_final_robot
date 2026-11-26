@@ -1,0 +1,123 @@
+{
+  "collapsed": {
+    "count": 1,
+    "open": false,
+    "status": [
+      "구조화 자료 기준"
+    ]
+  },
+  "expanded": true,
+  "errors": [],
+  "session_open": false,
+  "camera_status": "CAMERA_OFF",
+  "answer": {
+    "role": "assistant",
+    "content": "사용자가 제공한 소개에서 홍승조의 직업: 뮤즈 장로드래곤.\n\n사용자가 제공한 소개에서 홍승조의 전공: 20학번 전전.\n\n사용자가 제공한 소개에서 홍승조의 역할: 넘어지기.\n\n사용자가 제공한 소개에서 홍승조의 좋아하는 것: 자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬.",
+    "citations": [
+      {
+        "id": 57,
+        "document_id": 6,
+        "path": "HONG_SEUNGJO.md",
+        "heading": "홍승조",
+        "title": "홍승조",
+        "section": "홍승조",
+        "page": null,
+        "line": 3,
+        "version": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+        "revision": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+        "sha": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+        "source_sha256": "79d73a8d792aef201a3706c5c270cb1662e3a0a1a2a57adc0ca0c3de0eadfa49",
+        "trust": "user_reference",
+        "variant_id": "UNCLASSIFIED",
+        "source_kind": "USER_UPLOAD",
+        "evidence_status": "UNVERIFIED",
+        "source_path": "HONG_SEUNGJO.md",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "structure-e5-v2.1",
+        "heading_path": "홍승조",
+        "chunk_hash": "dca62cb5b1a3092a61914b10ec034f719022b3c31ffcd7a8503625d272baa190",
+        "token_count": 63,
+        "split_warning": null,
+        "excerpts": [
+          "홍승조 / 직업: 뮤즈 장로드래곤 / 전공: 20학번 전전 / 역할: 넘어지기 / 좋아하는 것: 자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬."
+        ],
+        "related_claims": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ]
+      }
+    ],
+    "speech_text": "사용자가 제공한 소개에서 홍승조의 직업: 뮤즈 장로드래곤.\n\n사용자가 제공한 소개에서 홍승조의 전공: 20학번 전전.\n\n사용자가 제공한 소개에서 홍승조의 역할: 넘어지기.\n\n사용자가 제공한 소개에서 홍승조의 좋아하는 것: 자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬.",
+    "answer_mode": "template",
+    "verification_status": "structured",
+    "insufficient_evidence": false,
+    "claims": [
+      {
+        "claim_id": "c1",
+        "text": "사용자가 제공한 소개에서 홍승조의 직업: 뮤즈 장로드래곤.",
+        "evidence_ids": [
+          57
+        ],
+        "supports": [
+          {
+            "evidence_id": 57,
+            "quote_index": 0
+          }
+        ],
+        "verification_status": "supported",
+        "verification_method": "structured_template"
+      },
+      {
+        "claim_id": "c2",
+        "text": "사용자가 제공한 소개에서 홍승조의 전공: 20학번 전전.",
+        "evidence_ids": [
+          57
+        ],
+        "supports": [
+          {
+            "evidence_id": 57,
+            "quote_index": 0
+          }
+        ],
+        "verification_status": "supported",
+        "verification_method": "structured_template"
+      },
+      {
+        "claim_id": "c3",
+        "text": "사용자가 제공한 소개에서 홍승조의 역할: 넘어지기.",
+        "evidence_ids": [
+          57
+        ],
+        "supports": [
+          {
+            "evidence_id": 57,
+            "quote_index": 0
+          }
+        ],
+        "verification_status": "supported",
+        "verification_method": "structured_template"
+      },
+      {
+        "claim_id": "c4",
+        "text": "사용자가 제공한 소개에서 홍승조의 좋아하는 것: 자칭 삼성팬, 브리또, 원피스(옷 → 절대 애니 아님), 포켓몬.",
+        "evidence_ids": [
+          57
+        ],
+        "supports": [
+          {
+            "evidence_id": 57,
+            "quote_index": 0
+          }
+        ],
+        "verification_status": "supported",
+        "verification_method": "structured_template"
+      }
+    ],
+    "unanswered_aspects": [],
+    "verification_failures": [],
+    "latency_ms": 191.49
+  }
+}

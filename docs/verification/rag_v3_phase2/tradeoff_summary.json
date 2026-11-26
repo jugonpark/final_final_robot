@@ -1,0 +1,10 @@
+{
+  "pareto_frontier": null,
+  "selected_configuration": "unchanged Phase1 defaults",
+  "reason": "Only 3 real questions and provisional/unreviewed gold; quality criteria cannot establish Pareto dominance.",
+  "independent_model": "Not selected without Korean calibration/license/cost comparison",
+  "risk_coverage_curve": null,
+  "threshold_reason": "Categorical verdicts provide no calibrated confidence threshold",
+  "production_optimization_applied": false,
+  "privacy_relaxation": false
+}

@@ -1,0 +1,59 @@
+{
+  "scope": "Only nine pre-existing files changed by this task",
+  "files": [
+    {
+      "path": "python_controller/knowledge/answer.py",
+      "backup": ".tmp/conversational-rag-before/python_controller__knowledge__answer.py",
+      "before_sha256": "98e80ceaca9cea38bc47855014380d33ec0b867b4bd0262bd36a48daf82f92c7",
+      "after_sha256": "f9d4da316f78187f80b864a759defebf9912ede0351292431992159c23fbd5bb"
+    },
+    {
+      "path": "python_controller/knowledge/facts.py",
+      "backup": ".tmp/conversational-rag-before/python_controller__knowledge__facts.py",
+      "before_sha256": "f26a51b28b139a9b02a35d0915310cac98f54b7cf2695e33c35a1e7db05f7587",
+      "after_sha256": "5709a338a9d5646d392943c3b907947666a274378592c926a102f6b295558757"
+    },
+    {
+      "path": "python_controller/knowledge/rendering.py",
+      "backup": ".tmp/conversational-rag-before/python_controller__knowledge__rendering.py",
+      "before_sha256": "963ff9e4ac201cc75d55b3f58b4e8631980f246df1b579af215ab8c564413c7e",
+      "after_sha256": "d462adc108543235755a9afac928449b16e3710e3438cf593daff779bd6dd447"
+    },
+    {
+      "path": "python_controller/llm/agent_graph.py",
+      "backup": ".tmp/conversational-rag-before/python_controller__llm__agent_graph.py",
+      "before_sha256": "c7d385778435f90a38ae9b90830800bf449f250eacf586863b20643403b5f674",
+      "after_sha256": "78f3749158880a18f5db01146253425c4abe26fc226dc53826c4cafc8ed983aa"
+    },
+    {
+      "path": "python_controller/llm/unified_agent.py",
+      "backup": ".tmp/conversational-rag-before/python_controller__llm__unified_agent.py",
+      "before_sha256": "d935afcc06df4abf280a04701a4382d5862d71a2036771ae9ee505f6972cd0a5",
+      "after_sha256": "3d2c60d7a94304f7de2e6e44a3dca77b0751f7966bd80450f9ccf60f390f32a7"
+    },
+    {
+      "path": "python_controller/visualization/agent_panel.py",
+      "backup": ".tmp/conversational-rag-before/python_controller__visualization__agent_panel.py",
+      "before_sha256": "435f9497131eb70b58839da550fd09b242ddf498dc3962e6ce0dc24e5c98054a",
+      "after_sha256": "2107acce72f9607406d1315ed8f52b5ca2f3f96d072f2dfae0017bdcc7fc32c9"
+    },
+    {
+      "path": "python_controller/web/app.js",
+      "backup": ".tmp/conversational-rag-before/python_controller__web__app.js",
+      "before_sha256": "ecbef396b4670455f15e75ba6ea8fe7d9d9e86874a13adda11070bb9218d4ee3",
+      "after_sha256": "50bb77bd85d2fedb360997132dacc38955f46d782f5ce048584482bd5f5cec25"
+    },
+    {
+      "path": "tests/test_knowledge_rag.py",
+      "backup": ".tmp/conversational-rag-before/tests__test_knowledge_rag.py",
+      "before_sha256": "3964d30001d3fd27330fe4d892b25edc49eecad8fed5a20da9ca0ed99a6081df",
+      "after_sha256": "a7f57ee350425067f929002213a76cddc6f43e5688934765c3e417771cb77b54"
+    },
+    {
+      "path": "tests/test_unified_agent.py",
+      "backup": ".tmp/conversational-rag-before/tests__test_unified_agent.py",
+      "before_sha256": "63b3907b75816fc2f7bb8e7d436d6faef3a39b61a5789819485596c879496dee",
+      "after_sha256": "f047b5403aa3a126e6410d01cf78ca3b33e6282b5dabe77c9b933c4b7c5d4b7f"
+    }
+  ]
+}

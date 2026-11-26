@@ -1,0 +1,15 @@
+{
+  "cases": 3,
+  "raw_claim_blocks": 11,
+  "deterministic_rejections": {
+    "ENTITY_MISMATCH": 2,
+    "DESIGN_QUALIFIER_DROPPED": 1,
+    "CONDITION_DROPPED": 2,
+    "SOURCE_TEXT_IN_REPLY": 1,
+    "INVALID_CITATION": 3
+  },
+  "historical_semantic_claims": 2,
+  "new_semantic_judgments": 0,
+  "all_cached_replays_match": true,
+  "candidate_results_are_eligibility_only": true
+}

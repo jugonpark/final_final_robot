@@ -163,6 +163,10 @@ summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 #source-dialog::backdrop{background:#0009}
 #source-meta,#source-text{white-space:pre-wrap;overflow-wrap:anywhere}
 .knowledge-body,.knowledge-list,.chat-citations{display:grid;gap:10px;min-width:0}
+.chat-citations:not([open])>:not(summary){display:none}
+.chat-citations summary{cursor:pointer;color:var(--muted)}
+.chat-citations blockquote{margin:0;padding:8px;border-left:2px solid var(--border);white-space:pre-wrap}
+.rag-verification{display:block;color:var(--muted);margin:6px 0}
 .knowledge-list{padding:0;margin:0;list-style:none}
 .knowledge-list li{min-width:0;display:grid;gap:4px;overflow-wrap:anywhere}
 #knowledge-library li{padding:8px 0;border-bottom:1px solid var(--border)}

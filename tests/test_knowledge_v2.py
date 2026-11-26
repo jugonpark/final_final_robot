@@ -105,7 +105,7 @@ class KnowledgeV2Tests(unittest.TestCase):
             from types import SimpleNamespace
             result.chat.completions.create.return_value=SimpleNamespace(choices=[SimpleNamespace(finish_reason='stop',message=SimpleNamespace(content=json.dumps({'answers':[]}),tool_calls=None))])
             _nemotron_evidence('question',[{'id':1,'body':'Approved project document evidence.','path':'docs/a.md','heading':'A','version':'v1','trust':'project_doc'}])
-            self.assertEqual(client.call_args.kwargs['timeout'],90.)
+            self.assertEqual(client.call_args.kwargs['timeout'],54.)  # Shared 90s budget reserves time for the judge.
             with patch('python_controller.llm.nvidia_client.OpenAI') as control_client:
                 NvidiaPlanner(api_key='test-value',model='test-model')._client()
                 self.assertEqual(control_client.call_args.kwargs['timeout'],20)
@@ -126,11 +126,13 @@ class KnowledgeV2Tests(unittest.TestCase):
         import json
         from python_controller.knowledge.answer import _nemotron_evidence
         row={'id':7,'body':'Qt uses PySide6 for the desktop interface.','heading':'Qt','path':'docs/qt.md','version':'v1','trust':'project_doc'}
-        response={'answers':[{'text':'Qt is a desktop interface.','sources':[{'id':7,'quote_index':0}]}]}
+        response={'claims':[{'claim_id':'c1','text':'Qt is a desktop interface.','supports':[{'evidence_id':7,'quote_index':0}]}],'unanswered_aspects':[]}
         env={'DIG_KNOWLEDGE_CLOUD':'1','NVIDIA_API_KEY':'test-value','NVIDIA_MODEL':'test-model'}
         with patch('python_controller.llm_cli.load_environment',return_value=env), patch('python_controller.llm.nvidia_client.NvidiaPlanner.complete',return_value=json.dumps(response)):
             selected=_nemotron_evidence('Qt?', [row])
-        self.assertEqual(selected['answers'][0]['sources'][0]['quote'],row['body'])
+        from python_controller.knowledge.evidence import select_evidence
+        index=selected['claims'][0]['supports'][0]['quote_index']
+        self.assertEqual(select_evidence([row],'Qt')[0]['quote_candidates'][index],row['body'])
 
     def test_new_revision_stays_hidden_until_embeddings_are_complete(self):
         from python_controller.knowledge.indexing import build

@@ -1,0 +1,1164 @@
+[
+  {
+    "case_id": "RAG-KO-061",
+    "question": "우리 프로그램은 노트북이랑 로봇이 어떻게 통신해?",
+    "intent": "PC와 ESP32 사이의 통신 방식과 명령/텔레메트리 방향. 카메라 파이프라인 상세는 질문의 핵심이 아님.",
+    "grounded_answer_facts": [
+      {
+        "statement": "PC 통신은 UDP를 사용한다.",
+        "required": true,
+        "source_path": "docs/CONTROL_SIMPLE_V2_PLAN.md",
+        "source_revision": "8861848",
+        "source_sha256": "d04b2d800a9512001e11532147fead55c2b244990844a92d15c76b39b0b7006a",
+        "line": 22,
+        "evidence_excerpt": "| PC 통신 | UDP 8888/8889, heartbeat 100/600 ms, 속도 TTL 300 ms, STOP과 순서·토큰 확인 | 같은 V2 연결 계약 |",
+        "scope": "documented_software",
+        "fact_key": "communication_udp",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-005-F01"
+      },
+      {
+        "statement": "문서의 제어 흐름에는 ESP32로 명령을 전달하는 경로가 있다.",
+        "required": true,
+        "source_path": "docs/CENTRAL_CONTROL_WORKFLOW.md",
+        "source_revision": "8861848",
+        "source_sha256": "cb3e565ece065cdd655a434faf1cc8ea838b5bdd191b4ce409679c77486eb01a",
+        "line": 31,
+        "evidence_excerpt": "    Direct --> UDP[\"ESP32 명령 UDP 8888\"]",
+        "scope": "documented_software",
+        "fact_key": "pc_to_esp_command",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-005-F02"
+      },
+      {
+        "statement": "문서의 제어 흐름에는 PC로 텔레메트리를 받는 경로가 있다.",
+        "required": true,
+        "source_path": "docs/CENTRAL_CONTROL_WORKFLOW.md",
+        "source_revision": "8861848",
+        "source_sha256": "cb3e565ece065cdd655a434faf1cc8ea838b5bdd191b4ce409679c77486eb01a",
+        "line": 37,
+        "evidence_excerpt": "    FW --> RX[\"PC 텔레메트리 UDP 8889\"]",
+        "scope": "documented_software",
+        "fact_key": "esp_to_pc_telemetry",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-005-F03"
+      },
+      {
+        "statement": "문서의 ESP32 명령 포트는 UDP 8888이다.",
+        "required": false,
+        "source_path": "docs/CENTRAL_CONTROL_WORKFLOW.md",
+        "source_revision": "8861848",
+        "source_sha256": "cb3e565ece065cdd655a434faf1cc8ea838b5bdd191b4ce409679c77486eb01a",
+        "line": 31,
+        "evidence_excerpt": "    Direct --> UDP[\"ESP32 명령 UDP 8888\"]",
+        "scope": "documented_software",
+        "fact_key": "command_port_optional",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-005-F04"
+      },
+      {
+        "statement": "문서의 PC 텔레메트리 포트는 UDP 8889다.",
+        "required": false,
+        "source_path": "docs/CENTRAL_CONTROL_WORKFLOW.md",
+        "source_revision": "8861848",
+        "source_sha256": "cb3e565ece065cdd655a434faf1cc8ea838b5bdd191b4ce409679c77486eb01a",
+        "line": 37,
+        "evidence_excerpt": "    FW --> RX[\"PC 텔레메트리 UDP 8889\"]",
+        "scope": "documented_software",
+        "fact_key": "telemetry_port_optional",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-005-F05"
+      },
+      {
+        "statement": "소켓 소유 모듈은 communication/esp32_udp.py다.",
+        "required": false,
+        "source_path": "docs/ARCHITECTURE.md",
+        "source_revision": "8861848",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "line": 59,
+        "evidence_excerpt": "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을 표시한다.",
+        "scope": "documented_software",
+        "fact_key": "socket_module_optional",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-005-F06"
+      }
+    ],
+    "retrieved_evidence": [
+      {
+        "id": 2,
+        "document_id": 1,
+        "heading": "현재 대시보드 확장",
+        "title": "현재 대시보드 확장",
+        "section": "현재 대시보드 확장",
+        "page": null,
+        "line": 12,
+        "body": "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.\n\nCamera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다.\n\nRaw 관측은 차단 여부와 무관하게 보존하지만, 제어 입력은 기존 단일 인물·목표 소유권 제한을 통과해야 한다. Controller에 진단 값과 긴급 정지 latch를 추가했으며 기존 30개 테스트를 유지한다. 요청 명령은 제한 전 출력이고 안전 명령과 구분한다. PAUSED/FAULT에서도 요청은 진단 목적으로 표시될 수 있으며 전송 가능성을 의미하지 않는다.\n\nUDP snapshot은 성공한 sendto 패킷, 수신 나이·유효성, ACK seq에 매칭된 송신 패킷, STOP 이후 확인 여부를 구분한다. `cmd_vx/cmd_vy/cmd_w`는 펌웨어가 보고한 희망 명령이며 제한 이후 본체 속도는 현재 펌웨어에 없다. `wheel_target/wheel_speed`가 실제 바퀴 목표/측정 피드백이다. cm/s를 설정 반지름 2.9cm로 환산한 RPM에는 환산 표시를 붙인다.\n\n로그는 10Hz 상태와 사용자 입력·상태 전이·적용 제스처 사건을 기록한다. queue가 가득 차거나 writer 오류가 보고되면 긴급 정지를 latch한다. 송신 성공이나 정지 텔레메트리 확인을 물리 주행 성공으로 승격하지 않는다. 테스트 결과는 기본 NOT TESTED, 사용자 수행 확인과 관찰 메모가 있어야 PASS/FAIL을 저장한다. 자세한 스키마·제한은 [대시보드 안내](DASHBOARD_GUIDE.md), 실제 증거는 [최신 검증](verification/DASHBOARD_VALIDATION.md)에",
+        "path": "docs/ARCHITECTURE.md",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+        "chunk_hash": "8e66ef9f5b590fbc290fde316d5911b69cc869615825c08fd48e5e41ee175a5c",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "quote_candidates": [
+          "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다.",
+          "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+          "Raw 관측은 차단 여부와 무관하게 보존하지만, 제어 입력은 기존 단일 인물·목표 소유권 제한을 통과해야 한다. Controller에 진단 값과 긴급 정지 latch를 추가했으며 기존 30개 테스트를 유지한다. 요청 명령은 제한 전 출력이고 안전 명령과 구분한다. PAUSED/FAULT에서도 요청은 진단 목적으로 표시될 수 있으며 전송 가능성을 의미하지 않는다."
+        ]
+      },
+      {
+        "id": 3,
+        "document_id": 1,
+        "heading": "현재 대시보드 확장",
+        "title": "현재 대시보드 확장",
+        "section": "현재 대시보드 확장",
+        "page": null,
+        "line": 12,
+        "body": "있다.\n\n아래는 재사용한 1차 제어 기반이다.\n\n요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+        "path": "docs/ARCHITECTURE.md",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+        "chunk_hash": "ed89eb213f54544f7368cbe7398337f46b9cfe906c7ab15636abd934f29b8532",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "quote_candidates": [
+          "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+          "아래는 재사용한 1차 제어 기반이다."
+        ]
+      },
+      {
+        "id": 5,
+        "document_id": 1,
+        "heading": "데이터 흐름과 파일 책임",
+        "title": "데이터 흐름과 파일 책임",
+        "section": "데이터 흐름과 파일 책임",
+        "page": null,
+        "line": 37,
+        "body": "\n`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.\n\n공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다.\n\n`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+        "path": "docs/ARCHITECTURE.md",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 데이터 흐름과 파일 책임",
+        "chunk_hash": "57787ab349bab6454905437ae1aeb2b83b7f80040b94becf031d5541bb79cb76",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "quote_candidates": [
+          "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+          "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.",
+          "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다."
+        ]
+      },
+      {
+        "id": 6,
+        "document_id": 1,
+        "heading": "데이터 흐름과 파일 책임",
+        "title": "데이터 흐름과 파일 책임",
+        "section": "데이터 흐름과 파일 책임",
+        "page": null,
+        "line": 37,
+        "body": "표시한다.\n\n현재 거리 대용값 계산은 `control/distance_estimator.py`의 `relative_height_ratio`로 분리했다. FollowController는 이 함수와 같은 `(target, frame_height) -> dimensionless proxy` callable을 주입받을 수 있다. 실제 거리 센서를 연결할 때에는 새 관측값의 유효성·단위와 목표값 의미도 함께 검증해야 한다.",
+        "path": "docs/ARCHITECTURE.md",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 데이터 흐름과 파일 책임",
+        "chunk_hash": "d82bac49709bb242d465c69ef4b1e57f5c7d5109c29788db7b23610526714b2c",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "quote_candidates": [
+          "현재 거리 대용값 계산은 `control/distance_estimator.py`의 `relative_height_ratio`로 분리했다. FollowController는 이 함수와 같은 `(target, frame_height) -> dimensionless proxy` callable을 주입받을 수 있다. 실제 거리 센서를 연결할 때에는 새 관측값의 유효성·단위와 목표값 의미도 함께 검증해야 한다."
+        ]
+      },
+      {
+        "id": 29,
+        "document_id": 4,
+        "heading": "대화 예시",
+        "title": "대화 예시",
+        "section": "대화 예시",
+        "page": null,
+        "line": 29,
+        "body": "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |\n\n구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다.",
+        "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "source_sha256": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "D.I.G. Agent 스키마와 대화 처리 / 대화 예시",
+        "chunk_hash": "41ebb3c545c8910a93059df3b23c96cd55175f67014709da49eb4ab4323c4476",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "quote_candidates": [
+          "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+          "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+        ]
+      },
+      {
+        "id": 9,
+        "document_id": 1,
+        "heading": "2차 범위",
+        "title": "2차 범위",
+        "section": "2차 범위",
+        "page": null,
+        "line": 94,
+        "body": "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다.",
+        "path": "docs/ARCHITECTURE.md",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 2차 범위",
+        "chunk_hash": "23b68a0c304e060cbadcc05662341ede9c8401acce5252805e440139d5df7d28",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "quote_candidates": [
+          "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+        ]
+      }
+    ],
+    "claim_trace": [
+      {
+        "claim_id": "c1",
+        "text": "노트북(PC)에서 실행되는 Python 대시보드 프로그램이 UDP 소켓을 통해 ESP32 기반 로봇과 통신합니다. `communication/esp32_udp.py` 모듈이 소켓을 전담하여 소유합니다.",
+        "supports": [
+          {
+            "evidence_id": 5,
+            "quote_index": 0
+          }
+        ],
+        "actual_quotes": [
+          "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을"
+        ],
+        "invalid_supports": [],
+        "deterministic_reason": "ENTITY_MISMATCH",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": "ENTITY_MISMATCH",
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [
+            {
+              "token": "없",
+              "context": "한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communi"
+            },
+            {
+              "token": "False",
+              "context": "dar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTAC"
+            },
+            {
+              "token": "없",
+              "context": "CLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을"
+            }
+          ],
+          "conditional": []
+        },
+        "analyst_assessment": "정상 차단: 전역 문서에서 사실일 수 있지만 선택한 인용은 UDP/ESP32 통신 전체를 뒷받침하지 않음. 복수 사실과 인용 연결 오류."
+      },
+      {
+        "claim_id": "c2",
+        "text": "기본 실행 모드에서는 UDP 소켓을 사용하지 않고 화면 시뮬레이션으로 동작하며, 실제 로봇 제어 시 ESP32의 운동학·PID·엔코더·워치독 펌웨어를 재사용하고 상위 제어 로직만 Python으로 추가합니다.",
+        "supports": [
+          {
+            "evidence_id": 3,
+            "quote_index": 0
+          }
+        ],
+        "actual_quotes": [
+          "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다."
+        ],
+        "invalid_supports": [],
+        "deterministic_reason": "DESIGN_QUALIFIER_DROPPED",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": null,
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [
+            {
+              "token": "목표",
+              "context": "청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행"
+            }
+          ],
+          "negative": [
+            {
+              "token": "없",
+              "context": "→ 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 "
+            }
+          ],
+          "conditional": []
+        },
+        "analyst_assessment": "False Rejection: 목표 손 제스처의 목표를 설계 목표로 오인. 원문에 기존 ESP32 기능 재사용과 Python 상위 제어가 직접 명시됨."
+      },
+      {
+        "claim_id": "c3",
+        "text": "데이터 흐름은 카메라 워커 → 비전 워커 → GUI 상태 머신(50ms QTimer) → 안전 명령 순서로 처리되며, GUI 스레드에서 직접 카메라 읽기, AI 추론, 소켓 수신, 로그 플러시를 수행하지 않습니다.",
+        "supports": [
+          {
+            "evidence_id": 2,
+            "quote_index": 0
+          }
+        ],
+        "actual_quotes": [
+          "Camera worker → 최신 슬롯(1개) → Vision worker → 최신 결과 슬롯(1개) → GUI 50ms QTimer의 상태 머신 → 안전 명령 순서다. GUI 스레드에서 카메라 read, AI 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perception lease의 실제 나이를 확인하며 STOP으로 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+        ],
+        "invalid_supports": [],
+        "deterministic_reason": null,
+        "historical_semantic": "ENTAILMENT",
+        "candidate_eligibility_reason": null,
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [
+            {
+              "token": "않",
+              "context": "I 추론, 소켓 recv, 로그 flush를 실행하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도"
+            },
+            {
+              "token": "않",
+              "context": "하지 않는다. 느린 처리 중 오래된 프레임 큐를 쌓지 않는다. GUI가 멈추어도 UDP worker가 마지막으로 받은 perce"
+            },
+            {
+              "token": "않",
+              "context": " 전환한다. 오래된 결과로 lease 시간을 갱신하지 않는다."
+            }
+          ],
+          "conditional": []
+        },
+        "analyst_assessment": "기록된 ENTAILMENT로 통과했으나 통신 질문에 대한 직접성/필수 사실은 부족. 한 블록에 여러 작업 사실이 묶임."
+      }
+    ],
+    "final_reply": "데이터 흐름은 카메라 워커 → 비전 워커 → GUI 상태 머신(50ms QTimer) → 안전 명령 순서로 처리되며, GUI 스레드에서 직접 카메라 읽기, AI 추론, 소켓 수신, 로그 플러시를 수행하지 않습니다.\n\n나머지 내용은 근거 검증을 통과하지 못해 설명을 보류했어요.",
+    "speech_text": "데이터 흐름은 카메라 워커 → 비전 워커 → GUI 상태 머신(50ms QTimer) → 안전 명령 순서로 처리되며, GUI 스레드에서 직접 카메라 읽기, AI 추론, 소켓 수신, 로그 플러시를 수행하지 않습니다.\n\n나머지 내용은 근거 검증을 통과하지 못해 설명을 보류했어요.",
+    "unanswered_aspects": [
+      "확인되지 않은 나머지 내용"
+    ],
+    "cached_replay_matches_record": true,
+    "historical_semantic_verdicts": [
+      {
+        "claim_id": "c1",
+        "relation": "ENTAILMENT"
+      }
+    ],
+    "analyst_review": "human_review_pending",
+    "missing_core_facts": "최종 답변에 UDP 방식 및 ESP32 명령/PC 텔레메트리 방향이 빠짐. 남은 카메라/GUI 설명은 핵심 질문을 대체하지 못함."
+  },
+  {
+    "case_id": "RAG-KO-062",
+    "question": "Qt 화면은 어떤 기술로 만든 거야?",
+    "intent": "사용한 Qt Python 바인딩(PySide6)과 UI 기술. 설치 절차·파일 경로·일반 대화 SSE는 부가 정보.",
+    "grounded_answer_facts": [
+      {
+        "statement": "기본 Qt UI에 사용하는 Python 바인딩은 PySide6다.",
+        "required": true,
+        "source_path": "docs/ARCHITECTURE.md",
+        "source_revision": "8861848",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "line": 13,
+        "evidence_excerpt": "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+        "scope": "documented_software",
+        "fact_key": "qt_binding_pyside6",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-006-F01"
+      },
+      {
+        "statement": "Qt 화면 구현은 visualization/dashboard.py에 있다.",
+        "required": false,
+        "source_path": "docs/ARCHITECTURE.md",
+        "source_revision": "8861848",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "line": 13,
+        "evidence_excerpt": "기존 제어·검출·추적·펌웨어는 재사용한다. 배치 실행의 기본 UI는 PySide6이며, 명시 `--ui opencv`와 기존 Python 진입 기본값은 호환 경로로 남긴다. `visualization/dashboard.py`가 Qt 탭·버튼·렌더링·그래프를, `dashboard_runtime.py`가 worker와 제어·스냅샷 조립을, `monitoring.py`가 단위 환산·검증 기록·비동기 JSONL을 소유한다.",
+        "scope": "documented_software",
+        "fact_key": "qt_view_path_optional",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-006-F02"
+      }
+    ],
+    "retrieved_evidence": [
+      {
+        "id": 29,
+        "document_id": 4,
+        "heading": "대화 예시",
+        "title": "대화 예시",
+        "section": "대화 예시",
+        "page": null,
+        "line": 29,
+        "body": "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |\n\n구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다.",
+        "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "source_sha256": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "D.I.G. Agent 스키마와 대화 처리 / 대화 예시",
+        "chunk_hash": "41ebb3c545c8910a93059df3b23c96cd55175f67014709da49eb4ab4323c4476",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "quote_candidates": [
+          "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+          "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+        ]
+      },
+      {
+        "id": 17,
+        "document_id": 2,
+        "heading": "파일 변경",
+        "title": "파일 변경",
+        "section": "파일 변경",
+        "page": null,
+        "line": 76,
+        "body": "추가:\n\n- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).\n\n수정:\n\n- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서.\n\n이번 변경에서는 펌웨어·원본 ZIP·모델 파일을 수정하지 않았다. 기존 30개 테스트 파일의 검증 목적을 유지했다.",
+        "path": "docs/DASHBOARD_GUIDE.md",
+        "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "source_sha256": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "실시간 검증 대시보드 사용 및 구현 안내 / 파일 변경",
+        "chunk_hash": "2e42d1b86407a3a886b54ba61fbd100b22a3ad581f4c19781ca399cc625f2137",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DASHBOARD_GUIDE.md",
+        "quote_candidates": [
+          "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview).",
+          "- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서.",
+          "이번 변경에서는 펌웨어·원본 ZIP·모델 파일을 수정하지 않았다. 기존 30개 테스트 파일의 검증 목적을 유지했다."
+        ]
+      },
+      {
+        "id": 28,
+        "document_id": 4,
+        "heading": "현재 LLM 동작",
+        "title": "현재 LLM 동작",
+        "section": "현재 LLM 동작",
+        "page": null,
+        "line": 19,
+        "body": "2. **의도 분류**는 현재 메시지와 미실행 초안의 동작 목록으로 JSON 의도 객체 하나를 반환한다. Pydantic이 필드를 검사하며, 이동·편집 제안은 현재 사용자 원문과 대조해 방향, 수치, 단계와 버전을 확인한다.\n3. **대화 생성**은 일반 대화와 확인 질문에서 별도로 NVIDIA 응답 스트림을 연다. 모델이 보내는 텍스트 조각은 문장 중간부터 웹의 SSE 연결로 전달된다. Qt는 현재까지 받은 텍스트를 화면 갱신 주기에 표시한다. 완료된 답변을 대화 기록에 저장한다. 최근 사용자 입력과 읽기 전용 답변을 합쳐 최대 10개 메시지를 문맥으로 사용한다. 장치 응답, 실행 영수증과 검색 문서 발췌는 대화 생성 문맥에서 제외한다. 최근 답변을 반복하면 한 번 새 답을 요청한다.\n4. 상태 질문은 런타임 스냅숏을 조회하고, 기술·매뉴얼 질문은 로컬 SQLite FTS5 근거를 읽어 출처를 붙인다. 로컬 벡터 검색과 승인된 Git 문서의 클라우드 인용 선택은 별도 옵션이다. 알려진 문서 지시문 패턴을 발췌에서 걸러내고 클라우드 인용을 실제 원문에 대조한다. 문서 답변은 실행 경로와 분리된다.\n5. LangGraph는 분류, 읽기 전용 답변, 문서 검색과 버전이 고정된 검토를 처리한다. Qt 운영자 승인과 실제 이동은 서버의 기존 실행 경로를 거친다. 실행 중 새 이동은 별도 미래 초안에 저장할 수 있다.\n\n제품 역할은 D.I.G. 로봇 관제 에이전트이며 모델 이름은 Python의 `NVIDIA_MODEL` 설정에서 읽는다. 공식 NVIDIA 엔드포인트와 사용자 지정 엔드포인트는 서버 답변에서 구별한다. 모델 연결에 문제가 생겨도 웹 블록 직접 편집과 로컬 처리 경로는 이용할 수 있다.",
+        "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "source_sha256": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "D.I.G. Agent 스키마와 대화 처리 / 현재 LLM 동작",
+        "chunk_hash": "a9d2508b529a061f96d576ec2cf57992e22bd1a5b9865f791d03f195e4fe76c9",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "quote_candidates": [
+          "2. **의도 분류**는 현재 메시지와 미실행 초안의 동작 목록으로 JSON 의도 객체 하나를 반환한다. Pydantic이 필드를 검사하며, 이동·편집 제안은 현재 사용자 원문과 대조해 방향, 수치, 단계와 버전을 확인한다.\n3. **대화 생성**은 일반 대화와 확인 질문에서 별도로 NVIDIA 응답 스트림을 연다. 모델이 보내는 텍스트 조각은 문장 중간부터 웹의 SSE 연결로 전달된다. Qt는 현재까지 받은 텍스트를 화면 갱신 주기에 표시한다. 완료된 답변을 대화 기록에 저장한다. 최근 사용자 입력과 읽기 전용 답변을 합쳐 최대 10개 메시지를 문맥으로 사용한다. 장치 응답, 실행 영수증과 검색 문서 발췌는 대화 생성 문맥에서 제외한다. 최근 답변을 반복하면 한 번 새 답을 요청한다.\n4. 상태 질문은 런타임 스냅숏을 조회하고, 기술·매뉴얼 질문은 로컬 SQLite FTS5 근거를 읽어 출처를 붙인다. 로컬 벡터 검색과 승인된 Git 문서의 클라우드 인용 선택은 별도 옵션이다. 알려진 문서 지시문 패턴을 발췌에서 걸러내고 클라우드 인용을 실제 원문에 대조한다. 문서 답변은 실행 경로와 분리된다.\n5. LangGraph는 분류, 읽기 전용 답변, 문서 검색과 버전이 고정된 검토를 처리한다. Qt 운영자 승인과 실제 이동은 서버의 기존 실행 경로를 거친다. 실행 중 새 이동은 별도 미래 초안에 저장할 수 있다.",
+          "제품 역할은 D.I.G. 로봇 관제 에이전트이며 모델 이름은 Python의 `NVIDIA_MODEL` 설정에서 읽는다. 공식 NVIDIA 엔드포인트와 사용자 지정 엔드포인트는 서버 답변에서 구별한다. 모델 연결에 문제가 생겨도 웹 블록 직접 편집과 로컬 처리 경로는 이용할 수 있다."
+        ]
+      },
+      {
+        "id": 3,
+        "document_id": 1,
+        "heading": "현재 대시보드 확장",
+        "title": "현재 대시보드 확장",
+        "section": "현재 대시보드 확장",
+        "page": null,
+        "line": 12,
+        "body": "있다.\n\n아래는 재사용한 1차 제어 기반이다.\n\n요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+        "path": "docs/ARCHITECTURE.md",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 현재 대시보드 확장",
+        "chunk_hash": "ed89eb213f54544f7368cbe7398337f46b9cfe906c7ab15636abd934f29b8532",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "quote_candidates": [
+          "요청 범위는 Windows 웹캠 → 사람 선택·추적 → 목표 손 제스처 → 상대 크기 추종 명령 → 화면 시뮬레이션이다. 기본 실행에는 UDP 소켓이 없다. ESP32의 운동학·PID·엔코더·워치독을 재사용하며 상위 제어만 Python으로 추가했다. 원본 ZIP과 기존 로봇의 동작 설정은 보존한다.",
+          "아래는 재사용한 1차 제어 기반이다."
+        ]
+      },
+      {
+        "id": 27,
+        "document_id": 4,
+        "heading": "스키마 구현 현황",
+        "title": "스키마 구현 현황",
+        "section": "스키마 구현 현황",
+        "page": null,
+        "line": 4,
+        "body": "명시적인 긴급 정지는 로컬에서 먼저 처리한다. |\n| 실행 승인 | LangGraph 검토 상태와 서버의 `ApprovalTicket` | 카드와 승인에 미션 ID·버전·세션이 연결된다. 운영자 승인으로 발급된 티켓은 5초 동안 한 번 사용할 수 있다. 초안 편집은 새 검토를 요구한다. 회전이 포함된 계획은 실행을 차단하며 실물 실행 승인은 Qt 관제에서만 가능하다. |\n\nPydantic 검증은 스키마에 없는 필드, 잘못된 타입, 숫자 문자열을 거부한다. 별도의 계획 검증은 순서와 전체 이동 거리를 확인한다. 텍스트를 그대로 파싱해 공급되는 제안도 같은 실행 제한을 적용받는다.",
+        "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "source_sha256": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "D.I.G. Agent 스키마와 대화 처리 / 스키마 구현 현황",
+        "chunk_hash": "3006c0f43c2f41489dd7a67c4dde602b07185d3fbd0e65c037c451b294e76060",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "quote_candidates": [
+          "명시적인 긴급 정지는 로컬에서 먼저 처리한다. |\n| 실행 승인 | LangGraph 검토 상태와 서버의 `ApprovalTicket` | 카드와 승인에 미션 ID·버전·세션이 연결된다. 운영자 승인으로 발급된 티켓은 5초 동안 한 번 사용할 수 있다. 초안 편집은 새 검토를 요구한다. 회전이 포함된 계획은 실행을 차단하며 실물 실행 승인은 Qt 관제에서만 가능하다. |",
+          "Pydantic 검증은 스키마에 없는 필드, 잘못된 타입, 숫자 문자열을 거부한다. 별도의 계획 검증은 순서와 전체 이동 거리를 확인한다. 텍스트를 그대로 파싱해 공급되는 제안도 같은 실행 제한을 적용받는다."
+        ]
+      },
+      {
+        "id": 11,
+        "document_id": 2,
+        "heading": "실행",
+        "title": "실행",
+        "section": "실행",
+        "page": null,
+        "line": 8,
+        "body": "\n`run_simulation.bat`도 같은 대시보드를 연다. Python 진입의 기본 OpenCV UI와 `--demo`는 기존 테스트와 사용법의 호환성을 위해 유지했다. Qt 설치는 `python -m pip install -r requirements.txt`로 준비하며, 현재 PC의 가상환경에는 설치를 완료했다. 새 PC 전체 부트스트랩은 검증하지 않았다.\n\n카메라 없는 명확한 합성 미리보기:\n\n\nSYNTHETIC_PREVIEW에서는 사람 박스와 손바닥 펼침 (Open Palm) 분류가 합성 입력이다. 성능 증거로 사용하지 않는다. 하드웨어 연결은 코드에서 거부한다. 정상 모드의 미수신 모터 값을 채우는 기능은 없다. `--smoke-seconds 30`은 지정 시간 뒤 정지·종료하는 검사용 옵션이다.",
+        "path": "docs/DASHBOARD_GUIDE.md",
+        "sha": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "source_sha256": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "실시간 검증 대시보드 사용 및 구현 안내 / 실행",
+        "chunk_hash": "25ac1661a131fa2e36ab17eb92f55769995974a9fc5c2bf9c4a6305e22e6ff57",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DASHBOARD_GUIDE.md",
+        "quote_candidates": [
+          "`run_simulation.bat`도 같은 대시보드를 연다. Python 진입의 기본 OpenCV UI와 `--demo`는 기존 테스트와 사용법의 호환성을 위해 유지했다. Qt 설치는 `python -m pip install -r requirements.txt`로 준비하며, 현재 PC의 가상환경에는 설치를 완료했다. 새 PC 전체 부트스트랩은 검증하지 않았다.",
+          "카메라 없는 명확한 합성 미리보기:",
+          "SYNTHETIC_PREVIEW에서는 사람 박스와 손바닥 펼침 (Open Palm) 분류가 합성 입력이다. 성능 증거로 사용하지 않는다. 하드웨어 연결은 코드에서 거부한다. 정상 모드의 미수신 모터 값을 채우는 기능은 없다. `--smoke-seconds 30`은 지정 시간 뒤 정지·종료하는 검사용 옵션이다."
+        ]
+      }
+    ],
+    "claim_trace": [
+      {
+        "claim_id": "c1",
+        "text": "Qt 화면은 Python의 Qt 프레임워크(PyQt/PySide)를 사용하여 구현된 4탭 대시보드로, 입력·영상·그래프 등을 실행 가능한 형태로 제공합니다.",
+        "supports": [
+          {
+            "evidence_id": 17,
+            "quote_index": 1
+          }
+        ],
+        "actual_quotes": [
+          "- `main.py`, `run_simulation.bat`: UI 선택 및 새 기본 배치 실행.\n- `control/follow_controller.py`, `control/state_machine.py`: 요청 명령·제스처 진단·긴급 정지 latch.\n- `vision/gesture_recognizer.py`: 차단 이전 Raw 진단과 단계 시간.\n- `communication/esp32_udp.py`: TX/ACK/STOP 이력 및 추가 배열 검증.\n- `config/default.json`, `config/__init__.py`: RPM 환산 반지름과 검증.\n- `requirements.txt`, `.gitignore`, README, 설계·검증 문서."
+        ],
+        "invalid_supports": [],
+        "deterministic_reason": "ENTITY_MISMATCH",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": "ENTITY_MISMATCH",
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [
+            {
+              "token": "설계",
+              "context": "s.txt`, `.gitignore`, README, 설계·검증 문서."
+            }
+          ],
+          "negative": [],
+          "conditional": []
+        },
+        "analyst_assessment": "정상 차단: 선택 인용에 PyQt/PySide 바인딩 근거가 없고 4탭 정보는 다른 인용 후보에 있음. 실제 PySide6 근거는 별도 문서 절에 존재."
+      },
+      {
+        "claim_id": "c2",
+        "text": "대시보드 실행 파일은 `python_controller/visualization/dashboard.py`에 있으며, 런타임 조립과 모드 전환은 `python_controller/dashboard_runtime.py`에서 담당합니다.",
+        "supports": [
+          {
+            "evidence_id": 17,
+            "quote_index": 0
+          }
+        ],
+        "actual_quotes": [
+          "- `python_controller/dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controller/visualization/dashboard.py`: 실행 가능한 Qt 4탭·입력·영상·그래프.\n- `python_controller/monitoring.py`: 피드백 환산·결과 기록·비동기 logger.\n- `tests/test_dashboard_core.py`, `test_dashboard_runtime.py`, `test_dashboard_telemetry.py`, `test_dashboard_ui.py`.\n- 이 안내, [대시보드 검증 기록](verification/DASHBOARD_VALIDATION.md), [합성 화면 5종](verification/dashboard_preview)."
+        ],
+        "invalid_supports": [],
+        "deterministic_reason": "CONDITION_DROPPED",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": "ENTITY_MISMATCH",
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [],
+          "conditional": [
+            {
+              "token": "only",
+              "context": "dashboard_runtime.py`: latest-only worker·제어 조립·모드 전환.\n- `python_controlle"
+            }
+          ]
+        },
+        "analyst_assessment": "규칙 오탐: 인용의 latest-only worker에 only가 있어 전역 조건 누락으로 처리. 역할/경로 두 사실을 한 블록에 묶었으며 파일명은 음성 답변에 불필요."
+      },
+      {
+        "claim_id": "c3",
+        "text": "LLM 응답 스트림(NVIDIA 모델)은 웹의 SSE 연결로 문장 중간부터 텍스트 조각을 전달하며, Qt는 화면 갱신 주기에 맞춰 현재까지 받은 텍스트를 표시합니다.",
+        "supports": [
+          {
+            "evidence_id": 28,
+            "quote_index": 0
+          }
+        ],
+        "actual_quotes": [
+          "2. **의도 분류**는 현재 메시지와 미실행 초안의 동작 목록으로 JSON 의도 객체 하나를 반환한다. Pydantic이 필드를 검사하며, 이동·편집 제안은 현재 사용자 원문과 대조해 방향, 수치, 단계와 버전을 확인한다.\n3. **대화 생성**은 일반 대화와 확인 질문에서 별도로 NVIDIA 응답 스트림을 연다. 모델이 보내는 텍스트 조각은 문장 중간부터 웹의 SSE 연결로 전달된다. Qt는 현재까지 받은 텍스트를 화면 갱신 주기에 표시한다. 완료된 답변을 대화 기록에 저장한다. 최근 사용자 입력과 읽기 전용 답변을 합쳐 최대 10개 메시지를 문맥으로 사용한다. 장치 응답, 실행 영수증과 검색 문서 발췌는 대화 생성 문맥에서 제외한다. 최근 답변을 반복하면 한 번 새 답을 요청한다.\n4. 상태 질문은 런타임 스냅숏을 조회하고, 기술·매뉴얼 질문은 로컬 SQLite FTS5 근거를 읽어 출처를 붙인다. 로컬 벡터 검색과 승인된 Git 문서의 클라우드 인용 선택은 별도 옵션이다. 알려진 문서 지시문 패턴을 발췌에서 걸러내고 클라우드 인용을 실제 원문에 대조한다. 문서 답변은 실행 경로와 분리된다.\n5. LangGraph는 분류, 읽기 전용 답변, 문서 검색과 버전이 고정된 검토를 처리한다. Qt 운영자 승인과 실제 이동은 서버의 기존 실행 경로를 거친다. 실행 중 새 이동은 별도 미래 초안에 저장할 수 있다."
+        ],
+        "invalid_supports": [],
+        "deterministic_reason": "CONDITION_DROPPED",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": "CONDITION_DROPPED",
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [],
+          "conditional": [
+            {
+              "token": "제외",
+              "context": " 실행 영수증과 검색 문서 발췌는 대화 생성 문맥에서 제외한다. 최근 답변을 반복하면 한 번 새 답을 요청한다.\n4. 상태 질문은"
+            }
+          ]
+        },
+        "analyst_assessment": "부분 정상 사실의 과잉 차단 후보: 대화 문맥에서 문서 발췌를 제외한다는 다른 절을 조건으로 적용. 다만 일반 대화 범위가 생략된 전체 LLM 스트리밍 일반화는 의미 재검토가 필요."
+      },
+      {
+        "claim_id": "c4",
+        "text": "기본 실행은 `main.py` 또는 `run_simulation.bat`로 Qt 대시보드를 열며, Qt 설치는 `requirements.txt`의 의존성으로 `pip install`로 준비됩니다.",
+        "supports": [
+          {
+            "evidence_id": 11,
+            "quote_index": 0
+          }
+        ],
+        "actual_quotes": [
+          "`run_simulation.bat`도 같은 대시보드를 연다. Python 진입의 기본 OpenCV UI와 `--demo`는 기존 테스트와 사용법의 호환성을 위해 유지했다. Qt 설치는 `python -m pip install -r requirements.txt`로 준비하며, 현재 PC의 가상환경에는 설치를 완료했다. 새 PC 전체 부트스트랩은 검증하지 않았다."
+        ],
+        "invalid_supports": [],
+        "deterministic_reason": "SOURCE_TEXT_IN_REPLY",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": "SOURCE_TEXT_IN_REPLY",
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [
+            {
+              "token": "않",
+              "context": "설치를 완료했다. 새 PC 전체 부트스트랩은 검증하지 않았다."
+            }
+          ],
+          "conditional": []
+        },
+        "analyst_assessment": "정상 스타일 차단: requirements.txt가 본문에 포함됨. 설치/실행 경로는 질문 핵심도 아니며 복수 사실 블록으로 같이 소실."
+      }
+    ],
+    "final_reply": "관련 문서는 있지만 질문에 답할 직접 근거와 설명을 검증하지 못했어요. 확인할 항목이나 문서 범위를 더 구체적으로 알려 주세요.",
+    "speech_text": "관련 문서는 있지만 질문에 답할 직접 근거와 설명을 검증하지 못했어요. 확인할 항목이나 문서 범위를 더 구체적으로 알려 주세요.",
+    "unanswered_aspects": [
+      "직접 근거 또는 검증 가능한 설명"
+    ],
+    "cached_replay_matches_record": true,
+    "historical_semantic_verdicts": [],
+    "analyst_review": "human_review_pending",
+    "missing_core_facts": "PySide6라는 실제 바인딩과 질문 결론 전체가 빠짐. 가져온 6개 근거의 body/후보 어느 쪽에도 PySide6가 없음."
+  },
+  {
+    "case_id": "RAG-KO-063",
+    "question": "레이더가 UNKNOWN이면 무슨 뜻이야?",
+    "intent": "레이더 UNKNOWN의 의미. 모든 UNKNOWN 원인을 하나로 단정하지 말고 수신 사유와 유효 상태를 구분.",
+    "grounded_answer_facts": [
+      {
+        "statement": "UNKNOWN/null은 값을 받지 못했거나 검증할 수 없다는 표시다.",
+        "required": true,
+        "source_path": "docs/DASHBOARD_GUIDE.md",
+        "source_revision": "8861848",
+        "source_sha256": "e2b2943a7aeff6b4063ac77f6ee5fa1060c7fa7cb5285ef48d4489f27b1f2332",
+        "line": 34,
+        "evidence_excerpt": "`UNKNOWN`/null은 값을 받지 못했거나 검증할 수 없다는 뜻이다. stale 텔레메트리는 마지막 값이 남을 수 있으므로 RX 유효성·나이를 함께 확인한다. 그래프는 유효 수신에만 새 점을 추가하며 과거 곡선이 남았다고 현재 정상이라는 뜻은 아니다. FPS는 완료된 추론 사이의 간격으로 계산한다. 최초 모델 초기화에는 오래 걸릴 수 있고 단계가 UI와 로그에 표시된다.",
+        "scope": "documented_software",
+        "fact_key": "unknown_meaning",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-007-F01"
+      },
+      {
+        "statement": "RADAR_NO_DATA는 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했다는 사유다.",
+        "required": false,
+        "source_path": "docs/RADAR_OPERATION_GUIDE.md",
+        "source_revision": "8861848",
+        "source_sha256": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+        "line": 81,
+        "evidence_excerpt": "| `RADAR_NO_DATA` | 설정한 Pi에서 아직 유효한 상태 패킷을 받지 못했습니다. `publisher.py` 실행 여부, `--pc`의 PC 주소, Pi 출발지 IPv4, PC의 UDP `8891` 수신 허용 여부를 확인합니다. |",
+        "scope": "documented_software",
+        "fact_key": "radar_no_data_optional",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-007-F02"
+      },
+      {
+        "statement": "RADAR_SENSOR_UNKNOWN은 Pi 패킷은 받았으나 센서 상태가 유효하지 않다는 사유다.",
+        "required": false,
+        "source_path": "docs/RADAR_OPERATION_GUIDE.md",
+        "source_revision": "8861848",
+        "source_sha256": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+        "line": 82,
+        "evidence_excerpt": "| `RADAR_SENSOR_UNKNOWN` | Pi 패킷은 받았으나 센서 상태가 유효하지 않습니다. Pi 터미널의 UART 오류와 설정 명령 응답을 확인합니다. |",
+        "scope": "documented_software",
+        "fact_key": "radar_sensor_unknown_optional",
+        "annotation_status": "agent_source_checked_human_review_pending",
+        "human_approved": false,
+        "fact_id": "G25-007-F03"
+      }
+    ],
+    "retrieved_evidence": [
+      {
+        "id": 29,
+        "document_id": 4,
+        "heading": "대화 예시",
+        "title": "대화 예시",
+        "section": "대화 예시",
+        "page": null,
+        "line": 29,
+        "body": "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |\n\n구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다.",
+        "path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "sha": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "source_sha256": "6ce14d0011b2c0afba35d06f3f6c9d622632c6633dcb53c1bb4e627083bbd096",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "D.I.G. Agent 스키마와 대화 처리 / 대화 예시",
+        "chunk_hash": "41ebb3c545c8910a93059df3b23c96cd55175f67014709da49eb4ab4323c4476",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/DIG_AGENT_SCHEMA_AND_DIALOGUE.md",
+        "quote_candidates": [
+          "| 사용자 입력 예시 | 처리 |\n| --- | --- |\n| “안녕”, “고마워” | `chat`으로 한 문장 답한다. 화면, 초안, 제어 상태에 영향을 주지 않는다. |\n| “우리 프로그램 설명해 줘”, “그 내용을 예로 들어 줘” | 서버에서 프로그램을 소개하고, 후속 질문은 이전 설명을 포함한 읽기 전용 문맥으로 답한다. |\n| “너는 어떤 모델이야?” | 서버가 D.I.G. 역할과 Python 설정의 공급자·모델을 답한다. |\n| “각 메뉴에 대한 설명”, “카메라 · 손동작 메뉴 사용법” | 화면의 주요 항목과 사용 방법을 읽기 전용으로 설명한다. |\n| “레이더 UNKNOWN은 무슨 뜻이야?”, “현재 레이더 상태는?” | 앞 질문은 근거 문서를 찾아 인용하고, 뒤 질문은 장치 스냅숏을 조회한다. 근거가 부족하면 확인 가능한 범위를 알려 준다. |\n| “조금 앞으로”, “카메라로 제어할래” | `clarify`로 거리나 제어 모드 등 필요한 항목 하나를 묻고, 답을 받을 때까지 초안과 제어 모드를 유지한다. |\n| “가장 작은 소수 두 개는?”, “그다음 두 개는?” | 일반 지식과 후속 질문으로 응답한다. |\n| “오늘 부산 날씨 알려줘” | 일반 대화로 분류한다. 현재 날씨처럼 실시간 데이터가 필요한 질문에는 확인 가능한 범위를 설명한다. |\n| “‘앞으로 5cm 이동해’라는 문장을 설명해 줘”, “‘멈춰’는 어떤 명령이야?” | 인용·설명으로 분류한다. 모델이 이동이나 정지로 해석하더라도 제어 상태는 유지한다. 독립 긴급 정지 버튼과 명시적인 정지 명령은 기존 경로를 따른다. |",
+          "구현 기준은 [동작 스키마](../python_controller/planning/schema.py), [계획 검증](../python_controller/planning/validator.py), [Agent 의도](../python_controller/llm/agent_intent.py), [읽기 전용 대화](../python_controller/llm/agent_dialogue.py), [LangGraph](../python_controller/llm/agent_graph.py), [관제 Agent](../python_controller/llm/unified_agent.py), [초안 저장소](../python_controller/mission/draft_store.py)다."
+        ]
+      },
+      {
+        "id": 23,
+        "document_id": 3,
+        "heading": "3. PC 대시보드에서 수신 확인",
+        "title": "3. PC 대시보드에서 수신 확인",
+        "section": "3. PC 대시보드에서 수신 확인",
+        "page": null,
+        "line": 53,
+        "body": "저장소 루트에서 대시보드를 엽니다.\n\n\n1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+        "path": "docs/RADAR_OPERATION_GUIDE.md",
+        "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+        "source_sha256": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인",
+        "chunk_hash": "4b4695f8523fa5ff3750c671844863e74c3296460ab4ca0c3e6bb085ebf4fdfd",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/RADAR_OPERATION_GUIDE.md",
+        "quote_candidates": [
+          "1. **ESP32 연결** 영역에서 **레이더 Pi**에 Pi의 실제 IPv4를 입력하고 **Pi 주소 저장**을 누릅니다. 주소를 고쳐야 할 때는 정지 후 ESP32 연결을 해제하고 변경합니다. 설정은 PC의 로컬 `settings/radar.json`에 저장됩니다.\n2. 기존 ESP32 주소로 연결한 다음 **모터가 정지한 상태**에서 레이더가 `CLEAR → EVADE → CLEAR`로 전환되는지 확인합니다. 센서 앞을 비운 뒤 장애물을 감지 범위에 놓았다가 치웁니다.\n3. 첫 연결·위험 차단·소프트웨어 긴급 정지 후에는 운영자 화면이 활성 상태이고 최신 `CLEAR`가 연속 1초 유지되며 새 ESP32 STOP·정상 세션이 확인되면 차단을 자동 해제합니다. 이전 수동 입력·추종·미션은 재개하지 않습니다. 방향을 다시 누르거나 손동작을 새로 활성화하거나 현재 미션을 다시 승인하세요. 위험·UNKNOWN·잘못된 패킷 및 지연된 CLEAR는 이 1초를 충족하지 않습니다.\n4. `RADAR_TIMEOUT`은 수신 지연 경고입니다. 마지막 레이더 상태·경과 시간을 유지하고 수신을 계속하며 단순 지연만으로 새 차단을 만들지 않습니다. 이미 EVADE·UNKNOWN 등으로 차단된 상태는 유지합니다.\n5. ESP32 통신 지연은 새 정상 STOP 수신 후 해제합니다. 프로토콜 2의 `ENCODER_JUMP`/`ENCODER_INVALID`는 출력 STOP과 정상 엔코더 샘플 10개를 확인하면 기존 오류 초기화·STOP 재동기화를 한 번 시도합니다. 실제 Fault 해제와 새 STOP을 기다리며, 지속 오류·미지원 Fault·보드 불일치·제어기 충돌·Python 오류를 자동으로 무시하지 않습니다.",
+          "저장소 루트에서 대시보드를 엽니다."
+        ]
+      },
+      {
+        "id": 5,
+        "document_id": 1,
+        "heading": "데이터 흐름과 파일 책임",
+        "title": "데이터 흐름과 파일 책임",
+        "section": "데이터 흐름과 파일 책임",
+        "page": null,
+        "line": 37,
+        "body": "\n`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다.\n\n공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다.\n\n`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+        "path": "docs/ARCHITECTURE.md",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 데이터 흐름과 파일 책임",
+        "chunk_hash": "57787ab349bab6454905437ae1aeb2b83b7f80040b94becf031d5541bb79cb76",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "quote_candidates": [
+          "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을",
+          "공간적 박스 포함만으로 다른 사람의 뻗은 팔을 완전히 구별할 수 없으므로 **1차 런타임은 사람이 여러 명이면 모든 손 제스처 명령을 비활성화**한다. 다인 목표 선택·추적과 키보드 제어는 가능하다. 손 연결 유틸리티는 구현했지만 다인 제스처 제어는 포즈 손목 연결과 실측 검증 뒤 활성화하는 범위로 남긴다. 사람이 검출되지 않거나 누락되는 상황까지 신원 소유권을 보장하지 않는다.",
+          "`models.py`는 단위가 명확한 불변 관측·명령 자료형이다. `vision/camera.py`만 카메라 입출력을 담당한다. `person_detector.py`는 검출과 ByteTrack 호출, `person_tracker.py`는 선택만 담당한다. `gesture_recognizer.py`는 같은 프레임의 손목과 손바닥 관절 5개가 유일하게 포함되는 사람 박스를 연결한다. 겹치는 사람·불명확한 소유자·충돌하는 제스처는 명령에서 제외한다. 목표 박스가 다른 사람과 겹치면 추종도 정지한다."
+        ]
+      },
+      {
+        "id": 19,
+        "document_id": 3,
+        "heading": "레이더 연결 및 실행 방법",
+        "title": "레이더 연결 및 실행 방법",
+        "section": "레이더 연결 및 실행 방법",
+        "page": null,
+        "line": 2,
+        "body": "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다.",
+        "path": "docs/RADAR_OPERATION_GUIDE.md",
+        "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+        "source_sha256": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "레이더 연결 및 실행 방법",
+        "chunk_hash": "c14da80e7d8ab0d63ccc0a66b0529d189061e2127abbee17d5303a7b577f479b",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/RADAR_OPERATION_GUIDE.md",
+        "quote_candidates": [
+          "Raspberry Pi는 레이더 상태를 PC의 UDP `8891`로 보냅니다. PC 중앙 대시보드가 이 상태를 받아 ESP32 제어와 정지를 처리합니다. Pi에는 프로젝트의 [`pi_radar/publisher.py`](../pi_radar/publisher.py)와 장비에서 사용하는 `.cfg`가 필요합니다."
+        ]
+      },
+      {
+        "id": 25,
+        "document_id": 3,
+        "heading": "레이더를 연결하지 않은 바퀴 시험",
+        "title": "레이더를 연결하지 않은 바퀴 시험",
+        "section": "레이더를 연결하지 않은 바퀴 시험",
+        "page": null,
+        "line": 67,
+        "body": "STOP 전용 재동기화를 요청하세요. |\n\n[레이더 송신 규격과 검증 범위](RADAR_LLM_INTEGRATION.md)",
+        "path": "docs/RADAR_OPERATION_GUIDE.md",
+        "sha": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+        "source_sha256": "b0fb207ee1889ef5e7c94ba40b27826a028c6762bc7dd4b03632641abfaed486",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "레이더 연결 및 실행 방법 / 3. PC 대시보드에서 수신 확인 / 레이더를 연결하지 않은 바퀴 시험",
+        "chunk_hash": "276fbda9a6526d2e23615ab3c0b8ad4033ef98bcc59cbf246a892aa36e2c4874",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/RADAR_OPERATION_GUIDE.md",
+        "quote_candidates": [
+          "[레이더 송신 규격과 검증 범위](RADAR_LLM_INTEGRATION.md)",
+          "STOP 전용 재동기화를 요청하세요. |"
+        ]
+      },
+      {
+        "id": 9,
+        "document_id": 1,
+        "heading": "2차 범위",
+        "title": "2차 범위",
+        "section": "2차 범위",
+        "page": null,
+        "line": 94,
+        "body": "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다.",
+        "path": "docs/ARCHITECTURE.md",
+        "sha": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "source_sha256": "e00a2672438f1d66177265315a6950845136d10a3337ea5d6efc54277443a9cc",
+        "version": "8861848",
+        "revision": "8861848",
+        "trust": "project_doc",
+        "effective_date": null,
+        "reviewed_by_user": 0,
+        "index_version": "legacy-tokenizer-unavailable",
+        "heading_path": "제어 기반 및 실시간 검증 대시보드 설계 / 2차 범위",
+        "chunk_hash": "23b68a0c304e060cbadcc05662341ede9c8401acce5252805e440139d5df7d28",
+        "token_count": null,
+        "split_warning": "tokenizer_unavailable",
+        "variant_id": "SOFTWARE_COMMON",
+        "source_kind": "GIT_DOCUMENT",
+        "evidence_status": "SOFTWARE_IMPLEMENTATION",
+        "source_path": "docs/ARCHITECTURE.md",
+        "quote_candidates": [
+          "레이더 실제 모델·출력 형식을 확인한 어댑터, 후방 센서 범위와 제동 거리 실측, 사람 포즈 손목 기반 연결, 가림·ID 교체 검증, Raspberry Pi 카메라 어댑터와 성능 측정을 순서대로 진행한다. Pi 전용 카메라 제품을 가정하지 않는다."
+        ]
+      }
+    ],
+    "claim_trace": [
+      {
+        "claim_id": "c1",
+        "text": "레이더 상태가 UNKNOWN이면 레이더 센서로부터 유효한 상태(CLEAR 또는 EVADE)를 수신하지 못했거나, 수신된 패킷이 잘못되어 상태를 판단할 수 없는 상황을 의미합니다.",
+        "supports": [
+          {
+            "evidence_id": 23,
+            "quote_index": 2
+          },
+          {
+            "evidence_id": 5,
+            "quote_index": 0
+          }
+        ],
+        "actual_quotes": [
+          "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을"
+        ],
+        "invalid_supports": [
+          {
+            "support": {
+              "evidence_id": 23,
+              "quote_index": 2
+            },
+            "available_indices": [
+              0,
+              1
+            ]
+          }
+        ],
+        "deterministic_reason": "INVALID_CITATION",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": "INVALID_CITATION",
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [
+            {
+              "token": "없",
+              "context": "한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communi"
+            },
+            {
+              "token": "False",
+              "context": "dar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTAC"
+            },
+            {
+              "token": "없",
+              "context": "CLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을"
+            }
+          ],
+          "conditional": []
+        },
+        "analyst_assessment": "정상 차단: 범위 밖 quote_index. 문장의 사실 여부와 인용 계약 오류를 분리해야 함."
+      },
+      {
+        "claim_id": "c2",
+        "text": "UNKNOWN 상태는 안전 차단 해제 조건인 '최신 CLEAR가 연속 1초 유지'를 충족하지 않으므로, 이미 차단된 상태를 유지하거나 새로운 차단을 유발합니다.",
+        "supports": [
+          {
+            "evidence_id": 23,
+            "quote_index": 2
+          }
+        ],
+        "actual_quotes": [],
+        "invalid_supports": [
+          {
+            "support": {
+              "evidence_id": 23,
+              "quote_index": 2
+            },
+            "available_indices": [
+              0,
+              1
+            ]
+          }
+        ],
+        "deterministic_reason": "INVALID_CITATION",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": "INVALID_CITATION",
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [],
+          "conditional": []
+        },
+        "analyst_assessment": "정상 차단: 범위 밖 quote_index. CLEAR 조건은 원문에서 찾을 수 있어도 임의 번호를 서버가 자동 승인해서는 안 됨."
+      },
+      {
+        "claim_id": "c3",
+        "text": "레이더가 미연결 상태이거나 관측 데이터가 없으면 시스템은 이를 UNKNOWN으로 처리하며, 1차 시뮬레이션에서는 레이더 관측 없이 실행하고 화면에 UNKNOWN을 표시합니다.",
+        "supports": [
+          {
+            "evidence_id": 5,
+            "quote_index": 0
+          }
+        ],
+        "actual_quotes": [
+          "`control/state_machine.py`가 활성화·정지·재개를 소유하고, `follow_controller.py`가 계산과 제한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communication/esp32_udp.py`만 소켓을 소유한다. `radar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTACLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을"
+        ],
+        "invalid_supports": [],
+        "deterministic_reason": null,
+        "historical_semantic": "ENTAILMENT",
+        "candidate_eligibility_reason": null,
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [
+            {
+              "token": "없",
+              "context": "한만 담당한다. 별도의 추상 SafetyManager 없이 상태 머신에 안전 검사를 모아 작은 구조를 유지했다. `communi"
+            },
+            {
+              "token": "False",
+              "context": "dar_interface.py`는 미연결을 `None/False`로 반환한다. 미연결 관측을 실제 안전 입력으로 연결하면 `OBSTAC"
+            },
+            {
+              "token": "없",
+              "context": "CLE_STOP`이며, 1차 시뮬레이션은 레이더 관측 없이 실행하고 화면에는 UNKNOWN을"
+            }
+          ],
+          "conditional": []
+        },
+        "analyst_assessment": "기록된 ENTAILMENT로 통과. 원문 전체와 맞지만 실제 전달된 legacy 청크가 UNKNOWN을 뒤에서 끝나 근거 완결성이 불충분."
+      },
+      {
+        "claim_id": "c4",
+        "text": "RADAR_TIMEOUT은 수신 지연 경고로, 마지막 레이더 상태와 경과 시간을 유지하며 단순 지연만으로 새 차단을 만들지 않지만, 이미 EVADE나 UNKNOWN 등으로 차단된 상태는 유지됩니다.",
+        "supports": [
+          {
+            "evidence_id": 23,
+            "quote_index": 3
+          }
+        ],
+        "actual_quotes": [],
+        "invalid_supports": [
+          {
+            "support": {
+              "evidence_id": 23,
+              "quote_index": 3
+            },
+            "available_indices": [
+              0,
+              1
+            ]
+          }
+        ],
+        "deterministic_reason": "INVALID_CITATION",
+        "historical_semantic": "NOT_CALLED",
+        "candidate_eligibility_reason": "INVALID_CITATION",
+        "candidate_is_verified": false,
+        "qualifier_hits": {
+          "design": [],
+          "negative": [],
+          "conditional": []
+        },
+        "analyst_assessment": "정상 차단: 범위 밖 quote_index. RADAR_TIMEOUT 설명은 관련 원문이 있으나 번호 연결은 잘못됨."
+      }
+    ],
+    "final_reply": "레이더가 미연결 상태이거나 관측 데이터가 없으면 시스템은 이를 UNKNOWN으로 처리하며, 1차 시뮬레이션에서는 레이더 관측 없이 실행하고 화면에 UNKNOWN을 표시합니다.\n\n나머지 내용은 근거 검증을 통과하지 못해 설명을 보류했어요.",
+    "speech_text": "레이더가 미연결 상태이거나 관측 데이터가 없으면 시스템은 이를 UNKNOWN으로 처리하며, 1차 시뮬레이션에서는 레이더 관측 없이 실행하고 화면에 UNKNOWN을 표시합니다.\n\n나머지 내용은 근거 검증을 통과하지 못해 설명을 보류했어요.",
+    "unanswered_aspects": [
+      "확인되지 않은 나머지 내용"
+    ],
+    "cached_replay_matches_record": true,
+    "historical_semantic_verdicts": [
+      {
+        "claim_id": "c1",
+        "relation": "ENTAILMENT"
+      }
+    ],
+    "analyst_review": "human_review_pending",
+    "missing_core_facts": "유효하지 않은 센서 상태와 수신 부재의 구분이 빠짐. 미연결·시뮬레이션 사례만 남음."
+  }
+]

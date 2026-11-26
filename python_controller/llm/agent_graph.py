@@ -12,7 +12,7 @@ from langsmith import tracing_context
 
 from python_controller.llm.agent_dialogue import ROLE_REPLY, identity_reply
 from python_controller.llm.menu_help import explain_menu
-from python_controller.llm.agent_intent import requested_plan
+from python_controller.llm.agent_intent import requested_plan,program_question
 from python_controller.llm.agent_semantics import semantic_validate
 from python_controller.knowledge.answer import answer_documents, document_question
 from python_controller.knowledge.variants import hardware_scope
@@ -34,6 +34,7 @@ class AgentState(TypedDict, total=False):
     citations: list
     reply: str | None
     retain_in_dialogue: bool
+    rag: dict | None
 
 
 class DialogueContext(TypedDict):
@@ -46,13 +47,25 @@ class ConversationGraph:
         self.interpreter = interpreter
         self.responder = responder
         self.last_document_question = None
+        self.last_document_values = ''
+        self.last_profile_question=None
+        self.last_profile_values=''
+        def profile_reference(text):
+            return bool(self.last_profile_question and re.search(r'뜻|맞|아니|좋아',text)
+                and not re.search(r'실행해|이동해|승인|바꿔|변경해',text)
+                and any(w in self.last_profile_values for w in re.findall(r'[가-힣A-Za-z]{2,}',text)
+                        if w not in ('뜻이야','좋아한다는','설명해','원하는')))
+        def followup(text):
+            return bool(self.last_document_question and (
+                re.fullmatch(r'(?:그럼\s*)?(?:그건|그 부분|차이는|동작 방식은|더 자세히|좀 더 자세히|좀 더 쉽게|더 쉽게|왜 그런지)(?:\s*(?:설명해\s*줘|알려\s*줘))?[?？.! ]*',text)
+                or profile_reference(text)))
+        self.document_followup=followup
         def classify(state, runtime: Runtime[DialogueContext]):
             previous = state['previous']
             text = state['message']
             if state['frozen']:
                 return {'card': state['frozen'], 'intent': None, 'decision': None, 'edit': None, 'error': None}
-            followup = bool(self.last_document_question and re.fullmatch(r'(?:그럼\s*)?(?:그건|그 부분|차이는|동작 방식은|더 자세히|좀 더 자세히|왜 그런지)(?:\s*(?:설명해\s*줘|알려\s*줘))?[?？.! ]*',text))
-            if not state['preview'] and (followup or document_question(text, knowledge) or hardware_scope(text) is not None):
+            if not state['preview'] and (followup(text) or document_question(text, knowledge) or program_question(text) or hardware_scope(text) is not None):
                 return {'intent': {'intent': 'ask_docs'}, 'card': previous, 'decision': None, 'edit': None, 'error': None}
             try:
                 if state['preview']:
@@ -83,11 +96,16 @@ class ConversationGraph:
 
         def docs(state):
             question = state['message']
-            if self.last_document_question and re.fullmatch(r'(?:그럼\s*)?(?:그건|그 부분|차이는|동작 방식은|더 자세히|좀 더 자세히|왜 그런지)(?:\s*(?:설명해\s*줘|알려\s*줘))?[?？.! ]*',question):
-                question = self.last_document_question + ' ' + question
+            if followup(question):
+                question = (self.last_profile_question if profile_reference(question) else self.last_document_question) + ' ' + question
             result = answer_documents(knowledge, question)
+            self.last_document_values=' '.join(c.get('presentation',{}).get('value','') for c in result.get('claims',[]))
+            if self.last_document_values:
+                self.last_profile_question=question[:350]
+                self.last_profile_values=self.last_document_values
             self.last_document_question = question[:350]
-            return {'intent': None, 'reply': result['reply'], 'citations': result['citations']}
+            return {'intent': None, 'reply': result['reply'], 'citations': result['citations'],
+                    'rag': {key: value for key,value in result.items() if key not in ('reply','citations')}}
 
         def dialogue(state, runtime: Runtime[DialogueContext]):
             kind = state['intent']['intent']
@@ -139,7 +157,7 @@ class ConversationGraph:
                 self.review(snapshot.values['card'], 'continue')
             return self.graph.invoke({'message': message, 'history': history, 'previous': previous,
                                       'preview': preview, 'frozen': frozen, 'citations': [], 'reply': None,
-                                      'retain_in_dialogue': False}, self.config,
+                                      'retain_in_dialogue': False, 'rag': None}, self.config,
                                      context={'on_partial': on_partial, 'reference': reference})
 
     def review(self, card, decision):

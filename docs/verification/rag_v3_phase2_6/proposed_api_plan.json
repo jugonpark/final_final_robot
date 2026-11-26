@@ -1,0 +1,36 @@
+{
+  "status": "PROPOSAL_ONLY_NOT_AUTHORIZED",
+  "new_budget_created": false,
+  "new_requests_made": 0,
+  "old_ledger": "docs/verification/rag_v3_phase2/api_budget.json",
+  "old_reservations": 12,
+  "old_cap": 12,
+  "proposed_max_requests": 6,
+  "automatic_retry": 0,
+  "automatic_regeneration": 0,
+  "cases": [
+    {
+      "case_id": "061",
+      "generation_max": 1,
+      "semantic_max": 1
+    },
+    {
+      "case_id": "062",
+      "generation_max": 1,
+      "semantic_max": 1
+    },
+    {
+      "case_id": "063",
+      "generation_max": 1,
+      "semantic_max": 1
+    }
+  ],
+  "all_metadata_failures_and_other_requests_count_toward_cap": true,
+  "prerequisites": [
+    "separate user API approval",
+    "explicit transmission permission for selected project excerpts and questions",
+    "freeze candidate and evidence hashes",
+    "independent provisional Gold review"
+  ],
+  "quality_improvement_demonstrated": false
+}

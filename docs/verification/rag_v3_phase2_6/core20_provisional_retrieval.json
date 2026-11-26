@@ -1,0 +1,461 @@
+{
+  "human_approved": false,
+  "metric": "source/exact-excerpt presence only, not answer Coverage",
+  "cases": [
+    {
+      "case_id": "G25-001",
+      "question": "손의 Thumb Up과 Thumb Down은 추종 거리 설정을 어떻게 바꾸나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-001-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-001-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-001-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-002",
+      "question": "손동작 화면을 쓰면서 AI 계획도 만들 수 있나요? 이동 제어권도 동시에 두 개가 되나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-002-F01",
+          "required": true,
+          "source_in_corpus": false,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-002-F02",
+          "required": true,
+          "source_in_corpus": false,
+          "exact_excerpt_in_input": false
+        }
+      ]
+    },
+    {
+      "case_id": "G25-003",
+      "question": "브레드보드 제공 BOM에는 어떤 모터 드라이버 모듈이 적혀 있나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-003-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-003-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-003-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-004",
+      "question": "PCB V19의 문서상 제작 승인 상태를 알려줘. 실물 승인과도 같은 뜻인가요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-004-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-004-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-004-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-005",
+      "question": "우리 프로그램은 노트북이랑 로봇이 어떻게 통신해?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-005-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-005-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-005-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-005-F04",
+          "required": false,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-005-F05",
+          "required": false,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-005-F06",
+          "required": false,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        }
+      ]
+    },
+    {
+      "case_id": "G25-006",
+      "question": "Qt 화면은 어떤 기술로 만든 거야?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-006-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-006-F02",
+          "required": false,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-007",
+      "question": "레이더가 UNKNOWN이면 무슨 뜻이야?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-007-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-007-F02",
+          "required": false,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-007-F03",
+          "required": false,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-008",
+      "question": "영상 처리와 GUI 제어 작업은 어떻게 분리되어 있나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-008-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-008-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-008-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-008-F04",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        }
+      ]
+    },
+    {
+      "case_id": "G25-009",
+      "question": "ESP32와 PC의 Python 코드는 각각 어떤 역할을 하나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-009-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-009-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-009-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": false
+        }
+      ]
+    },
+    {
+      "case_id": "G25-010",
+      "question": "브레드보드 TERANTY 배터리의 기준 전압은 몇 V인가요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-010-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-011",
+      "question": "PCB V19 CAD에서 M2 엔코더 A와 B는 각각 어느 GPIO인가요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-011-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-011-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-011-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-012",
+      "question": "AI 이동 초안의 행동 수, 이동당 거리와 총 거리 제한은 어떻게 되나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-012-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-012-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-012-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-013",
+      "question": "V18과 V19의 모터 드라이버 자료를 보면 실물 모듈 교체가 검증됐다고 볼 수 있나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-013-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-013-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-013-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-014",
+      "question": "브레드보드 펌웨어와 V19 CAD의 M2 엔코더 핀을 따로 비교해줘.",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-014-F01",
+          "required": true,
+          "source_in_corpus": false,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-014-F02",
+          "required": true,
+          "source_in_corpus": false,
+          "exact_excerpt_in_input": false
+        },
+        {
+          "fact_id": "G25-014-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-014-F04",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-014-F05",
+          "required": true,
+          "source_in_corpus": false,
+          "exact_excerpt_in_input": false
+        }
+      ]
+    },
+    {
+      "case_id": "G25-015",
+      "question": "레이더가 CLEAR면 바로 움직여도 되나요? 차단 해제 조건과 이전 미션 재개 여부를 설명해줘.",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-015-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-015-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-015-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-015-F04",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-015-F05",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-016",
+      "question": "GUI가 멈춰도 프레임 나이를 감시하나요? 이 구조가 모든 물리적 정지를 보장하나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-016-F01",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-016-F02",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        },
+        {
+          "fact_id": "G25-016-F03",
+          "required": true,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-017",
+      "question": "우리 로봇 UDP 통신의 실측 지연은 항상 1ms 이내인가요?",
+      "live_guard": false,
+      "facts": []
+    },
+    {
+      "case_id": "G25-018",
+      "question": "V19 실물에서 2A 연속 부하의 안전 운전이 검증됐나요?",
+      "live_guard": false,
+      "facts": [
+        {
+          "fact_id": "G25-018-F01",
+          "required": false,
+          "source_in_corpus": true,
+          "exact_excerpt_in_input": true
+        }
+      ]
+    },
+    {
+      "case_id": "G25-019",
+      "question": "문서만 보고 지금 로봇의 실제 이동 속도를 알려줘.",
+      "live_guard": true,
+      "facts": []
+    },
+    {
+      "case_id": "G25-020",
+      "question": "지금 연결된 실물 PCB가 V18인지 V19인지 문서로 정해줘.",
+      "live_guard": true,
+      "facts": []
+    }
+  ]
+}

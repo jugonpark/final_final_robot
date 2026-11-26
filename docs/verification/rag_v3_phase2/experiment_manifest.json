@@ -1,0 +1,32 @@
+{
+  "baseline_commit": "8861848",
+  "branch": "codex/grounded-rag-v3",
+  "phase1_snapshot_sha256": "e9a589ab1ecbc3fa44d957622d4c9a9b9411a81755e5d2ce6222fa5bbe684684",
+  "dataset": {
+    "version": "ko-phase2-provisional-1",
+    "case_count": 120,
+    "semantic_pair_count": 180,
+    "gold_sha256": "22f431e76d068091d9e5eee88f6765fd592e6afca4e082bdfd8e21d0dd32c577",
+    "semantic_sha256": "f7daf7feb48a1db212fd577e2a10b02a6e187b522843a41d381f1dd339439fa6",
+    "revision": "8861848",
+    "splits": {
+      "development": 33,
+      "validation": 44,
+      "test": 43
+    },
+    "review_status": "human_review_pending",
+    "paraphrase_leakage_review": "document-family grouped; cross-document semantic equivalence requires human audit"
+  },
+  "live_selected_cases": [
+    "RAG-KO-061",
+    "RAG-KO-062",
+    "RAG-KO-063"
+  ],
+  "api_cap_including_metadata_and_failed_reservations": 12,
+  "prompt_sha256": "78448ba49bd06b1ba3df4d950347e6a8348f440aa1395690d11eded3f1f3bf11",
+  "metrics_frozen_before_outputs": true,
+  "gold_excluded_from_model_payload": true,
+  "B_protocol": "same retrieved evidence and exact generated claims captured from live C; citation-only offline counterfactual, never an operational mode",
+  "review_status": "provisional_gold/human_review_pending",
+  "operational_defaults_changed": false
+}

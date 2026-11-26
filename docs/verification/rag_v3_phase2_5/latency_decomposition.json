@@ -1,0 +1,50 @@
+[
+  {
+    "case_id": "RAG-KO-061",
+    "retrieval_ms": 10.730599984526634,
+    "evidence_selection_ms": null,
+    "generation_wrapper_ms": 20529.88769998774,
+    "deterministic_validation_ms": null,
+    "semantic_wrapper_ms": 6950.989899982233,
+    "semantic_called": true,
+    "rendering_ms": null,
+    "total_ms": 29137.631399964448,
+    "unseparated_remainder_ms": 1646.0232000099495,
+    "sdk_create_generation_ms": 10635.093500022776,
+    "sdk_create_semantic_ms": 995.7006999757141,
+    "generation_wrapper_minus_create_ms": 9894.794199964963,
+    "semantic_wrapper_minus_create_ms": 5955.2892000065185
+  },
+  {
+    "case_id": "RAG-KO-062",
+    "retrieval_ms": 882.7831000089645,
+    "evidence_selection_ms": null,
+    "generation_wrapper_ms": 12742.307799984701,
+    "deterministic_validation_ms": null,
+    "semantic_wrapper_ms": null,
+    "semantic_called": false,
+    "rendering_ms": null,
+    "total_ms": 18194.776099990122,
+    "unseparated_remainder_ms": 4569.6851999964565,
+    "sdk_create_generation_ms": 6048.620900022797,
+    "sdk_create_semantic_ms": null,
+    "generation_wrapper_minus_create_ms": 6693.686899961904,
+    "semantic_wrapper_minus_create_ms": null
+  },
+  {
+    "case_id": "RAG-KO-063",
+    "retrieval_ms": 207.9982000286691,
+    "evidence_selection_ms": null,
+    "generation_wrapper_ms": 13178.368999972008,
+    "deterministic_validation_ms": null,
+    "semantic_wrapper_ms": 11087.582199950702,
+    "semantic_called": true,
+    "rendering_ms": null,
+    "total_ms": 25761.990799976047,
+    "unseparated_remainder_ms": 1288.0414000246674,
+    "sdk_create_generation_ms": 10190.56159997126,
+    "sdk_create_semantic_ms": 788.7087999843061,
+    "generation_wrapper_minus_create_ms": 2987.8074000007473,
+    "semantic_wrapper_minus_create_ms": 10298.873399966396
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "samples_ms": [
+    2561.913600016851,
+    1418.4023000416346,
+    1412.2547000297345
+  ],
+  "network_requests": 0,
+  "key_source": "dummy literal; no environment key read",
+  "method": "SDK construction and close only, Python sockets blocked",
+  "limitation": "New local measurement; cannot retroactively allocate historical wrapper overhead"
+}

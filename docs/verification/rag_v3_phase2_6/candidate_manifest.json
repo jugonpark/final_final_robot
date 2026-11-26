@@ -1,0 +1,23 @@
+{
+  "phase": "2.6",
+  "branch": "codex/grounded-rag-v3",
+  "files": {
+    "python_controller/knowledge/recovery/client.py": "f7adf205418ea73d68c1ba86a308f9423944ac22f050f6ceb9fca2745a908099",
+    "python_controller/knowledge/recovery/pipeline.py": "d9d57d82a9e0bb941a1a77c626c7d2f334e38a65444a5fefaba99242cc1eebef",
+    "python_controller/knowledge/recovery/retrieval.py": "63b5e41645a10335ef3f174e2e07fc5ed157f53b13f37eddadda5c9f0de94142",
+    "python_controller/knowledge/recovery/rules.py": "96a00824a89345cc5887eef78040e04ff3d976953849f1642837e44d90cc3b20",
+    "python_controller/knowledge/recovery/__init__.py": "76ce8941b96bde6e61d01f085b9a7e177290e0e2aeeddb38cb3c47a2ff799fc4",
+    "scripts/evaluate_rag_phase2_6.py": "a1316ce7ca40c667f031151b3f4a207cecec997b0a65891f9b57db958bc1d22a",
+    "tests/test_rag_phase2_6.py": "f2fe3316ce27b898663f79fcc5c2e7cd54333767f5e9f1243c7057fbf818c0a4",
+    "docs/verification/RAG_V3_PHASE2_6_RECOVERY_REPORT.md": "8cae5bc0894bb7f859b67540e2fb7d7bb104bacc390dfd98571c20c9b675eb18"
+  },
+  "operational_default_changed": false,
+  "external_api_requests": 0,
+  "old_budget_preserved": "12/12",
+  "quality_improvement_demonstrated": false,
+  "gold_human_approved": false,
+  "validation": {
+    "passed": 59,
+    "subtests_passed": 44
+  }
+}

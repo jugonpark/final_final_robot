@@ -1,0 +1,18 @@
+{
+  "current_evaluation_sources": {
+    "python_controller/knowledge/experiments.py": "ee725a784bcfe6ca8c501b57b0dd12b52af38e593712f7cf25d2080e7dfde308",
+    "tests/test_rag_phase2.py": "d8958343db0505d28d3c162a3340a93d683137ff34c73f34a4c74d4d6136c17f",
+    "scripts/audit_rag_phase2_gold.py": "ad617783a37516aaeb8435f582e1b67bd34dc9ed174bf433ac9c5d34325f3ebd",
+    "scripts/build_rag_phase2_dataset.py": "e7c3c1e8e12667da1e4d80d94c293fac092b76aed7931db41d4ab262c30fe390",
+    "scripts/plot_rag_phase2.py": "75ec4732e25a38bb9a4abeeff270fd42a9086827598c7dd99477272d7478226c",
+    "scripts/rag_phase2_preflight.py": "77705f5cc7f722f6eb1b9d96bdfa35875df88c791e749a29333934bfed840fd1",
+    "scripts/evaluate_rag_v3.py": "98c58b8bba9d6bcb0bdc047b51979d4948a1ec7ad67148367682dbdade583904",
+    "scripts/evaluate_semantic_verifier.py": "d3beca5a3ab2310e725d72fa802c68997c5617862d218abbdcaee37acd33ce97",
+    "scripts/analyze_rag_tradeoff.py": "3e6277580910af70032b0b58e3c812ebe859bac6f4dcb8bf00cafbb831c2a172",
+    "scripts/evaluate_rag_policy_candidate.py": "482d1de36af55a70e4430809d5189096bb796cbd3ea5912eef1c8cf8e1a98067"
+  },
+  "phase1_snapshot_changes": [
+    "docs/README.md"
+  ],
+  "note": "Final source hashes; original live runs predate added local stage timing and strengthened nested-payload guard."
+}

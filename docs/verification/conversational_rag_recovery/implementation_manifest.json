@@ -1,0 +1,32 @@
+{
+  "branch": "codex/grounded-rag-v3",
+  "files": {
+    "python_controller/knowledge/answer.py": "f9d4da316f78187f80b864a759defebf9912ede0351292431992159c23fbd5bb",
+    "python_controller/knowledge/facts.py": "5709a338a9d5646d392943c3b907947666a274378592c926a102f6b295558757",
+    "python_controller/knowledge/rendering.py": "d462adc108543235755a9afac928449b16e3710e3438cf593daff779bd6dd447",
+    "python_controller/llm/agent_graph.py": "78f3749158880a18f5db01146253425c4abe26fc226dc53826c4cafc8ed983aa",
+    "python_controller/llm/unified_agent.py": "3d2c60d7a94304f7de2e6e44a3dca77b0751f7966bd80450f9ccf60f390f32a7",
+    "python_controller/visualization/agent_panel.py": "2107acce72f9607406d1315ed8f52b5ca2f3f96d072f2dfae0017bdcc7fc32c9",
+    "python_controller/web/app.js": "50bb77bd85d2fedb360997132dacc38955f46d782f5ce048584482bd5f5cec25",
+    "tests/test_knowledge_rag.py": "a7f57ee350425067f929002213a76cddc6f43e5688934765c3e417771cb77b54",
+    "tests/test_unified_agent.py": "f047b5403aa3a126e6410d01cf78ca3b33e6282b5dabe77c9b933c4b7c5d4b7f",
+    "python_controller/knowledge/program.py": "832d9485aebadb80350120d2544258482b8c73b99649fcc814160322bf596c4b",
+    "docs/knowledge/PROGRAM_KNOWLEDGE.md": "4fdb364be836a94ebdbf4a0b6585131a618d30cfe113fb1f20672ab78f22c3bf",
+    "tests/test_conversational_recovery.py": "5ea100169c26903797086d02b6a64bb82372b3a4884279d205a10a8cad2f745b",
+    "scripts/run_conversational_rag_preview.py": "b69d87c71c9a2fa1499962fd9d4095167f2b60d842f28e76e35022c40f6d3f33",
+    "scripts/verify_conversational_rag_ui.py": "217eb317b1cbd8a0c253cce41a0fee8d22ee0f46d4cb10f1a4f5563badd4a17a",
+    "scripts/rollback_conversational_rag.py": "97189f3735485d8b8190ac67ac12b859b196392a00f9f79f292cb955f028686d",
+    "docs/verification/CONVERSATIONAL_RAG_RECOVERY_REPORT.md": "79539c0f57d7083f7857cf5e41b296112908d3f4567198d098ca306c402c1b0a"
+  },
+  "validation": {
+    "passed": 104,
+    "skipped": 1,
+    "subtests_passed": 144
+  },
+  "web_cases": 10,
+  "qt_cases": 10,
+  "ui_answers_identical": 10,
+  "new_external_ai_requests": 0,
+  "operational_server_restarted": false,
+  "human_quality_review_complete": false
+}

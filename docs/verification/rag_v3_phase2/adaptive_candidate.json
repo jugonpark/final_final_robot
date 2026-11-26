@@ -1,0 +1,84 @@
+{
+  "case_id": "RAG-KO-061",
+  "split": "development",
+  "policy": "contextual target/design qualifier experiment",
+  "before_claims": [
+    {
+      "claim_id": "c1",
+      "text": "데이터 흐름은 카메라 워커 → 비전 워커 → GUI 상태 머신(50ms QTimer) → 안전 명령 순서로 처리되며, GUI 스레드에서 직접 카메라 읽기, AI 추론, 소켓 수신, 로그 플러시를 수행하지 않습니다.",
+      "evidence_ids": [
+        2
+      ],
+      "supports": [
+        {
+          "evidence_id": 2,
+          "quote_index": 0
+        }
+      ],
+      "verification_status": "supported",
+      "verification_method": "nemotron_semantic_and_rules"
+    }
+  ],
+  "before_rejections": [
+    {
+      "reason": "ENTITY_MISMATCH"
+    },
+    {
+      "reason": "DESIGN_QUALIFIER_DROPPED"
+    }
+  ],
+  "after_claims": [
+    {
+      "claim_id": "c1",
+      "text": "기본 실행 모드에서는 UDP 소켓을 사용하지 않고 화면 시뮬레이션으로 동작하며, 실제 로봇 제어 시 ESP32의 운동학·PID·엔코더·워치독 펌웨어를 재사용하고 상위 제어 로직만 Python으로 추가합니다.",
+      "evidence_ids": [
+        3
+      ],
+      "supports": [
+        {
+          "evidence_id": 3,
+          "quote_index": 0
+        }
+      ],
+      "verification_status": "supported",
+      "verification_method": "nemotron_semantic_and_rules"
+    },
+    {
+      "claim_id": "c2",
+      "text": "데이터 흐름은 카메라 워커 → 비전 워커 → GUI 상태 머신(50ms QTimer) → 안전 명령 순서로 처리되며, GUI 스레드에서 직접 카메라 읽기, AI 추론, 소켓 수신, 로그 플러시를 수행하지 않습니다.",
+      "evidence_ids": [
+        2
+      ],
+      "supports": [
+        {
+          "evidence_id": 2,
+          "quote_index": 0
+        }
+      ],
+      "verification_status": "supported",
+      "verification_method": "nemotron_semantic_and_rules"
+    }
+  ],
+  "after_rejections": [
+    {
+      "reason": "ENTITY_MISMATCH"
+    }
+  ],
+  "requests": [
+    {
+      "purpose": "development_target_design_candidate_judge",
+      "model_id": "nvidia/nemotron-3-ultra-550b-a55b",
+      "max_tokens": 2048,
+      "temperature": 0.2,
+      "payload_sha256": "b4328f2a8f1ca2f01a1f1435dce0c826153f36165f5c926575c93eb2de05914e",
+      "input_tokens": 3793,
+      "output_tokens": 35,
+      "reasoning_tokens": 0,
+      "failure_code": null,
+      "response_text": "{\"verdicts\":[{\"claim_id\":\"c1\",\"relation\":\"ENTAILMENT\"},{\"claim_id\":\"c2\",\"relation\":\"ENTAILMENT\"}]}",
+      "latency_ms": 1701.562499976717
+    }
+  ],
+  "production_default_changed": false,
+  "held_out_improvement_proven": false
+}

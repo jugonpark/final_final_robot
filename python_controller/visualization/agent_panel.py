@@ -1,6 +1,7 @@
 """Operator chat and explicit review for the blue Qt console."""
+import sqlite3
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QCheckBox, QGroupBox, QHBoxLayout, QLineEdit, QMessageBox, QPlainTextEdit,
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QGroupBox, QHBoxLayout, QLineEdit, QMessageBox, QPlainTextEdit,
                                QPushButton, QSplitter, QVBoxLayout, QWidget)
 
 from python_controller.llm.unified_agent import STEP_LABELS, progress_summary
@@ -34,6 +35,22 @@ class AgentPanel(QWidget):
         self.history.setAccessibleName('Agent 대화 기록')
         self.history.setMinimumHeight(220)
         chat_layout.addWidget(self.history)
+        self.sources_toggle = QPushButton('관련 근거 보기 ▾')
+        self.sources_toggle.setCheckable(True)
+        self.sources_box = QWidget()
+        source_layout = QVBoxLayout(self.sources_box)
+        self.source_choice = QComboBox()
+        self.source_text = QPlainTextEdit()
+        self.source_text.setReadOnly(True)
+        self.source_text.setMaximumHeight(180)
+        source_layout.addWidget(self.source_choice)
+        source_layout.addWidget(self.source_text)
+        self.sources_box.hide()
+        self.sources_toggle.toggled.connect(self.sources_box.setVisible)
+        self.sources_toggle.toggled.connect(lambda opened: self.show_source() if opened else None)
+        self.source_choice.currentIndexChanged.connect(self.show_source)
+        chat_layout.addWidget(self.sources_toggle)
+        chat_layout.addWidget(self.sources_box)
         entry = QHBoxLayout()
         self.command = QLineEdit()
         self.command.setMaxLength(350)
@@ -146,6 +163,25 @@ class AgentPanel(QWidget):
             self.feedback.setText(str(exc))
         self.refresh()
 
+    def show_source(self, *_):
+        if not self.sources_toggle.isChecked():
+            return
+        selected = self.source_choice.currentData()
+        if not selected:
+            self.source_text.clear()
+            return
+        citation, related = selected
+        try:
+            row = self.agent.knowledge.get_document_chunk(citation['id'])
+            body = row['body'] if row else '이 출처를 더 이상 열 수 없습니다.'
+        except (OSError, ValueError, sqlite3.Error):
+            body = '출처를 지금 열 수 없습니다.'
+        self.source_text.setPlainText('\n'.join([
+            f'{citation["path"]} · {citation["heading"]}',
+            f'리비전 {citation.get("revision")} · {citation.get("evidence_status")}',
+            '관련 주장: ' + ' / '.join(related),
+            '사용한 인용: ' + '\n'.join(citation.get('excerpts',[])), '', body]))
+
     def refresh(self):
         state = self.agent.view()
         if state['navigation_id'] != self.last_navigation:
@@ -157,8 +193,23 @@ class AgentPanel(QWidget):
             messages = [*messages, {'role': 'assistant', 'content': state['partial_reply']}]
         if messages != self.displayed_messages:
             self.displayed_messages = messages
-            self.history.setPlainText('\n\n'.join(f'{"나" if row["role"] == "user" else "D.I.G."} · {row["content"]}' for row in messages))
+            verification_labels = {'verified':'근거 검증 통과','partial':'일부만 확인','structured':'구조화 자료 기준',
+                                   'unavailable':'검증 사용 불가','failed':'검증 실패 · 답변 보류',
+                                   'not_verified':'설명 확인 안 됨','citation_only':'요청한 원문','conflicting':'자료 간 충돌',
+                                   'policy_disabled':'현재 설정에서 AI 해석 미사용','restricted':'문서 외부 전송 제한',
+                                   'runtime_snapshot':'현재 관제 스냅숏'}
+            self.history.setPlainText('\n\n'.join(
+                f'{"나" if row["role"] == "user" else "D.I.G."} · {row["content"]}' +
+                (f'\n({verification_labels.get(row.get("verification_status"),"검증 상태 확인 필요")})' if row.get('answer_mode') else '')
+                for row in messages))
             self.history.verticalScrollBar().setValue(self.history.verticalScrollBar().maximum())
+            self.sources_toggle.setChecked(False)
+            self.source_choice.clear()
+            for message in messages:
+                for citation in message.get('citations',[]):
+                    related = [c['text'] for c in message.get('claims',[]) if citation['id'] in c['evidence_ids']]
+                    self.source_choice.addItem(f'{citation["path"]} · {citation["heading"]}',(citation,related))
+            self.sources_toggle.setEnabled(self.source_choice.count()>0)
         card = state['card']
         self.clear_button.setEnabled(bool(state['messages'] or state['busy'] or (card and card['review_requested'])))
         shown = (card['id'], card['revision']) if card else None

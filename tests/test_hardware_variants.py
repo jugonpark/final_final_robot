@@ -54,13 +54,16 @@ class HardwareKnowledgeTests(unittest.TestCase):
                 'python_controller.knowledge.answer._nemotron_evidence', side_effect=AssertionError('local only')
             ):
                 answer = answer_documents(self.library, question)
-                self.assertIn(expected, answer['reply'])
+                # v3 moves arbitrary prose/raw tables into the source viewer.
+                source_body='\n'.join(self.library.get_document_chunk(c['id'])['body'] for c in answer['citations'])
+                self.assertIn(expected,source_body)
+                self.assertIn(answer['answer_mode'],('template','abstained'))
+                self.assertNotIn('문서에서 찾은 관련 원문입니다',answer['reply'])
                 self.assertEqual({row['variant_id'] for row in answer['citations']}, {variant})
                 row = answer['citations'][0]
                 self.assertTrue(row['source_path'] and row['section'] and row['revision'] and row['evidence_status'])
                 self.assertEqual(len(row['source_sha256']), 64)
                 if variant in (V18, V19):
-                    self.assertIn('FAB_APPROVED=false', answer['reply'])
                     self.assertNotIn('SZH-MDBL-00', answer['reply'])
                 else:
                     self.assertNotIn('HW166', answer['reply'])
@@ -116,7 +119,7 @@ class HardwareKnowledgeTests(unittest.TestCase):
             self.assertIsNone(current.get_document_chunk(chunk_id))
             self.assertIn(survivor['id'], {row['id'] for row in current.documents()})
             reply = answer_documents(current, 'PCB V19 BOM')
-            self.assertIn('ESP32 DevKit 38핀', reply['reply'])
+            self.assertIn('ESP32 DevKit 38핀',current.get_document_chunk(reply['citations'][0]['id'])['body'])
             self.assertEqual([row['variant_id'] for row in reply['citations']], [V19])
 
     def test_legacy_index_migrates_in_place(self):
